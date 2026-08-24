@@ -7,23 +7,29 @@ Welcome to the **Publication, Education & Video Content Platform** repository.
 1. **[Master Project Requirements Document (PRD)](file:///e:/Freelance/Ebook/PROJECT_REQUIREMENTS.md)**:
    - Complete system overview, multi-tenant publication taxonomy, public hub moderation pipeline, dynamic advertisement engine, direct creator donation model, and administrative capabilities.
 
-2. **[Android App Technical Evaluation & Architecture Plan](file:///e:/Freelance/Ebook/TECHNICAL_EVALUATION_AND_PLAN.md)**:
-   - Tech stack comparison (Flutter selected), risk mitigations, clean folder skeleton (`lib/`), data models, service layer, Riverpod + GoRouter setup, and restricted content screen skeleton.
+2. **[Android App & Technical Evaluation Plan](file:///e:/Freelance/Ebook/TECHNICAL_EVALUATION_AND_PLAN.md)**:
+   - Tech stack comparison (Flutter selected for app, Node.js + Express + Prisma + PostgreSQL for backend), risk mitigations, folder skeletons (`lib/` & `backend/`), data models, and service layer specifications.
 
 3. **[Design System Specification](file:///e:/Freelance/Ebook/docs/DESIGN_SYSTEM_SPEC.md)**:
    - Fonts (`Literata`, `Lexend`, `Inter`), typography scale, Light & Dark mode color hex palettes, elevation guidelines, and eye comfort reading rules.
 
-4. **[Day-by-Day Execution Plan & Daily Trackers (Days 1 – 20)](file:///e:/Freelance/Ebook/docs/DAY_BY_DAY_PLAN.md)**:
-   - Dedicated `docs/` folder containing separated day-by-day files from Day 1 to Day 20 outlining exact deliverables for each single day.
+4. **[30-Day Master Execution Plan (10-Day Node.js Backend + 20-Day App)](file:///e:/Freelance/Ebook/docs/DAY_BY_DAY_PLAN.md)**:
+   - Dedicated `docs/` folder containing 10-Day Node.js Backend Plan documents (`backend_day_01` to `backend_day_10`) and 20-Day App Plan documents (`day_01` to `day_20`).
 
 ---
 
-## 🎨 Design System Quick Summary
+## 🛠️ Node.js Backend Architecture & Plan (10 Days)
 
-- **Fonts**: `Literata` (Body/Reading 400/500), `Lexend` (Headings 600/700), `Inter` (UI/Buttons 400/500). Offline bundled.
-- **Dark Palette**: Background `#121212`, Surface `#1E1E1E`, Primary `#7C9CFF`, Text `#E8E8E8`.
-- **Light Palette**: Background `#FFFFFF`, Surface `#F5F5F7`, Primary `#4A6CF7`, Text `#1A1A1A`.
-- **Corner Radii**: `12px` cards, `8px` buttons, `20px` bottom sheets.
+- **[Backend Day 01: Server Architecture & PostgreSQL Setup](file:///e:/Freelance/Ebook/docs/backend_day_01_server_db_setup.md)**
+- **[Backend Day 02: Authentication & RBAC Middleware](file:///e:/Freelance/Ebook/docs/backend_day_02_auth_rbac_jwt.md)**
+- **[Backend Day 03: Publication Registry APIs](file:///e:/Freelance/Ebook/docs/backend_day_03_publication_registry_api.md)**
+- **[Backend Day 04: Educational Taxonomy & eBook APIs](file:///e:/Freelance/Ebook/docs/backend_day_04_ebook_taxonomy_api.md)**
+- **[Backend Day 05: Publication YouTube Streams API](file:///e:/Freelance/Ebook/docs/backend_day_05_youtube_mapping_api.md)**
+- **[Backend Day 06: Question & Test Paper PDF Compiler](file:///e:/Freelance/Ebook/docs/backend_day_06_pdf_compiler_generator.md)**
+- **[Backend Day 07: Public Hub Moderation Queue APIs](file:///e:/Freelance/Ebook/docs/backend_day_07_moderation_queue_api.md)**
+- **[Backend Day 08: Ad Subscription Package Engine](file:///e:/Freelance/Ebook/docs/backend_day_08_ad_subscription_engine.md)**
+- **[Backend Day 09: Razorpay Webhook & Double Verification API](file:///e:/Freelance/Ebook/docs/backend_day_09_razorpay_double_verification.md)**
+- **[Backend Day 10: Reports Engine, Donations & Docker Deploy](file:///e:/Freelance/Ebook/docs/backend_day_10_reports_donations_deployment.md)**
 
 ---
 

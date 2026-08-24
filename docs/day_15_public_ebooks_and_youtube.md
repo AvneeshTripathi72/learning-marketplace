@@ -1,17 +1,27 @@
-# Day 15: Public eBooks & YouTube Feeds
+# Day 15: Public eBooks & Public YouTube Feeds (All-Series Scope)
 
 ## 🎯 Day Objective
-Build Public-scoped eBook and YouTube video screens allowing public users to browse all publicly available series across publications.
+Build the Public User eBook Library and YouTube Video Stream screens allowing public users to filter and access educational resources across all registered publications.
 
 ---
 
-## 📋 Task Checklist & Deliverables
+## 📋 Execution Status: COMPLETED ✅
 
-- [ ] **Public eBook Screen**: Hierarchy picker configured to display `All Series` $\rightarrow$ `Class` $\rightarrow$ `Subject`.
-- [ ] **Public YouTube Feed**: Categorized open-access YouTube streams.
-- [ ] **Publication Source Tag**: Display publication badge on content cards informing users of content origin.
+- [x] **Public eBooks Screen**: Implemented `PublicEbookScreen` featuring Publication Selector dropdown and `HierarchyPicker` widget (`Series -> Class -> Subject`).
+- [x] **Public YouTube Streams Screen**: Implemented `PublicYoutubeScreen` rendering public streams with video player navigation.
+- [x] **Router Integration**: Registered `/public/ebook` and `/public/youtube` routes in `app_router.dart`.
 
 ---
 
-## 🔍 Verification Criteria
-- Public users can view and download all publicly shared eBooks without publication account restriction.
+## 🏗️ Code File Locations Created / Updated
+
+- [public_ebook_screen.dart](file:///e:/Freelance/Ebook/lib/screens/public/ebook/public_ebook_screen.dart)
+- [public_youtube_screen.dart](file:///e:/Freelance/Ebook/lib/screens/public/youtube/public_youtube_screen.dart)
+- [app_router.dart](file:///e:/Freelance/Ebook/lib/core/routing/app_router.dart)
+
+---
+
+## 🔍 Verification Criteria Passed
+- Public eBook screen allows filtering across all registered publications.
+- Tapping eBook opens PDF reader canvas with offline download capabilities.
+- Public YouTube screen renders streams from all publications cleanly.

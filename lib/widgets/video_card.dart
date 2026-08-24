@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/video_model.dart';
+import '../services/video_playback_resolver_service.dart';
 
-class VideoCard extends StatelessWidget {
+class VideoCard extends StatefulWidget {
   final VideoModel video;
   final VoidCallback onTap;
 
@@ -12,75 +13,83 @@ class VideoCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<VideoCard> createState() => _VideoCardState();
+}
 
-    return Container(
-      width: 220,
-      margin: const EdgeInsets.only(right: 12),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: InkWell(
-          onTap: onTap,
+class _VideoCardState extends State<VideoCard> {
+  bool _isLiked = false;
+  bool _isSaved = false;
+
+  IconData _getPlatformIcon() {
+    switch (widget.video.platform) {
+      case VideoPlatform.youtube:
+        return Icons.play_circle_fill;
+      case VideoPlatform.instagram:
+        return Icons.camera_alt;
+      case VideoPlatform.facebook:
+        return Icons.facebook;
+    }
+  }
+
+  Color _getPlatformColor() {
+    switch (widget.video.platform) {
+      case VideoPlatform.youtube:
+        return Colors.red;
+      case VideoPlatform.instagram:
+        return Colors.purple;
+      case VideoPlatform.facebook:
+        return Colors.blue;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () => VideoPlaybackResolverService.playVideo(widget.video),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
+              Row(
                 children: [
-                  Container(
-                    height: 110,
-                    color: Colors.grey[800],
-                    child: video.thumbnailUrl.startsWith('http')
-                        ? Image.network(
-                            video.thumbnailUrl,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Center(
-                              child: Icon(Icons.play_circle_fill, size: 40, color: Colors.white),
-                            ),
-                          )
-                        : const Center(
-                            child: Icon(Icons.play_circle_fill, size: 40, color: Colors.white),
-                          ),
-                  ),
-                  Positioned(
-                    right: 8,
-                    bottom: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        video.duration,
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
-                      ),
+                  Icon(_getPlatformIcon(), color: _getPlatformColor()),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.video.channelName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      video.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      video.channelName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 8),
+              Text('Category: ${widget.video.category}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(_isLiked ? Icons.thumb_up : Icons.thumb_up_outlined, color: _isLiked ? Colors.blue : null),
+                    onPressed: () => setState(() => _isLiked = !_isLiked),
+                  ),
+                  IconButton(
+                    icon: Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border, color: _isSaved ? Colors.amber : null),
+                    onPressed: () => setState(() => _isSaved = !_isSaved),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Sharing video link...')),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

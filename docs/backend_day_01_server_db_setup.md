@@ -1,29 +1,76 @@
-# Full Technical Evaluation, Architecture Skeleton & Master Execution Plan
+# Node.js / NestJS Backend — Day 01: NestJS Architecture & Prisma PostgreSQL Setup
 
-This document contains the consolidated technical evaluation, stack comparison, data models, NestJS backend architecture, Flutter app structure, and 30-Day Master Execution Plan (10-Day NestJS Backend + 20-Day Flutter App).
-
----
-
-## 1. Tech Stack Comparison & Selection
-
-### 1.1 Mobile Stack (Flutter selected)
-- **Framework**: Flutter (Dart)
-- **State Management**: Riverpod (`flutter_riverpod`)
-- **Routing & Guards**: `go_router`
-- **PDF Viewer & Downloader**: `syncfusion_flutter_pdfviewer`, `dio`
-- **Secure Storage**: `flutter_secure_storage`
-
-### 1.2 Backend Stack (NestJS + PostgreSQL + Prisma ORM selected)
-- **Framework**: NestJS (TypeScript)
-- **Database & ORM**: PostgreSQL with Prisma ORM
-- **Authentication**: Passport JWT (`jwt.strategy.ts`) & bcrypt
-- **Role Guards**: `@Roles()` decorator + `roles.guard.ts` (`PUBLICATION`, `PUBLIC`, `ADMIN`)
-- **PDF Generation**: `pdf-kit` / `puppeteer`
-- **Payment Gateway**: Razorpay Node SDK & HMAC SHA256 Webhook validator
+## 🎯 Objective
+Initialize the NestJS + TypeScript backend REST API server, setup environment configuration, and configure Prisma ORM with the complete PostgreSQL database schema matching client brief specifications.
 
 ---
 
-## 2. Complete Prisma Schema Definition (`prisma/schema.prisma`)
+## 📋 Technical Deliverables & Tasks
+
+- [x] **NestJS Server Init**: Initialize `backend/` directory with NestJS CLI (`nest new backend`), TypeScript, and modular architecture.
+- [x] **Prisma ORM Setup**: Install `@prisma/client` and `prisma`. Initialize PostgreSQL provider (`npx prisma init`).
+- [x] **Prisma Database Schema**: Define full database models in `prisma/schema.prisma`:
+  - `Publication` (`id`, `name`, `email`, `mobile`, `address`, `logoUrl`, `inquiryNumber`, `isActive`, `createdAt`)
+  - `Series`, `Class`, `Subject` (Educational Hierarchy)
+  - `EBook` (`id`, `subjectId`, `coverUrl`, `fileUrl`, `isActive`)
+  - `Video` (`id`, `url`, `platform`, `channelName`, `categoryId`, `status`, `submittedById`, `submittedAt`)
+  - `Category` (`id`, `name`, `isEnabled` - admin parental control toggle)
+  - `Subscription` (`id`, `publicationId`, `package`, `startDate`, `endDate`, `status`, `paymentId`)
+  - `Payment` (`id`, `transactionId`, `amount`, `status`, `gatewayRef`)
+  - `Donation` (`id`, `channelName`, `upiId`, `qrCodeUrl`, `creatorPhotoUrl`)
+  - `User` (`id`, `name`, `email`, `role`, `publicationId`)
+- [x] **Database Migration & Validation**: Verify schema sync with PostgreSQL (`npx prisma db push`).
+
+---
+
+## 🏗️ NestJS Modular Directory Structure (`backend/src/`)
+
+```
+src/
+├── main.ts
+├── app.module.ts
+├── prisma/
+│   ├── prisma.module.ts
+│   └── prisma.service.ts
+├── auth/
+│   ├── auth.module.ts
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── guards/roles.guard.ts
+│   └── strategies/jwt.strategy.ts
+├── publication/
+│   ├── publication.module.ts
+│   ├── publication.controller.ts
+│   └── publication.service.ts
+├── content-hierarchy/
+│   ├── series/
+│   ├── class/
+│   └── subject/
+├── ebook/
+├── video/
+│   ├── video.module.ts
+│   ├── video.controller.ts
+│   ├── video.service.ts
+│   └── video-moderation.service.ts
+├── question-paper/
+├── test-paper/
+├── category/
+├── subscription/
+│   ├── subscription.module.ts
+│   ├── subscription.controller.ts
+│   └── subscription.service.ts
+├── payment/
+│   ├── payment.module.ts
+│   ├── payment.controller.ts
+│   └── payment.service.ts
+├── donation/
+├── reports/
+└── notifications/
+```
+
+---
+
+## 📜 Full Prisma Schema Definition (`prisma/schema.prisma`)
 
 ```prisma
 datasource db {
@@ -193,23 +240,3 @@ model Donation {
   createdAt       DateTime @default(now())
 }
 ```
-
----
-
-## 3. Master 30-Day Execution Timeline
-
-### Part 1: Node.js / NestJS Backend (10 Days)
-- **Day B01**: NestJS Init & Prisma PostgreSQL Setup
-- **Day B02**: JWT Auth & RBAC Roles Guard (`PUBLICATION`, `PUBLIC`, `ADMIN`)
-- **Day B03**: Publication Registry & Logo Upload APIs
-- **Day B04**: Educational Taxonomy & eBook Distribution APIs
-- **Day B05**: Publication YouTube Streams & Server-Driven Category APIs
-- **Day B06**: Question & Model Test Paper PDF Compiler Engine
-- **Day B07**: Video Submission Hub & Moderation Queue APIs
-- **Day B08**: Ad Subscription Package & Rule Engine APIs
-- **Day B09**: Razorpay Webhook & Double Verification API
-- **Day B10**: Admin Analytics Reports Engine & Docker Deployment
-
-### Part 2: Flutter Mobile App (20 Days)
-- **Days 01 - 13**: Phase 1 Publication Core Module
-- **Days 14 - 20**: Phase 2 Public Module & Launch Prep
