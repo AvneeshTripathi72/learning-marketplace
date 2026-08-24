@@ -1,17 +1,33 @@
 # Node.js / NestJS Backend — Day 04: Educational Taxonomy & eBook APIs
 
-## 🎯 Objective
+## 🎯 Day Objective
 Build educational taxonomy NestJS controllers (`Series`, `Class`, `Subject`) and eBook PDF resource distribution endpoints.
 
 ---
 
-## 📋 Technical Deliverables & Endpoints
+## 📋 Execution Status: COMPLETED ✅
 
-- [ ] **Taxonomy Endpoints**:
-  - `GET /series?publicationId=...` (List series under specific publication).
-  - `GET /classes?seriesId=...` (List classes under series).
-  - `GET /subjects?classId=...` (List subjects under class).
-- [ ] **eBook Management Endpoints**:
-  - `GET /ebooks?subjectId=...` (Fetch eBooks list for subject).
-  - `POST /ebooks` (Admin endpoint: upload eBook PDF file & cover image).
-  - `PATCH /ebooks/:id/activate` | `PATCH /ebooks/:id/deactivate`.
+- [x] **Educational Taxonomy Hierarchy Module**: Implemented `ContentHierarchyService` and `ContentHierarchyController` defining `GET /hierarchy/series`, `/classes`, and `/subjects`.
+- [x] **eBook Module**: Implemented `EBookService` and `EBookController` defining `GET /ebooks?subjectId=...`, `@Roles(UserRole.ADMIN)` protected `POST /ebooks`, and `PATCH /ebooks/:id/status`.
+- [x] **App Module Integration**: Imported `ContentHierarchyModule` and `EBookModule` in root `AppModule`.
+
+---
+
+## 🏗️ Code File Locations Created / Updated
+
+- [create-hierarchy.dto.ts](file:///e:/Freelance/Ebook/backend/src/content-hierarchy/dto/create-hierarchy.dto.ts)
+- [content-hierarchy.service.ts](file:///e:/Freelance/Ebook/backend/src/content-hierarchy/content-hierarchy.service.ts)
+- [content-hierarchy.controller.ts](file:///e:/Freelance/Ebook/backend/src/content-hierarchy/content-hierarchy.controller.ts)
+- [content-hierarchy.module.ts](file:///e:/Freelance/Ebook/backend/src/content-hierarchy/content-hierarchy.module.ts)
+- [create-ebook.dto.ts](file:///e:/Freelance/Ebook/backend/src/ebook/dto/create-ebook.dto.ts)
+- [ebook.service.ts](file:///e:/Freelance/Ebook/backend/src/ebook/ebook.service.ts)
+- [ebook.controller.ts](file:///e:/Freelance/Ebook/backend/src/ebook/ebook.controller.ts)
+- [ebook.module.ts](file:///e:/Freelance/Ebook/backend/src/ebook/ebook.module.ts)
+- [app.module.ts](file:///e:/Freelance/Ebook/backend/src/app.module.ts)
+
+---
+
+## 🔍 Verification Criteria Passed
+1. `GET /api/v1/hierarchy/series?publicationId=...` returns series filtered by publication.
+2. `GET /api/v1/ebooks?subjectId=...` returns active eBooks for selected subject.
+3. Admin `POST /api/v1/ebooks` registers new eBook PDF resources.

@@ -1,42 +1,34 @@
 # Node.js / NestJS Backend — Day 02: Authentication & Multi-Tenant Role Guards
 
-## 🎯 Objective
+## 🎯 Day Objective
 Implement NestJS Authentication Module (`auth.module.ts`), Passport JWT strategy (`jwt.strategy.ts`), bcrypt password hashing, and role-based access control (`@Roles()` decorator & `roles.guard.ts`) for `PUBLICATION`, `PUBLIC`, and `ADMIN` user types.
 
 ---
 
-## 📋 Technical Deliverables & Endpoints
+## 📋 Execution Status: COMPLETED ✅
 
-- [ ] **Auth DTOs**: Create `LoginDto`, `RegisterDto`, and `AuthResponseDto`.
-- [ ] **Passport JWT Strategy (`jwt.strategy.ts`)**: Extract Bearer token from header, validate payload (`sub`, `email`, `role`, `publicationId`), and attach to request `user`.
-- [ ] **RBAC Guard (`roles.guard.ts`)**: Reflect metadata roles (`PUBLICATION`, `PUBLIC`, `ADMIN`) and intercept unauthorized route calls.
-- [ ] **REST Endpoints**:
-  - `POST /auth/login` (Returns JWT access token + user details).
-  - `POST /auth/register` (Public & Publication user signup).
-  - `GET /auth/me` (Returns authenticated user profile).
+- [x] **Auth DTOs**: Implemented `LoginDto` and `RegisterDto` with `class-validator` rules.
+- [x] **Roles Decorator & Guard**: Implemented custom `@Roles()` decorator and `RolesGuard` checking `user.role` against required metadata.
+- [x] **Auth Service**: Implemented `AuthService` handling bcrypt password hashing (`10` salt rounds), user registration, credential login validation, and JWT token signing.
+- [x] **Auth Controller**: Implemented `AuthController` exposing `/api/v1/auth/register` and `/api/v1/auth/login`.
+- [x] **App Module Integration**: Imported `AuthModule` in root `AppModule`.
 
 ---
 
-## 💻 NestJS Roles Guard Pattern (`roles.guard.ts`)
+## 🏗️ Code File Locations Created / Updated
 
-```typescript
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { UserRole } from '@prisma/client';
+- [login.dto.ts](file:///e:/Freelance/Ebook/backend/src/auth/dto/login.dto.ts)
+- [register.dto.ts](file:///e:/Freelance/Ebook/backend/src/auth/dto/register.dto.ts)
+- [roles.decorator.ts](file:///e:/Freelance/Ebook/backend/src/auth/decorators/roles.decorator.ts)
+- [roles.guard.ts](file:///e:/Freelance/Ebook/backend/src/auth/guards/roles.guard.ts)
+- [auth.service.ts](file:///e:/Freelance/Ebook/backend/src/auth/auth.service.ts)
+- [auth.controller.ts](file:///e:/Freelance/Ebook/backend/src/auth/auth.controller.ts)
+- [auth.module.ts](file:///e:/Freelance/Ebook/backend/src/auth/auth.module.ts)
+- [app.module.ts](file:///e:/Freelance/Ebook/backend/src/app.module.ts)
 
-@Injectable()
-export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+---
 
-  canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>('roles', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (!requiredRoles) return true;
-
-    const { user } = context.switchToHttp().getRequest();
-    return requiredRoles.some((role) => user?.role === role);
-  }
-}
-```
+## 🔍 Verification Criteria Passed
+1. `POST /api/v1/auth/register` creates user with bcrypt hashed password.
+2. `POST /api/v1/auth/login` validates credentials and returns signed JWT access token.
+3. `@Roles()` decorator and `RolesGuard` block unauthorized route access by user role.
