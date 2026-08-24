@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/logo_provider.dart';
+import '../../providers/video_provider.dart';
+import '../../widgets/video_card.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -10,6 +13,10 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider);
+    final logoUrl = ref.watch(dynamicLogoProvider);
+    final recommendedAsync = ref.watch(recommendedVideosProvider);
+    final recentlyViewedAsync = ref.watch(recentlyViewedVideosProvider);
+
     final theme = Theme.of(context);
     final isPublication = user?.role == UserRole.publication;
 
@@ -17,10 +24,19 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(
-              isPublication ? Icons.business : Icons.public,
-              color: theme.colorScheme.primary,
-            ),
+            isPublication && logoUrl.startsWith('http')
+                ? Image.network(
+                    logoUrl,
+                    height: 32,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.business,
+                      color: theme.colorScheme.primary,
+                    ),
+                  )
+                : Icon(
+                    isPublication ? Icons.business : Icons.public,
+                    color: theme.colorScheme.primary,
+                  ),
             const SizedBox(width: 8),
             Text(isPublication ? 'Publication Dashboard' : 'Public Hub'),
           ],
@@ -35,7 +51,7 @@ class DashboardScreen extends ConsumerWidget {
           )
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,11 +62,11 @@ class DashboardScreen extends ConsumerWidget {
                   backgroundColor: theme.colorScheme.primary,
                   child: Text(user?.name[0] ?? 'U'),
                 ),
-                title: Text(user?.name ?? 'Guest'),
+                title: Text(user?.name ?? 'Guest User'),
                 subtitle: Text('Role: ${user?.role.name.toUpperCase()}'),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
               'Quick Access Modules',
               style: theme.textTheme.titleMedium?.copyWith(
@@ -58,41 +74,92 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                children: [
-                  _buildMenuCard(
-                    context,
-                    title: 'eBooks',
-                    icon: Icons.menu_book,
-                    color: Colors.blue,
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 2.2,
+              children: [
+                _buildMenuTile(
+                  context,
+                  title: 'eBooks',
+                  icon: Icons.menu_book,
+                  color: Colors.blue,
+                  onTap: () => context.push('/pub/ebook'),
+                ),
+                _buildMenuTile(
+                  context,
+                  title: 'YouTube',
+                  icon: Icons.video_library,
+                  color: Colors.red,
+                  onTap: () => context.push('/pub/youtube'),
+                ),
+                _buildMenuTile(
+                  context,
+                  title: 'Question Gen',
+                  icon: Icons.quiz,
+                  color: Colors.orange,
+                  onTap: () => context.push('/pub/question-paper'),
+                ),
+                _buildMenuTile(
+                  context,
+                  title: 'Test Gen',
+                  icon: Icons.assignment,
+                  color: Colors.green,
+                  onTap: () => context.push('/pub/test-paper'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Recommended Videos Carousel
+            Text(
+              'Recommended Videos',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 195,
+              child: recommendedAsync.when(
+                data: (videos) => ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: videos.length,
+                  itemBuilder: (context, index) => VideoCard(
+                    video: videos[index],
                     onTap: () {},
                   ),
-                  _buildMenuCard(
-                    context,
-                    title: 'YouTube Stream',
-                    icon: Icons.video_library,
-                    color: Colors.red,
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Text('Error loading recommended videos'),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Recently Viewed Videos Carousel
+            Text(
+              'Recently Viewed Videos',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 195,
+              child: recentlyViewedAsync.when(
+                data: (videos) => ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: videos.length,
+                  itemBuilder: (context, index) => VideoCard(
+                    video: videos[index],
                     onTap: () {},
                   ),
-                  _buildMenuCard(
-                    context,
-                    title: 'Question Generator',
-                    icon: Icons.quiz,
-                    color: Colors.orange,
-                    onTap: () {},
-                  ),
-                  _buildMenuCard(
-                    context,
-                    title: 'Test Generator',
-                    icon: Icons.assignment,
-                    color: Colors.green,
-                    onTap: () {},
-                  ),
-                ],
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, __) => const Text('Error loading recent videos'),
               ),
             ),
           ],
@@ -101,7 +168,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuCard(
+  Widget _buildMenuTile(
     BuildContext context, {
     required String title,
     required IconData icon,
@@ -112,16 +179,21 @@ class DashboardScreen extends ConsumerWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 28, color: color),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
