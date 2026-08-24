@@ -6,6 +6,8 @@ class UserModel {
   final String email;
   final UserRole role;
   final String? publicationId;
+  final String? avatarUrl;
+  final String? mobile;
 
   UserModel({
     required this.id,
@@ -13,7 +15,29 @@ class UserModel {
     required this.email,
     required this.role,
     this.publicationId,
+    this.avatarUrl,
+    this.mobile,
   });
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    UserRole? role,
+    String? publicationId,
+    String? avatarUrl,
+    String? mobile,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      publicationId: publicationId ?? this.publicationId,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      mobile: mobile ?? this.mobile,
+    );
+  }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -25,6 +49,8 @@ class UserModel {
         orElse: () => UserRole.public,
       ),
       publicationId: json['publicationId'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
+      mobile: json['mobile'] as String?,
     );
   }
 
@@ -35,6 +61,8 @@ class UserModel {
       'email': email,
       'role': role.name,
       'publicationId': publicationId,
+      'avatarUrl': avatarUrl,
+      'mobile': mobile,
     };
   }
 }

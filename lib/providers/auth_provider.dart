@@ -14,6 +14,17 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     state = user;
   }
 
+  void updateProfile({String? name, String? email, String? mobile, String? avatarUrl}) {
+    if (state != null) {
+      state = state!.copyWith(
+        name: name,
+        email: email,
+        mobile: mobile,
+        avatarUrl: avatarUrl,
+      );
+    }
+  }
+
   void logout() {
     _storage.deleteToken();
     state = null;

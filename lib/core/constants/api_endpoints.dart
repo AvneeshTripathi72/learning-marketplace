@@ -1,5 +1,5 @@
 class ApiEndpoints {
-  static const String baseUrl = 'https://api.platform.com/v1';
+  static const String baseUrl = 'http://localhost:8080/api/v1';
 
   // Auth
   static const String login = '/auth/login';

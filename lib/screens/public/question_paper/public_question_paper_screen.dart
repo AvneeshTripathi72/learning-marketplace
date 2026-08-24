@@ -31,8 +31,8 @@ class _PublicQuestionPaperScreenState extends State<PublicQuestionPaperScreen> {
     final result = QuestionPaperResultModel(
       id: 'qp_pub_${DateTime.now().millisecondsSinceEpoch}',
       title: 'Public Model Paper - $_selectedSubject',
+      publicationName: _selectedPublication,
       pdfUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
-      totalMarks: _totalMarks.toInt(),
       generatedDate: DateTime.now(),
     );
 

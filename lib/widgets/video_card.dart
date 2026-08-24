@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/video_model.dart';
 import '../services/video_playback_resolver_service.dart';
+import 'animated_card.dart';
 
 class VideoCard extends StatefulWidget {
   final VideoModel video;
@@ -44,54 +45,65 @@ class _VideoCardState extends State<VideoCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => VideoPlaybackResolverService.playVideo(widget.video),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(_getPlatformIcon(), color: _getPlatformColor()),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.video.channelName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+    return AnimatedCard(
+      onTap: () => VideoPlaybackResolverService.playVideo(widget.video),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(_getPlatformIcon(), color: _getPlatformColor()),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.video.channelName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text('Category: ${widget.video.category}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: Icon(_isLiked ? Icons.thumb_up : Icons.thumb_up_outlined, color: _isLiked ? Colors.blue : null),
-                    onPressed: () => setState(() => _isLiked = !_isLiked),
-                  ),
-                  IconButton(
-                    icon: Icon(_isSaved ? Icons.bookmark : Icons.bookmark_border, color: _isSaved ? Colors.amber : null),
-                    onPressed: () => setState(() => _isSaved = !_isSaved),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.share),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sharing video link...')),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Category: ${widget.video.category}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                        color: _isLiked ? Colors.blue : null,
+                      ),
+                      onPressed: () => setState(() => _isLiked = !_isLiked),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                        color: _isSaved ? Colors.amber : null,
+                      ),
+                      onPressed: () => setState(() => _isSaved = !_isSaved),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.share),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Sharing video link...')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

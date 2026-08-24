@@ -16,7 +16,7 @@ class AppTheme {
         onSurface: AppColors.lightTextPrimary,
         onPrimary: Colors.white,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.lightElevatedSurface,
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -47,7 +47,7 @@ class AppTheme {
         onSurface: AppColors.darkTextPrimary,
         onPrimary: AppColors.darkBackground,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.darkElevatedSurface,
         elevation: 0, // Avoid shadows in dark mode, use surface layering
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
