@@ -51,10 +51,10 @@ class CustomBottomNavBar extends ConsumerWidget {
       }
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-      child: Align(
-        alignment: Alignment.bottomCenter,
+    return SizedBox(
+      height: 80,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(36),
           child: BackdropFilter(
