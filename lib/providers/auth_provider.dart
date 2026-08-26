@@ -7,7 +7,18 @@ final secureStorageProvider = Provider((ref) => SecureStorageService());
 class AuthNotifier extends StateNotifier<UserModel?> {
   final SecureStorageService _storage;
 
-  AuthNotifier(this._storage) : super(null);
+  AuthNotifier(this._storage)
+      : super(
+          UserModel(
+            id: 'pub_admin_1',
+            email: 'admin@publication.com',
+            name: 'Oxford Publication Admin',
+            role: UserRole.publication,
+            publicationId: 'pub_oxford_1',
+            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+            mobile: '+91 9876543210',
+          ),
+        );
 
   void login(UserModel user, String token) {
     _storage.saveToken(token);

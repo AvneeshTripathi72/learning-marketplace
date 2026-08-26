@@ -192,7 +192,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               : null,
                           child: user?.avatarUrl == null
                               ? Text(
-                                  user?.name[0] ?? 'U',
+                                  (user != null && user.name.isNotEmpty) ? user.name[0] : 'U',
                                   style: const TextStyle(
                                     fontSize: 40,
                                     fontWeight: FontWeight.bold,

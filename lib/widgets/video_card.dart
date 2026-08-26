@@ -6,11 +6,13 @@ import 'animated_card.dart';
 class VideoCard extends StatefulWidget {
   final VideoModel video;
   final VoidCallback onTap;
+  final double? width;
 
   const VideoCard({
     super.key,
     required this.video,
     required this.onTap,
+    this.width = 260.0,
   });
 
   @override
@@ -45,17 +47,20 @@ class _VideoCardState extends State<VideoCard> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedCard(
-      onTap: () => VideoPlaybackResolverService.playVideo(widget.video),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      width: widget.width,
+      child: AnimatedCard(
+        onTap: () => VideoPlaybackResolverService.playVideo(widget.video),
+        child: Card(
+          margin: const EdgeInsets.only(right: 12, bottom: 4),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   children: [
@@ -107,6 +112,7 @@ class _VideoCardState extends State<VideoCard> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

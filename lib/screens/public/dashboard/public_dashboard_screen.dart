@@ -107,7 +107,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
                     radius: 26,
                     backgroundColor: Colors.white,
                     child: Text(
-                      user?.name[0] ?? 'S',
+                      (user != null && user.name.isNotEmpty) ? user.name[0] : 'S',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
