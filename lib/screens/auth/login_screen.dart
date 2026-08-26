@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/animated_card.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -13,13 +14,21 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  String _selectedCountry = 'India (+91)';
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController(text: 'user@oxford.com');
-  final _passwordController = TextEditingController(text: 'password123');
+  late final PageController _pageController;
+  int _currentStep = 0;
 
+  // Selected Onboarding Options
+  String? _selectedGoal;
+  String? _selectedRole;
+  String? _selectedRoutine;
+  bool _notificationsAllowed = true;
+
+  // Direct Login Form State
   bool _showEmailLogin = false;
-  bool _obscurePassword = true;
+  String _selectedCountry = 'India (+91)';
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   final List<String> _countries = [
     'India (+91)',
@@ -27,44 +36,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     'United Kingdom (+44)',
     'Canada (+1)',
     'Australia (+61)',
-    'United Arab Emirates (+971)',
+    'Singapore (+65)',
   ];
 
-  void _loginAsPublication() {
-    final mockUser = UserModel(
-      id: 'pub_001',
-      name: 'Oxford Publication User',
-      email: 'user@oxford.com',
-      role: UserRole.publication,
-      publicationId: 'oxford_pub',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
-    );
-    ref.read(authProvider.notifier).login(mockUser, 'mock_pub_token');
-    context.go('/dashboard');
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
   }
 
-  void _loginAsPublic() {
-    final mockUser = UserModel(
-      id: 'public_001',
-      name: 'Rahul Sharma (Student)',
-      email: 'public@user.com',
-      role: UserRole.public,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-    );
-    ref.read(authProvider.notifier).login(mockUser, 'mock_public_token');
-    context.go('/public/dashboard');
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
-  void _loginWithGoogle() {
-    final mockUser = UserModel(
-      id: 'google_101',
-      name: 'Google User',
-      email: 'google@user.com',
-      role: UserRole.public,
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+  void _goToStep(int step) {
+    setState(() => _currentStep = step);
+    _pageController.animateToPage(
+      step,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeInOutCubic,
     );
-    ref.read(authProvider.notifier).login(mockUser, 'mock_google_token');
-    context.go('/public/dashboard');
+  }
+
+  void _nextStep() {
+    if (_currentStep < 7) {
+      _goToStep(_currentStep + 1);
+    }
+  }
+
+  void _prevStep() {
+    if (_currentStep > 0) {
+      _goToStep(_currentStep - 1);
+    }
+  }
+
+  void _loginAsRole(UserRole role) async {
+    final auth = ref.read(authProvider.notifier);
+    if (role == UserRole.publication) {
+      await auth.loginAsPublicationAdmin();
+      if (mounted) context.go('/dashboard');
+    } else {
+      await auth.loginAsPublicStudent();
+      if (mounted) context.go('/public/dashboard');
+    }
+  }
+
+  void _loginWithGoogle() async {
+    final role = _selectedRole == 'publisher' ? UserRole.publication : UserRole.public;
+    _loginAsRole(role);
   }
 
   @override
@@ -73,33 +97,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // Top Header Bar matching reference layout
-            Padding(
+            // Top Header Bar with Back Button, Progress Bar, Theme Switcher & Close
+            Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 22),
-                    onPressed: () {
-                      if (_showEmailLogin) {
-                        setState(() => _showEmailLogin = false);
-                      }
-                    },
+                  // Back Arrow Button
+                  SizedBox(
+                    width: 40,
+                    child: _currentStep > 0
+                        ? IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                            onPressed: _prevStep,
+                            tooltip: 'Back',
+                          )
+                        : const SizedBox.shrink(),
                   ),
-                  const Expanded(
-                    child: Text(
-                      'Log in or sign up',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+
+                  // Animated Progress Bar (Steps 1 to 7)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: _currentStep == 0 ? 0.05 : (_currentStep / 7.0),
+                          minHeight: 6,
+                          backgroundColor: theme.dividerColor.withValues(alpha: 0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.primary,
+                          ),
+                        ),
                       ),
                     ),
                   ),
+
+                  // Theme Toggle Button
                   IconButton(
                     icon: Icon(
                       themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
@@ -110,283 +146,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ref.read(themeModeProvider.notifier).toggleTheme();
                     },
                   ),
+
+                  // Close / Skip to Login Hub
+                  if (_currentStep < 7)
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 22),
+                      tooltip: 'Skip Onboarding',
+                      onPressed: () => _goToStep(7),
+                    ),
                 ],
               ),
             ),
             const Divider(height: 1),
 
-            // Scrollable Content Form Body
+            // PageView carrying Onboarding Steps 0 through 7
             Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      switchInCurve: Curves.easeInCubic,
-                      switchOutCurve: Curves.easeOutCubic,
-                      child: Column(
-                        key: ValueKey(_showEmailLogin),
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!_showEmailLogin) ...[
-                          // Country/Region & Phone Number Segmented Box
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: theme.dividerColor),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              children: [
-                                // Country/Region Selector
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 6),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: _selectedCountry,
-                                      isExpanded: true,
-                                      icon: const Icon(Icons.keyboard_arrow_down),
-                                      hint: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Country/Region',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: theme.textTheme.bodySmall?.color,
-                                            ),
-                                          ),
-                                          Text(
-                                            _selectedCountry,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      items: _countries.map((c) {
-                                        return DropdownMenuItem(
-                                          value: c,
-                                          child: Text(c),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() => _selectedCountry = val);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                const Divider(height: 1),
-                                // Phone Number Input
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 4),
-                                  child: TextField(
-                                    controller: _phoneController,
-                                    keyboardType: TextInputType.phone,
-                                    decoration: const InputDecoration(
-                                      hintText: 'Phone number',
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.zero,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            "We'll call or text to confirm your number. Standard message and data rates apply.",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.textTheme.bodySmall?.color,
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Primary Continue Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: _loginAsPublic,
-                              child: const Text(
-                                'Continue',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ] else ...[
-                          // Email Login Form Mode
-                          Text(
-                            'Sign in with Email',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                              labelText: 'Email Address',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          TextField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              border: const OutlineInputBorder(),
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility),
-                                onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: _loginAsPublication,
-                              child: const Text(
-                                'Log In',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 24),
-
-                        // OR Divider
-                        Row(
-                          children: [
-                            Expanded(child: Divider(color: theme.dividerColor)),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                'or',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.textTheme.bodySmall?.color,
-                                ),
-                              ),
-                            ),
-                            Expanded(child: Divider(color: theme.dividerColor)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Outlined Option Buttons matching reference design
-                        if (!_showEmailLogin)
-                          _buildOutlinedButton(
-                            context,
-                            icon: Icons.email_outlined,
-                            iconColor: theme.colorScheme.primary,
-                            label: 'Continue with email',
-                            onTap: () => setState(() => _showEmailLogin = true),
-                          )
-                        else
-                          _buildOutlinedButton(
-                            context,
-                            icon: Icons.phone_android,
-                            iconColor: theme.colorScheme.primary,
-                            label: 'Continue with phone',
-                            onTap: () =>
-                                setState(() => _showEmailLogin = false),
-                          ),
-                        const SizedBox(height: 12),
-
-                        _buildOutlinedButton(
-                          context,
-                          icon: Icons.apple,
-                          iconColor: theme.colorScheme.onSurface,
-                          label: 'Continue with Apple',
-                          onTap: _loginAsPublic,
-                        ),
-                        const SizedBox(height: 12),
-
-                        _buildOutlinedButton(
-                          context,
-                          icon: Icons.g_mobiledata,
-                          iconColor: Colors.redAccent,
-                          label: 'Continue with Google',
-                          onTap: _loginWithGoogle,
-                        ),
-                        const SizedBox(height: 12),
-
-                        _buildOutlinedButton(
-                          context,
-                          icon: Icons.facebook,
-                          iconColor: Colors.blue,
-                          label: 'Continue with Facebook',
-                          onTap: _loginAsPublic,
-                        ),
-                        const SizedBox(height: 16),
-
-                        const Divider(),
-                        const SizedBox(height: 12),
-
-                        // Quick Role Login Buttons
-                        _buildOutlinedButton(
-                          context,
-                          icon: Icons.business,
-                          iconColor: Colors.amber,
-                          label: 'Continue as Publication Admin',
-                          onTap: _loginAsPublication,
-                        ),
-                        const SizedBox(height: 12),
-
-                        _buildOutlinedButton(
-                          context,
-                          icon: Icons.school,
-                          iconColor: Colors.teal,
-                          label: 'Continue as Public Student',
-                          onTap: _loginAsPublic,
-                        ),
-                      ],
-                    ),
-                  ),
-                  ),
-                ),
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(), // Managed via Continue / Back buttons
+                onPageChanged: (page) => setState(() => _currentStep = page),
+                children: [
+                  _buildStep0Hero(theme),
+                  _buildStep1Goals(theme),
+                  _buildStep2Reach(theme),
+                  _buildStep3Role(theme),
+                  _buildStep4Routine(theme),
+                  _buildStep5Notifications(theme),
+                  _buildStep6Testimonial(theme),
+                  _buildStep7LoginHub(theme),
+                ],
               ),
             ),
           ],
@@ -395,43 +183,1052 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildOutlinedButton(
-    BuildContext context, {
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  // ---------------------------------------------------------------------------
+  // SPEECH BUBBLE MASCOT COMPONENT
+  // ---------------------------------------------------------------------------
+  Widget _buildSpeechBubble(BuildContext context, {required String text}) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: theme.dividerColor, width: 1.2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Mascot Icon Avatar
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.school, color: Colors.white, size: 24),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-        onPressed: onTap,
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: iconColor),
-            Expanded(
+          const SizedBox(width: 12),
+
+          // Speech Bubble Container
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF5F5F7),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                ),
+              ),
               child: Text(
-                label,
-                textAlign: TextAlign.center,
+                text,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
+                  color: theme.textTheme.bodyLarge?.color,
                 ),
               ),
             ),
-            const SizedBox(width: 22),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 0: HERO SCREEN (Brilliant Image 1)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep0Hero(ThemeData theme) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28.0),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Stylized Brand Typography Banner
+              Text(
+                'Master your\nstudies.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 38,
+                  height: 1.15,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Interactive educational eBooks, compiled question papers, YouTube video hub, and custom test paper generators. Learn effectively in 15 minutes a day.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 36),
+
+              // Feature Badges
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildBadgeChip(theme, Icons.book, 'eBooks'),
+                  const SizedBox(width: 8),
+                  _buildBadgeChip(theme, Icons.play_circle_fill, 'Videos'),
+                  const SizedBox(width: 8),
+                  _buildBadgeChip(theme, Icons.assignment, 'Papers'),
+                ],
+              ),
+              const SizedBox(height: 48),
+
+              // Primary Continue Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                  onPressed: () => _goToStep(1),
+                  child: const Text(
+                    'Get Started',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Existing User Sign In Link
+              TextButton(
+                onPressed: () => _goToStep(7),
+                child: Text.rich(
+                  TextSpan(
+                    text: 'Existing user? ',
+                    style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                    children: [
+                      TextSpan(
+                        text: 'Sign in',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadgeChip(ThemeData theme, IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 1: TOP GOAL SELECTION (Brilliant Images 3 & 4)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep1Goals(ThemeData theme) {
+    final speechText = _selectedGoal == null
+        ? "What's your top goal?"
+        : "Smart move! Future you approves.";
+
+    final goals = [
+      {'id': 'exam', 'icon': Icons.track_changes, 'title': 'Excelling in Board Exams (CBSE/ICSE)'},
+      {'id': 'ebook', 'icon': Icons.menu_book, 'title': 'Reading eBooks & Study Material'},
+      {'id': 'paper', 'icon': Icons.edit_note, 'title': 'Generating Practice Question Papers'},
+      {'id': 'video', 'icon': Icons.play_circle_filled, 'title': 'Watching Educational Video Tutorials'},
+      {'id': 'publish', 'icon': Icons.business, 'title': 'Managing Publication & Ad Injections'},
+      {'id': 'other', 'icon': Icons.auto_awesome, 'title': 'General Knowledge & Learning'},
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSpeechBubble(context, text: speechText),
+              ...goals.map((g) {
+                final isSelected = _selectedGoal == g['id'];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: AnimatedCard(
+                    onTap: () => setState(() => _selectedGoal = g['id'] as String),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                            : theme.cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.dividerColor,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            g['icon'] as IconData,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.iconTheme.color,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              g['title'] as String,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight:
+                                    isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(Icons.check_circle, color: theme.colorScheme.primary),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _selectedGoal != null ? _nextStep : null,
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 2: PLATFORM REACH (Brilliant Image 5)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep2Reach(ThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(28.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              // Graphic Stack Container
+              Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.book, size: 54, color: theme.colorScheme.primary),
+                      const SizedBox(width: 16),
+                      Icon(Icons.ondemand_video, size: 64, color: theme.colorScheme.primary),
+                      const SizedBox(width: 16),
+                      Icon(Icons.quiz, size: 54, color: theme.colorScheme.primary),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 36),
+
+              Text(
+                "You'll fit right in",
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Thousands of students, educators, and publishers use our platform daily to master subjects and publish educational assets.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 48),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _nextStep,
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 3: EDUCATIONAL LEVEL / ROLE GRID (Brilliant Images 6 & 7)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep3Role(ThemeData theme) {
+    final speechText = _selectedRole == null
+        ? "What's your educational / platform role?"
+        : "Great! Tailoring content specifically for your role.";
+
+    final roles = [
+      {
+        'id': 'student',
+        'title': 'School Student',
+        'sub': 'Class 9 - 12 CBSE/ICSE curriculum & eBooks',
+        'icon': Icons.school,
+        'role': UserRole.public,
+      },
+      {
+        'id': 'aspirant',
+        'title': 'Competitive Aspirant',
+        'sub': 'Advanced papers, mock tests & video hub',
+        'icon': Icons.psychology,
+        'role': UserRole.public,
+      },
+      {
+        'id': 'publisher',
+        'title': 'Publication Admin',
+        'sub': 'Manage series, eBooks & ad campaigns',
+        'icon': Icons.business,
+        'role': UserRole.publication,
+      },
+      {
+        'id': 'educator',
+        'title': 'Teacher / Educator',
+        'sub': 'Generate & compile custom test papers',
+        'icon': Icons.history_edu,
+        'role': UserRole.public,
+      },
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSpeechBubble(context, text: speechText),
+
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.95,
+                ),
+                itemCount: roles.length,
+                itemBuilder: (context, index) {
+                  final r = roles[index];
+                  final isSelected = _selectedRole == r['id'];
+
+                  return AnimatedCard(
+                    onTap: () => setState(() => _selectedRole = r['id'] as String),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                            : theme.cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.dividerColor,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            r['icon'] as IconData,
+                            size: 32,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.iconTheme.color,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            r['title'] as String,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: isSelected ? theme.colorScheme.primary : null,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            r['sub'] as String,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.textTheme.bodySmall?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _selectedRole != null ? _nextStep : null,
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 4: PREFERRED STUDY ROUTINE (Brilliant Images 9 & 10)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep4Routine(ThemeData theme) {
+    final speechText = _selectedRoutine == null
+        ? "How will learning fit into your day?"
+        : "Nightly study sessions by starlight! Sounds dreamy.";
+
+    final routines = [
+      {'id': 'morning', 'icon': Icons.wb_sunny, 'title': 'Morning routine', 'sub': 'During breakfast or commute'},
+      {'id': 'break', 'icon': Icons.local_pizza, 'title': 'Quick break', 'sub': 'Between classes or lunch time'},
+      {'id': 'night', 'icon': Icons.nights_stay, 'title': 'Nightly ritual', 'sub': 'After dinner or before bed'},
+      {'id': 'flexible', 'icon': Icons.schedule, 'title': 'Another time', 'sub': 'Flexible daily routine'},
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSpeechBubble(context, text: speechText),
+              ...routines.map((r) {
+                final isSelected = _selectedRoutine == r['id'];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: AnimatedCard(
+                    onTap: () => setState(() => _selectedRoutine = r['id'] as String),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                            : theme.cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.dividerColor,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            r['icon'] as IconData,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.iconTheme.color,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  r['title'] as String,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  r['sub'] as String,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.textTheme.bodySmall?.color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(Icons.check_circle, color: theme.colorScheme.primary),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _selectedRoutine != null ? _nextStep : null,
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 5: NOTIFICATIONS PROMPT (Brilliant Image 11)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep5Notifications(ThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSpeechBubble(
+                context,
+                text: "I'll send reminders so studying becomes a daily long-term habit.",
+              ),
+              const SizedBox(height: 20),
+
+              // iOS Style Alert Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: theme.dividerColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.notifications_active, size: 40, color: Colors.blue),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '“Platform” Would Like to Send You Notifications',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Notifications may include paper compile alerts, new eBook releases, and study reminders.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(height: 1),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() => _notificationsAllowed = false);
+                              _nextStep();
+                            },
+                            child: const Text("Don't Allow"),
+                          ),
+                        ),
+                        Container(height: 30, width: 1, color: theme.dividerColor),
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() => _notificationsAllowed = true);
+                              _nextStep();
+                            },
+                            child: const Text(
+                              "Allow",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 36),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _nextStep,
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 6: TESTIMONIAL & RATING (Brilliant Image 12)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep6Testimonial(ThemeData theme) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(28.0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.workspace_premium, size: 54, color: theme.colorScheme.primary),
+              ),
+              const SizedBox(height: 24),
+
+              Text(
+                "You're on your way!",
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 5 Stars
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.star, color: Colors.amber, size: 24),
+                  Icon(Icons.star, color: Colors.amber, size: 24),
+                  Icon(Icons.star, color: Colors.amber, size: 24),
+                  Icon(Icons.star, color: Colors.amber, size: 24),
+                  Icon(Icons.star, color: Colors.amber, size: 24),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              Text(
+                "“This platform is an absolute game-changer for reading eBooks and preparing board exam papers! The question generator saved me countless hours of compilation.”",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontStyle: FontStyle.italic,
+                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.85),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '— Student & Educator Review',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+              const SizedBox(height: 48),
+
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: _nextStep,
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // STEP 7: FINAL SIGN UP & LOGIN HUB (Brilliant Image 13)
+  // ---------------------------------------------------------------------------
+  Widget _buildStep7LoginHub(ThemeData theme) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Sign up for free to discover your learning path',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // Side-by-side Social Sign-In Buttons (Apple & Google)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => _loginAsRole(UserRole.public),
+                      icon: const Icon(Icons.apple, size: 22),
+                      label: const Text('Apple'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _loginWithGoogle,
+                      icon: const Icon(Icons.g_mobiledata, size: 26, color: Colors.red),
+                      label: const Text('Google'),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: theme.dividerColor)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Text(
+                      'OR',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: theme.textTheme.bodySmall?.color,
+                      ),
+                    ),
+                  ),
+                  Expanded(child: Divider(color: theme.dividerColor)),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Toggle between Phone input and Email input
+              if (!_showEmailLogin) ...[
+                // Country & Phone Input Box
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.dividerColor),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedCountry,
+                            isExpanded: true,
+                            icon: const Icon(Icons.keyboard_arrow_down),
+                            items: _countries.map((c) {
+                              return DropdownMenuItem(value: c, child: Text(c));
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) setState(() => _selectedCountry = val);
+                            },
+                          ),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        child: TextField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            hintText: 'Phone number',
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => _loginAsRole(UserRole.public),
+                    child: const Text(
+                      'Continue with Phone',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                // Email & Password Fields
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    prefixIcon: const Icon(Icons.email),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => _loginAsRole(UserRole.public),
+                    child: const Text(
+                      'Sign In / Sign Up',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 14),
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () => setState(() => _showEmailLogin = !_showEmailLogin),
+                child: Text(
+                  _showEmailLogin ? 'Continue with Phone Number' : 'Continue with Email',
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 12),
+
+              // One-Click Role Shortcuts
+              Text(
+                'Quick Testing Shortcuts:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.bodySmall?.color,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 42),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => _loginAsRole(UserRole.publication),
+                      icon: const Icon(Icons.business, size: 18),
+                      label: const Text('Publisher Admin', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 42),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => _loginAsRole(UserRole.public),
+                      icon: const Icon(Icons.school, size: 18),
+                      label: const Text('Public Student', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

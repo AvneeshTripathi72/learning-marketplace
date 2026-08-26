@@ -14,6 +14,31 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     state = user;
   }
 
+  Future<void> loginAsPublicationAdmin() async {
+    final user = UserModel(
+      id: 'pub_admin_1',
+      email: 'admin@publication.com',
+      name: 'Oxford Publication Admin',
+      role: UserRole.publication,
+      publicationId: 'pub_oxford_1',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      mobile: '+91 9876543210',
+    );
+    login(user, 'dummy_pub_admin_token');
+  }
+
+  Future<void> loginAsPublicStudent() async {
+    final user = UserModel(
+      id: 'student_1',
+      email: 'student@gmail.com',
+      name: 'Rahul Sharma (Student)',
+      role: UserRole.public,
+      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+      mobile: '+91 9123456789',
+    );
+    login(user, 'dummy_student_token');
+  }
+
   void updateProfile({String? name, String? email, String? mobile, String? avatarUrl}) {
     if (state != null) {
       state = state!.copyWith(
