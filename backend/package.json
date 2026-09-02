@@ -7,14 +7,14 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "postinstall": "npx prisma generate",
+    "postinstall": "node node_modules/prisma/build/index.js generate",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push"
+    "prisma:generate": "node node_modules/prisma/build/index.js generate",
+    "prisma:push": "node node_modules/prisma/build/index.js db push"
   },
   "prisma": {
     "seed": "npx ts-node prisma/seed.ts"
