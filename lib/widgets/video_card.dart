@@ -235,75 +235,90 @@ class _VideoCardState extends State<VideoCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        InkWell(
-                          onTap: () => setState(() => _isLiked = !_isLiked),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                                  size: 18,
-                                  color: _isLiked ? theme.colorScheme.primary : theme.iconTheme.color,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: InkWell(
+                              onTap: () => setState(() => _isLiked = !_isLiked),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                                      size: 18,
+                                      color: _isLiked ? theme.colorScheme.primary : theme.iconTheme.color,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _isLiked ? 'Liked' : 'Like',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _isLiked ? theme.colorScheme.primary : theme.textTheme.bodySmall?.color,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _isLiked ? 'Liked' : 'Like',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _isLiked ? theme.colorScheme.primary : theme.textTheme.bodySmall?.color,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                        InkWell(
-                          onTap: () => setState(() => _isSaved = !_isSaved),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                                  size: 18,
-                                  color: _isSaved ? Colors.amber : theme.iconTheme.color,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: InkWell(
+                              onTap: () => setState(() => _isSaved = !_isSaved),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                      size: 18,
+                                      color: _isSaved ? Colors.amber : theme.iconTheme.color,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _isSaved ? 'Saved' : 'Save',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _isSaved ? Colors.amber : theme.textTheme.bodySmall?.color,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _isSaved ? 'Saved' : 'Save',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _isSaved ? Colors.amber : theme.textTheme.bodySmall?.color,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                        InkWell(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Video link copied to clipboard!')),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.share_outlined, size: 18),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Share',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: theme.textTheme.bodySmall?.color,
-                                  ),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: InkWell(
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Video link copied to clipboard!')),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.share_outlined, size: 18),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Share',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: theme.textTheme.bodySmall?.color,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),

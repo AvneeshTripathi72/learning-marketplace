@@ -65,43 +65,44 @@ class MyUploadsScreen extends ConsumerWidget {
       itemCount: videos.length,
       itemBuilder: (context, index) {
         final video = videos[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Stack(
             children: [
-              Stack(
-                children: [
-                  VideoCard(video: video, onTap: () {}),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: video.status == VideoStatus.approved
-                            ? Colors.green.withValues(alpha: 0.9)
-                            : video.status == VideoStatus.rejected
-                                ? Colors.red.withValues(alpha: 0.9)
-                                : Colors.amber.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(12),
+              VideoCard(video: video, onTap: () {}),
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: video.status == VideoStatus.approved
+                        ? Colors.green.withValues(alpha: 0.9)
+                        : video.status == VideoStatus.rejected
+                            ? Colors.red.withValues(alpha: 0.9)
+                            : Colors.amber.withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
                       ),
-                      child: Text(
-                        video.status == VideoStatus.approved
-                            ? 'APPROVED & LIVE'
-                            : video.status == VideoStatus.rejected
-                                ? 'REJECTED'
-                                : 'PENDING MODERATION',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    ],
+                  ),
+                  child: Text(
+                    video.status == VideoStatus.approved
+                        ? 'APPROVED & LIVE'
+                        : video.status == VideoStatus.rejected
+                            ? 'REJECTED'
+                            : 'PENDING MODERATION',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
