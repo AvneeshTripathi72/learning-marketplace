@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/donation_model.dart';
 import '../../../services/donation_service.dart';
+import '../../../services/razorpay_payment_service.dart';
 
 class DonationScreen extends StatefulWidget {
   final String channelId;
@@ -41,6 +42,29 @@ class _DonationScreenState extends State<DonationScreen> {
       name: _donationData!.channelName,
       amount: amount,
     );
+  }
+
+  void _donateViaRazorpay() async {
+    if (_donationData == null) return;
+    final amount = double.tryParse(_amountController.text) ?? 100.0;
+
+    final result = await RazorpayPaymentService().processPayment(
+      context: context,
+      amount: amount,
+      title: 'Support Creator: ${_donationData!.channelName}',
+      description: '100% Direct Channel Donation',
+      userEmail: 'supporter@user.com',
+      userContact: '+91 9876543210',
+    );
+
+    if (result != null && result.success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Donation of ₹$amount to ${_donationData!.channelName} successful! Thank you! ❤️'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   @override
@@ -122,14 +146,28 @@ class _DonationScreenState extends State<DonationScreen> {
                 prefixIcon: Icon(Icons.currency_rupee),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0C2340),
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: _donateViaRazorpay,
+                icon: const Icon(Icons.lock),
+                label: const Text('Pay via Razorpay Gateway'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
                 onPressed: _donate,
                 icon: const Icon(Icons.payment),
-                label: const Text('Pay via UPI App (GPay / PhonePe / Paytm)'),
+                label: const Text('Pay via Direct UPI App'),
               ),
             ),
           ],

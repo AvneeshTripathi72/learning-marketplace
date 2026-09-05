@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 
@@ -79,44 +78,108 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final nameCtrl = TextEditingController(text: user.name);
     final emailCtrl = TextEditingController(text: user.email);
     final mobileCtrl = TextEditingController(text: user.mobile ?? '+91 9876543210');
+    final avatarCtrl = TextEditingController(text: user.avatarUrl ?? _avatars[0]);
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit Profile Information'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
-                  ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.edit, color: Colors.blue),
+              SizedBox(width: 10),
+              Text('Edit Profile Information'),
+            ],
+          ),
+          content: StatefulBuilder(
+            builder: (context, setDialogState) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Avatar Image Preview & Selector
+                    Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundImage: NetworkImage(
+                            avatarCtrl.text.isNotEmpty ? avatarCtrl.text : _avatars[0],
+                          ),
+                          child: avatarCtrl.text.isEmpty ? const Icon(Icons.person, size: 36) : null,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Choose Preset Avatar:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          children: _avatars.map((url) {
+                            final isSelected = avatarCtrl.text == url;
+                            return GestureDetector(
+                              onTap: () {
+                                setDialogState(() {
+                                  avatarCtrl.text = url;
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected ? Colors.blue : Colors.transparent,
+                                    width: 3,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundImage: NetworkImage(url),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: avatarCtrl,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: const InputDecoration(
+                        labelText: 'Custom Profile Picture URL',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.image),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: emailCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Email Address',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: mobileCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Mobile Number',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.phone),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: emailCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: mobileCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Mobile Number',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -124,15 +187,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
               onPressed: () {
                 ref.read(authProvider.notifier).updateProfile(
-                      name: nameCtrl.text,
-                      email: emailCtrl.text,
-                      mobile: mobileCtrl.text,
+                      name: nameCtrl.text.trim(),
+                      email: emailCtrl.text.trim(),
+                      mobile: mobileCtrl.text.trim(),
+                      avatarUrl: avatarCtrl.text.trim(),
                     );
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profile details updated!')),
+                  const SnackBar(
+                    content: Text('Profile information & picture updated successfully! 🎉'),
+                    backgroundColor: Colors.green,
+                  ),
                 );
               },
               child: const Text('Save Changes'),
@@ -146,30 +216,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
     final isPublication = user?.role == UserRole.publication;
 
     return Scaffold(
+      extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('User Profile & Settings'),
-        actions: [
-          IconButton(
-            icon: Icon(themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
-            tooltip: 'Toggle Light/Dark Theme',
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).toggleTheme();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authProvider.notifier).logout();
-              context.go('/login');
-            },
-          ),
-        ],
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 4),
       body: SingleChildScrollView(
@@ -243,55 +297,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onPressed: () => user != null ? _showEditProfileDialog(context, user) : null,
                       icon: const Icon(Icons.edit),
                       label: const Text('Edit Profile Information'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Theme & Appearance Settings Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Appearance & Theme Settings',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const Divider(),
-                    RadioListTile<ThemeMode>(
-                      title: const Text('System Default Theme'),
-                      subtitle: const Text('Matches device OS settings'),
-                      value: ThemeMode.system,
-                      groupValue: themeMode,
-                      onChanged: (mode) => mode != null ? ref.read(themeModeProvider.notifier).setThemeMode(mode) : null,
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: const Row(
-                        children: [
-                          Icon(Icons.light_mode, color: Colors.amber),
-                          SizedBox(width: 8),
-                          Text('Light Theme Mode'),
-                        ],
-                      ),
-                      value: ThemeMode.light,
-                      groupValue: themeMode,
-                      onChanged: (mode) => mode != null ? ref.read(themeModeProvider.notifier).setThemeMode(mode) : null,
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: const Row(
-                        children: [
-                          Icon(Icons.dark_mode, color: Colors.indigoAccent),
-                          SizedBox(width: 8),
-                          Text('Dark Theme Mode'),
-                        ],
-                      ),
-                      value: ThemeMode.dark,
-                      groupValue: themeMode,
-                      onChanged: (mode) => mode != null ? ref.read(themeModeProvider.notifier).setThemeMode(mode) : null,
                     ),
                   ],
                 ),

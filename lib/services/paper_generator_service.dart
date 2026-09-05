@@ -10,6 +10,12 @@ class PaperGeneratorService {
       publicationName: 'Oxford Educational Press',
       pdfUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
       generatedDate: DateTime.now(),
+      series: config.seriesId,
+      className: config.classId,
+      subject: config.subjectId,
+      totalMarks: config.totalMarks,
+      timeMinutes: config.timeMinutes,
+      selectedChapters: config.selectedChapters,
     );
   }
 }

@@ -6,12 +6,13 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/logo_provider.dart';
 import '../../providers/video_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../widgets/animated_card.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/category_chip_list.dart';
 import '../../widgets/video_card.dart';
+
+import '../../widgets/notification_modal.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -22,7 +23,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String _selectedCategoryId = 'all';
-  String _searchQuery = '';
 
   final List<CategoryModel> _categories = [
     CategoryModel(id: 'all', name: 'All', isEnabled: true),
@@ -40,12 +40,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final logoUrl = ref.watch(dynamicLogoProvider);
     final recommendedAsync = ref.watch(recommendedVideosProvider);
     final recentlyViewedAsync = ref.watch(recentlyViewedVideosProvider);
-    final themeMode = ref.watch(themeModeProvider);
 
     final theme = Theme.of(context);
     final isPublication = user?.role == UserRole.publication;
 
     return Scaffold(
+      extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(
         leading: Builder(
@@ -79,24 +79,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
-            tooltip: 'Toggle Theme Mode',
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).toggleTheme();
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.notifications_none),
-            tooltip: 'Notifications',
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () {
-              ref.read(authProvider.notifier).logout();
-              context.go('/login');
-            },
+            tooltip: 'Notifications & Web Alerts',
+            onPressed: () => showAppNotificationModal(context),
           ),
         ],
       ),
@@ -254,7 +239,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 filled: true,
               ),
-              onChanged: (val) => setState(() => _searchQuery = val),
+              onChanged: (val) {},
             ),
             const SizedBox(height: 12),
             CategoryChipList(
@@ -328,6 +313,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   color: Colors.purple,
                   onTap: () => context.push('/pub/hub/upload'),
                 ),
+                _buildMenuTile(
+                  context,
+                  title: 'Magazines Portal',
+                  subtitle: 'Vendor & Public Issues',
+                  icon: Icons.picture_in_picture,
+                  color: Colors.deepPurple,
+                  onTap: () => context.push('/magazines'),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -400,13 +393,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 195,
+              height: 230,
               child: recommendedAsync.when(
                 data: (videos) => ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: videos.length,
                   itemBuilder: (context, index) => VideoCard(
                     video: videos[index],
+                    width: 260,
                     onTap: () {},
                   ),
                 ),
@@ -426,13 +420,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 195,
+              height: 230,
               child: recentlyViewedAsync.when(
                 data: (videos) => ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: videos.length,
                   itemBuilder: (context, index) => VideoCard(
                     video: videos[index],
+                    width: 260,
                     onTap: () {},
                   ),
                 ),

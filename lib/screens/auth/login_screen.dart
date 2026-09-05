@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../widgets/animated_card.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -15,42 +14,39 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final PageController _pageController;
-  int _currentStep = 0;
+  int _currentStep = 7;
 
   // Selected Onboarding Options
   String? _selectedGoal;
   String? _selectedRole;
   String? _selectedRoutine;
-  bool _notificationsAllowed = true;
 
-  // Direct Login Form State
-  bool _showEmailLogin = false;
-  String _selectedCountry = 'India (+91)';
+  // Direct Login / Sign Up Form State
+  bool _isSignUpMode = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  String? _errorMessage;
+  String _selectedRegisterRole = 'PUBLIC'; // 'PUBLIC' or 'PUBLICATION'
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  final List<String> _countries = [
-    'India (+91)',
-    'United States (+1)',
-    'United Kingdom (+44)',
-    'Canada (+1)',
-    'Australia (+61)',
-    'Singapore (+65)',
-  ];
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _pageController = PageController(initialPage: 7);
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -94,7 +90,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -133,18 +128,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ),
-                  ),
-
-                  // Theme Toggle Button
-                  IconButton(
-                    icon: Icon(
-                      themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
-                      size: 22,
-                    ),
-                    tooltip: 'Toggle Theme Mode',
-                    onPressed: () {
-                      ref.read(themeModeProvider.notifier).toggleTheme();
-                    },
                   ),
 
                   // Close / Skip to Login Hub
@@ -852,7 +835,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Expanded(
                           child: TextButton(
                             onPressed: () {
-                              setState(() => _notificationsAllowed = false);
                               _nextStep();
                             },
                             child: const Text("Don't Allow"),
@@ -862,7 +844,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Expanded(
                           child: TextButton(
                             onPressed: () {
-                              setState(() => _notificationsAllowed = true);
                               _nextStep();
                             },
                             child: const Text(
@@ -997,6 +978,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // ---------------------------------------------------------------------------
   // STEP 7: FINAL SIGN UP & LOGIN HUB (Brilliant Image 13)
   // ---------------------------------------------------------------------------
+
   Widget _buildStep7LoginHub(ThemeData theme) {
     return Center(
       child: SingleChildScrollView(
@@ -1007,7 +989,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome Back',
+                _isSignUpMode ? 'Join Ebook Platform' : 'Welcome Back',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 26,
@@ -1016,12 +998,89 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Sign in to access your ebooks, video hub and learning portal',
+                _isSignUpMode
+                    ? 'Create your account as Student or Publication Vendor'
+                    : 'Sign in to access your ebooks, video hub and learning portal',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.textTheme.bodySmall?.color,
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
+
+              // Role Selector for Sign Up
+              if (_isSignUpMode) ...[
+                Text(
+                  'Select Account Type:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: _selectedRegisterRole == 'PUBLIC'
+                              ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                              : Colors.transparent,
+                          side: BorderSide(
+                            color: _selectedRegisterRole == 'PUBLIC'
+                                ? theme.colorScheme.primary
+                                : theme.dividerColor,
+                            width: _selectedRegisterRole == 'PUBLIC' ? 2 : 1,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () => setState(() => _selectedRegisterRole = 'PUBLIC'),
+                        icon: const Icon(Icons.school, size: 20),
+                        label: const Text('Student / Reader', style: TextStyle(fontSize: 13)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: _selectedRegisterRole == 'PUBLICATION'
+                              ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                              : Colors.transparent,
+                          side: BorderSide(
+                            color: _selectedRegisterRole == 'PUBLICATION'
+                                ? theme.colorScheme.primary
+                                : theme.dividerColor,
+                            width: _selectedRegisterRole == 'PUBLICATION' ? 2 : 1,
+                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () => setState(() => _selectedRegisterRole = 'PUBLICATION'),
+                        icon: const Icon(Icons.business, size: 20),
+                        label: const Text('Publication Vendor', style: TextStyle(fontSize: 13)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Name Field for Sign Up
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: _selectedRegisterRole == 'PUBLICATION'
+                        ? 'Publication / Vendor Name'
+                        : 'Full Name',
+                    hintText: _selectedRegisterRole == 'PUBLICATION'
+                        ? 'e.g. Oxford Press'
+                        : 'e.g. Rahul Sharma',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Email Field
               TextField(
@@ -1029,7 +1088,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Email Address',
-                  hintText: 'e.g. user@oxford.com or public@user.com',
+                  hintText: 'e.g. user@oxford.com',
                   prefixIcon: const Icon(Icons.email_outlined),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -1039,17 +1098,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               // Password Field
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   hintText: 'Enter your password',
                   prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
+
+              // Confirm Password Field (Shown only in Sign Up Mode)
+              if (_isSignUpMode) ...[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    hintText: 'Re-enter your password',
+                    prefixIcon: const Icon(Icons.lock_reset_outlined),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+
+              // Inline Error Text directly under Password / Confirm Password Field
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
               const SizedBox(height: 20),
 
-              // Sign In Button
+              // Submit Button (Sign In or Create Account)
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -1062,35 +1178,149 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   onPressed: () async {
+                    setState(() => _errorMessage = null);
                     final email = _emailController.text.trim();
                     final password = _passwordController.text.trim();
+                    final confirmPassword = _confirmPasswordController.text.trim();
+                    final name = _nameController.text.trim();
 
-                    if (email.isEmpty || password.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter Email and Password')),
-                      );
-                      return;
+                    if (_isSignUpMode) {
+                      if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+                        setState(() {
+                          _errorMessage = 'Please fill all required fields.';
+                        });
+                        return;
+                      }
+                      if (password != confirmPassword) {
+                        setState(() {
+                          _errorMessage = 'Passwords do not match. Please re-enter matching passwords.';
+                        });
+                        return;
+                      }
+                      if (password.length < 6) {
+                        setState(() {
+                          _errorMessage = 'Password must be at least 6 characters long.';
+                        });
+                        return;
+                      }
+                    } else {
+                      if (email.isEmpty || password.isEmpty) {
+                        setState(() {
+                          _errorMessage = 'Please fill all required fields.';
+                        });
+                        return;
+                      }
                     }
 
                     final auth = ref.read(authProvider.notifier);
-                    final user = await auth.loginWithCredentials(email, password);
+                    UserModel? user;
 
-                    if (mounted && user != null) {
-                      if (user.role == UserRole.publication) {
-                        context.go('/dashboard');
-                      } else {
-                        context.go('/public/dashboard');
+                    if (_isSignUpMode) {
+                      await auth.registerAccountOnly(
+                        name: name,
+                        email: email,
+                        password: password,
+                        roleStr: _selectedRegisterRole,
+                      );
+                      if (mounted) {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green, size: 28),
+                                SizedBox(width: 10),
+                                Text('Account Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                              ],
+                            ),
+                            content: Text(
+                              'Your account ($email) has been created successfully!\n\nPlease click "Sign In Now" to log into your account.',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            actions: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: theme.colorScheme.primary,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  setState(() {
+                                    _isSignUpMode = false;
+                                    _errorMessage = null;
+                                    _confirmPasswordController.clear();
+                                  });
+                                },
+                                child: const Text('Sign In Now'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    } else {
+                      user = await auth.loginWithCredentials(email, password);
+                      if (mounted) {
+                        if (user != null) {
+                          setState(() => _errorMessage = null);
+                          if (user.role == UserRole.admin) {
+                            context.go('/admin/dashboard');
+                          } else if (user.role == UserRole.publication) {
+                            context.go('/dashboard');
+                          } else {
+                            context.go('/public/dashboard');
+                          }
+                        } else {
+                          setState(() {
+                            _errorMessage = 'Invalid email or password. Please check your credentials.';
+                          });
+                        }
                       }
                     }
                   },
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  child: Text(
+                    _isSignUpMode ? 'Create Account' : 'Sign In',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Toggle between Sign In and Sign Up
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isSignUpMode = !_isSignUpMode;
+                      _errorMessage = null;
+                    });
+                  },
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                      children: [
+                        TextSpan(
+                          text: _isSignUpMode
+                              ? 'Already have an account? '
+                              : "Don't have an account? ",
+                        ),
+                        TextSpan(
+                          text: _isSignUpMode ? 'Sign In' : 'Create Account (Sign Up)',
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(child: Divider(color: theme.dividerColor)),
@@ -1108,7 +1338,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Expanded(child: Divider(color: theme.dividerColor)),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Google Social Sign In Button
               SizedBox(

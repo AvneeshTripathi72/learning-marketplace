@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/test_paper_model.dart';
+import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import 'test_paper_preview_screen.dart';
 
@@ -14,7 +15,7 @@ class _TestPaperScreenState extends State<TestPaperScreen> {
   String _selectedSeries = 'CBSE 2026';
   String _selectedClass = 'Class 10';
   String _selectedSubject = 'Mathematics';
-  String _selectedPattern = 'Mid-Term Model Paper';
+  String _selectedPattern = 'Mid-Term Model Paper (80 Marks)';
   bool _includeAnswerKey = true;
   bool _isGenerating = false;
 
@@ -55,9 +56,11 @@ class _TestPaperScreenState extends State<TestPaperScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: const Text('Test Paper Generator'),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -78,7 +81,7 @@ class _TestPaperScreenState extends State<TestPaperScreen> {
             const Text('Test Exam Blueprint Pattern', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedPattern,
+              initialValue: _selectedPattern,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: _patterns.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
               onChanged: (v) => v != null ? setState(() => _selectedPattern = v) : null,

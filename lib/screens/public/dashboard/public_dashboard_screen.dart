@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../../models/category_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/public_data_provider.dart';
-import '../../../providers/theme_provider.dart';
 import '../../../widgets/animated_card.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/category_chip_list.dart';
+import '../../../widgets/notification_modal.dart';
 import '../../../widgets/video_card.dart';
 
 class PublicDashboardScreen extends ConsumerStatefulWidget {
@@ -21,7 +21,6 @@ class PublicDashboardScreen extends ConsumerStatefulWidget {
 
 class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
   String _selectedCategoryId = 'all';
-  String _searchQuery = '';
 
   final List<CategoryModel> _categories = [
     CategoryModel(id: 'all', name: 'All', isEnabled: true),
@@ -37,10 +36,10 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider);
     final recommendedAsync = ref.watch(publicRecommendedVideosProvider);
-    final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
+      extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(
         leading: Builder(
@@ -62,22 +61,9 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode),
-            tooltip: 'Toggle Theme Mode',
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).toggleTheme();
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authProvider.notifier).logout();
-              context.go('/login');
-            },
+            tooltip: 'Notifications & Web Alerts',
+            onPressed: () => showAppNotificationModal(context),
           ),
         ],
       ),
@@ -154,7 +140,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
                 ),
                 filled: true,
               ),
-              onChanged: (val) => setState(() => _searchQuery = val),
+              onChanged: (val) {},
             ),
             const SizedBox(height: 12),
             CategoryChipList(
@@ -228,6 +214,14 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
                   color: Colors.pink,
                   onTap: () => context.push('/donate/creator_001'),
                 ),
+                _buildMenuTile(
+                  context,
+                  title: 'Magazines Portal',
+                  subtitle: 'Read In-App PDF Issues',
+                  icon: Icons.picture_in_picture,
+                  color: Colors.indigo,
+                  onTap: () => context.push('/magazines'),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -298,13 +292,14 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 195,
+              height: 230,
               child: recommendedAsync.when(
                 data: (videos) => ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: videos.length,
                   itemBuilder: (context, index) => VideoCard(
                     video: videos[index],
+                    width: 260,
                     onTap: () {},
                   ),
                 ),

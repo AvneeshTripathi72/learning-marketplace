@@ -23,9 +23,9 @@ class CustomBottomNavBar extends ConsumerWidget {
     final navItems = [
       {'icon': Icons.home_outlined, 'selectedIcon': Icons.home, 'label': 'Home'},
       {'icon': Icons.menu_book_outlined, 'selectedIcon': Icons.menu_book, 'label': 'eBooks'},
-      {'icon': Icons.bolt_outlined, 'selectedIcon': Icons.bolt, 'label': 'Shorts'},
+      {'icon': Icons.play_circle_outline, 'selectedIcon': Icons.play_circle, 'label': 'Videos'},
       {'icon': Icons.quiz_outlined, 'selectedIcon': Icons.quiz, 'label': 'Generators'},
-      {'icon': Icons.bookmark_border_outlined, 'selectedIcon': Icons.bookmark, 'label': 'My Library'},
+      {'icon': Icons.person_outlined, 'selectedIcon': Icons.person, 'label': 'Profile'},
     ];
 
     void handleNavigation(int index) {
@@ -35,47 +35,46 @@ class CustomBottomNavBar extends ConsumerWidget {
           context.go(isPublication ? '/dashboard' : '/public/dashboard');
           break;
         case 1:
-          context.push(isPublication ? '/pub/ebook' : '/public/ebook');
+          context.go(isPublication ? '/pub/ebook' : '/public/ebook');
           break;
         case 2:
-          context.push(isPublication ? '/pub/youtube' : '/public/youtube');
+          context.go(isPublication ? '/pub/youtube' : '/public/youtube');
           break;
         case 3:
-          context.push(
-            isPublication ? '/pub/question-paper' : '/public/question-paper',
-          );
+          context.go(isPublication ? '/pub/question-paper' : '/public/question-paper');
           break;
         case 4:
-          context.push('/profile');
+          context.go('/profile');
           break;
       }
     }
 
-    return SizedBox(
-      height: 70,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return Container(
+      color: Colors.transparent,
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12, top: 4),
+      child: SizedBox(
+        height: 64,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(36),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xDD1E1E1E)
+                    ? const Color(0xEE1E1E1E)
                     : const Color(0xEEF5F5F7),
                 borderRadius: BorderRadius.circular(36),
                 border: Border.all(
                   color: isDark
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : Colors.black.withValues(alpha: 0.08),
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : Colors.black.withValues(alpha: 0.1),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                    blurRadius: 16,
+                    color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+                    blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),
                 ],

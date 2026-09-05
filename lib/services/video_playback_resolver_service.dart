@@ -1,25 +1,14 @@
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/material.dart';
 import '../models/video_model.dart';
+import '../screens/shared/video_player/video_player_screen.dart';
 
 class VideoPlaybackResolverService {
-  static Future<void> playVideo(VideoModel video) async {
-    final uri = Uri.parse(video.url);
-
-    switch (video.platform) {
-      case VideoPlatform.youtube:
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-        break;
-
-      case VideoPlatform.instagram:
-      case VideoPlatform.facebook:
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } else {
-          await launchUrl(uri, mode: LaunchMode.inAppWebView);
-        }
-        break;
-    }
+  static void playVideo(BuildContext context, VideoModel video) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VideoPlayerScreen(video: video),
+      ),
+    );
   }
 }

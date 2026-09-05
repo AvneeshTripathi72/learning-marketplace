@@ -27,34 +27,80 @@ class HierarchyPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           children: [
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: selectedSeries,
-                decoration: const InputDecoration(labelText: 'Series', border: InputBorder.none),
-                items: seriesList.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                isExpanded: true,
+                initialValue: selectedSeries,
+                decoration: const InputDecoration(
+                  labelText: 'Series',
+                  contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  border: InputBorder.none,
+                ),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+                items: seriesList
+                    .map((s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(s, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                        ))
+                    .toList(),
                 onChanged: (v) => v != null ? onSeriesChanged(v) : null,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: selectedClass,
-                decoration: const InputDecoration(labelText: 'Class', border: InputBorder.none),
-                items: classList.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                isExpanded: true,
+                initialValue: selectedClass,
+                decoration: const InputDecoration(
+                  labelText: 'Class',
+                  contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  border: InputBorder.none,
+                ),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+                items: classList
+                    .map((c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(c, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                        ))
+                    .toList(),
                 onChanged: (v) => v != null ? onClassChanged(v) : null,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: selectedSubject,
-                decoration: const InputDecoration(labelText: 'Subject', border: InputBorder.none),
-                items: subjectList.map((sub) => DropdownMenuItem(value: sub, child: Text(sub))).toList(),
+                isExpanded: true,
+                initialValue: selectedSubject,
+                decoration: const InputDecoration(
+                  labelText: 'Subject',
+                  contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  border: InputBorder.none,
+                ),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+                items: subjectList
+                    .map((sub) => DropdownMenuItem(
+                          value: sub,
+                          child: Text(sub, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+                        ))
+                    .toList(),
                 onChanged: (v) => v != null ? onSubjectChanged(v) : null,
               ),
             ),

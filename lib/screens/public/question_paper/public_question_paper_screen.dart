@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/question_paper_model.dart';
+import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../publication/question_paper/question_paper_preview_screen.dart';
 
@@ -34,6 +35,11 @@ class _PublicQuestionPaperScreenState extends State<PublicQuestionPaperScreen> {
       publicationName: _selectedPublication,
       pdfUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
       generatedDate: DateTime.now(),
+      series: _selectedSeries,
+      className: _selectedClass,
+      subject: _selectedSubject,
+      totalMarks: _totalMarks.toInt(),
+      timeMinutes: 180,
     );
 
     if (mounted) {
@@ -50,22 +56,25 @@ class _PublicQuestionPaperScreenState extends State<PublicQuestionPaperScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: const Text('Public Question Paper Generator'),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DropdownButtonFormField<String>(
-              value: _selectedPublication,
+              isExpanded: true,
+              initialValue: _selectedPublication,
               decoration: const InputDecoration(
                 labelText: 'Select Publication Scope',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.business),
               ),
-              items: _publications.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+              items: _publications.map((p) => DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis))).toList(),
               onChanged: (v) => v != null ? setState(() => _selectedPublication = v) : null,
             ),
             const SizedBox(height: 16),

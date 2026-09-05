@@ -7,14 +7,25 @@ class AppTheme {
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.lightBackground,
       colorScheme: const ColorScheme.light(
-        background: AppColors.lightBackground,
         surface: AppColors.lightSurface,
         primary: AppColors.lightAccentPrimary,
         secondary: AppColors.lightAccentAlt,
         error: AppColors.lightError,
-        onBackground: AppColors.lightTextPrimary,
         onSurface: AppColors.lightTextPrimary,
         onPrimary: Colors.white,
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: AppColors.lightBackground,
+        surfaceTintColor: Colors.transparent,
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.lightElevatedSurface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.lightBackground,
+        foregroundColor: AppColors.lightTextPrimary,
+        elevation: 0,
       ),
       cardTheme: CardThemeData(
         color: AppColors.lightElevatedSurface,
@@ -38,14 +49,25 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.darkBackground,
       colorScheme: const ColorScheme.dark(
-        background: AppColors.darkBackground,
         surface: AppColors.darkSurface,
         primary: AppColors.darkAccentPrimary,
         secondary: AppColors.darkAccentAlt,
         error: AppColors.darkError,
-        onBackground: AppColors.darkTextPrimary,
         onSurface: AppColors.darkTextPrimary,
         onPrimary: AppColors.darkBackground,
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: AppColors.darkSurface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.darkSurface,
+        surfaceTintColor: Colors.transparent,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.darkSurface,
+        foregroundColor: AppColors.darkTextPrimary,
+        elevation: 0,
       ),
       cardTheme: CardThemeData(
         color: AppColors.darkElevatedSurface,

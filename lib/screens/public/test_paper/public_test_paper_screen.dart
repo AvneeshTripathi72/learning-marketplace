@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/test_paper_model.dart';
 import '../../publication/test_paper/test_paper_preview_screen.dart';
+import '../../../widgets/bottom_nav_bar.dart';
 
 class PublicTestPaperScreen extends StatefulWidget {
   const PublicTestPaperScreen({super.key});
@@ -43,9 +44,11 @@ class _PublicTestPaperScreenState extends State<PublicTestPaperScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: const Text('Public Test Paper Generator'),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

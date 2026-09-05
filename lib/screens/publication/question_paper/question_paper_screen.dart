@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/question_paper_model.dart';
+import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../../services/paper_generator_service.dart';
 import 'question_paper_preview_screen.dart';
@@ -16,7 +17,7 @@ class _QuestionPaperScreenState extends State<QuestionPaperScreen> {
   String _selectedClass = 'Class 10';
   String _selectedSubject = 'Mathematics';
   int _totalMarks = 80;
-  int _timeMinutes = 180;
+  final int _timeMinutes = 180;
   bool _isGenerating = false;
 
   final List<String> _chapters = [
@@ -57,9 +58,11 @@ class _QuestionPaperScreenState extends State<QuestionPaperScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: const Text('Question Paper Generator'),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/video_model.dart';
+import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../../widgets/video_card.dart';
-import '../../shared/video_player/video_player_screen.dart';
 
 class PublicationYoutubeScreen extends StatefulWidget {
   const PublicationYoutubeScreen({super.key});
@@ -19,12 +19,12 @@ class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
   final List<VideoModel> _mockVideos = [
     VideoModel(
       id: 'yt_101',
-      title: 'Class 10 Math Chapter 1 Real Numbers Full Lecture',
+      title: 'Class 10 Math Chapter 1 Real Numbers Full Lecture & Proofs',
       url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       platform: VideoPlatform.youtube,
-      channelName: 'Oxford Academic YouTube',
+      channelName: 'Oxford Academic Official',
       category: 'Mathematics',
-      thumbnailUrl: 'https://via.placeholder.com/300x180',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop',
       duration: '42:10',
       viewsCount: 15400,
       status: VideoStatus.approved,
@@ -36,9 +36,9 @@ class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
       title: 'Class 10 Math Chapter 2 Polynomials Formulas & Examples',
       url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       platform: VideoPlatform.youtube,
-      channelName: 'Oxford Academic YouTube',
+      channelName: 'Oxford Academic Official',
       category: 'Mathematics',
-      thumbnailUrl: 'https://via.placeholder.com/300x180',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop',
       duration: '28:45',
       viewsCount: 9200,
       status: VideoStatus.approved,
@@ -50,9 +50,11 @@ class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: const Text('Publication YouTube Channel'),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       body: Column(
         children: [
           HierarchyPicker(
@@ -72,19 +74,8 @@ class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
               itemCount: _mockVideos.length,
               itemBuilder: (context, index) {
                 final video = _mockVideos[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: VideoCard(
-                    video: video,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => VideoPlayerScreen(video: video),
-                        ),
-                      );
-                    },
-                  ),
+                return VideoCard(
+                  video: video,
                 );
               },
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/subscription_model.dart';
 import '../../../widgets/subscription_package_card.dart';
 import '../../../services/subscription_service.dart';
+import '../../../services/razorpay_payment_service.dart';
 
 class AdSubscriptionScreen extends StatefulWidget {
   const AdSubscriptionScreen({super.key});
@@ -59,10 +60,22 @@ class _AdSubscriptionScreenState extends State<AdSubscriptionScreen> {
   ];
 
   void _onSelectPackage(SubscriptionPackageModel pkg) async {
-    final success = await SubscriptionService().requestUpgrade('oxford_pub', pkg.tier);
-    if (success && mounted) {
+    final result = await RazorpayPaymentService().processPayment(
+      context: context,
+      amount: pkg.price,
+      title: pkg.name,
+      description: '${pkg.adLimits} (${pkg.durationDays} Days Validity)',
+      userEmail: 'user@oxford.com',
+      userContact: '+91 9876543210',
+    );
+
+    if (result != null && result.success && mounted) {
+      await SubscriptionService().requestUpgrade('oxford_pub', pkg.tier);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment Checkout initiated for ${pkg.name}')),
+        SnackBar(
+          content: Text('${pkg.name} Activated Successfully via Razorpay!'),
+          backgroundColor: Colors.green,
+        ),
       );
     }
   }

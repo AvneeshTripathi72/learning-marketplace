@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../screens/admin/admin_dashboard_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/dashboard/dashboard_screen.dart';
 import '../../screens/profile/profile_screen.dart';
@@ -20,6 +21,7 @@ import '../../screens/publication/subscription/ad_subscription_screen.dart';
 import '../../screens/publication/test_paper/test_paper_screen.dart';
 import '../../screens/publication/youtube/publication_youtube_screen.dart';
 import '../../screens/shared/donation/donation_screen.dart';
+import '../../screens/shared/magazine/magazine_screen.dart';
 import '../../screens/shared/restricted_content_screen.dart';
 
 CustomTransitionPage<void> buildAnimatedPage({
@@ -64,7 +66,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: user == null
         ? '/login'
-        : (user.role == UserRole.public ? '/public/dashboard' : '/dashboard'),
+        : (user.role == UserRole.admin
+            ? '/admin/dashboard'
+            : (user.role == UserRole.public ? '/public/dashboard' : '/dashboard')),
     redirect: (context, state) {
       final loggingIn = state.matchedLocation == '/login';
 
@@ -73,7 +77,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (loggingIn) {
-        return user.role == UserRole.public ? '/public/dashboard' : '/dashboard';
+        return user.role == UserRole.admin
+            ? '/admin/dashboard'
+            : (user.role == UserRole.public ? '/public/dashboard' : '/dashboard');
       }
 
       // Intercept Public users attempting cross-publication /pub/* routes
@@ -89,6 +95,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => buildAnimatedPage(
           key: state.pageKey,
           child: const LoginScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/dashboard',
+        pageBuilder: (context, state) => buildAnimatedPage(
+          key: state.pageKey,
+          child: const AdminDashboardScreen(),
         ),
       ),
       GoRoute(
@@ -204,6 +217,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => buildAnimatedPage(
           key: state.pageKey,
           child: const ProfileScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/magazines',
+        pageBuilder: (context, state) => buildAnimatedPage(
+          key: state.pageKey,
+          child: const MagazineScreen(),
         ),
       ),
       GoRoute(

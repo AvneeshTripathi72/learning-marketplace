@@ -14,6 +14,7 @@ class AppDrawer extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final theme = Theme.of(context);
     final isPublication = user?.role == UserRole.publication;
+    final isAdmin = user?.role == UserRole.admin;
 
     return Drawer(
       child: ListView(
@@ -21,9 +22,11 @@ class AppDrawer extends ConsumerWidget {
         children: [
           UserAccountsDrawerHeader(
             decoration: BoxDecoration(
-              color: isPublication
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.secondary,
+              color: isAdmin
+                  ? const Color(0xFF0C2340)
+                  : (isPublication
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.secondary),
             ),
             accountName: Text(
               user?.name ?? 'Guest User',
@@ -42,16 +45,31 @@ class AppDrawer extends ConsumerWidget {
                     : null,
                 child: user?.avatarUrl == null
                     ? Icon(
-                        isPublication ? Icons.business : Icons.person,
-                        color: isPublication
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.secondary,
-                        size: 32,
+                        isAdmin
+                            ? Icons.admin_panel_settings
+                            : (isPublication ? Icons.business : Icons.person),
+                        color: isAdmin
+                            ? Colors.amber
+                            : (isPublication
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.secondary),
+                        size: 36,
                       )
                     : null,
               ),
             ),
           ),
+          if (isAdmin) ...[
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings, color: Colors.amber),
+              title: const Text('Admin Control Console', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/admin/dashboard');
+              },
+            ),
+            const Divider(),
+          ],
 
           // Theme Switcher Toggle Switch
           SwitchListTile(
@@ -134,6 +152,14 @@ class AppDrawer extends ConsumerWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.picture_in_picture, color: Colors.purple),
+            title: const Text('Educational Magazines'),
+            onTap: () {
+              Navigator.pop(context);
+              context.push('/magazines');
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.grid_view, color: Colors.teal),
             title: const Text('Category & Video Hub'),
             onTap: () {
@@ -189,43 +215,7 @@ class AppDrawer extends ConsumerWidget {
               context.push('/donate/creator_001');
             },
           ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.swap_horiz, color: Colors.deepOrange),
-            title: Text(
-              isPublication ? 'Switch to Public View' : 'Switch to Publication View',
-            ),
-            subtitle: const Text('Quick Role Switch for Testing'),
-            onTap: () {
-              Navigator.pop(context);
-              if (isPublication) {
-                ref.read(authProvider.notifier).login(
-                      UserModel(
-                        id: 'public_001',
-                        name: 'Rahul Sharma (Student)',
-                        email: 'public@user.com',
-                        role: UserRole.public,
-                        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-                      ),
-                      'mock_public_token',
-                    );
-                context.go('/public/dashboard');
-              } else {
-                ref.read(authProvider.notifier).login(
-                      UserModel(
-                        id: 'pub_001',
-                        name: 'Oxford Publication User',
-                        email: 'user@oxford.com',
-                        role: UserRole.publication,
-                        publicationId: 'oxford_pub',
-                        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
-                      ),
-                      'mock_pub_token',
-                    );
-                context.go('/dashboard');
-              }
-            },
-          ),
+
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.grey),
             title: const Text('Logout'),

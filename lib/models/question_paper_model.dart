@@ -24,6 +24,12 @@ class QuestionPaperResultModel {
   final String publicationName;
   final String pdfUrl;
   final DateTime generatedDate;
+  final String series;
+  final String className;
+  final String subject;
+  final int totalMarks;
+  final int timeMinutes;
+  final List<String>? selectedChapters;
 
   QuestionPaperResultModel({
     required this.id,
@@ -31,5 +37,11 @@ class QuestionPaperResultModel {
     required this.publicationName,
     required this.pdfUrl,
     required this.generatedDate,
+    this.series = 'CBSE 2026',
+    this.className = 'Class 10',
+    this.subject = 'Mathematics',
+    this.totalMarks = 80,
+    this.timeMinutes = 180,
+    this.selectedChapters,
   });
 }

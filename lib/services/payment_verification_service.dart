@@ -9,7 +9,7 @@ class PaymentVerificationService {
     // Double condition check:
     // 1. Subscription status == Active
     // 2. Payment status == Successful
-    final bool isSubscriptionActive = true;
+    const bool isSubscriptionActive = true;
     final bool isPaymentSuccessful = paymentId.isNotEmpty;
 
     return isSubscriptionActive && isPaymentSuccessful;
