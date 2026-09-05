@@ -1,11 +1,10 @@
 services:
   - type: web
     name: ebook-backend
-    env: node
+    env: docker
+    dockerfilePath: Dockerfile
     rootDir: backend
     plan: free
-    buildCommand: npm install --production=false && chmod +x ./node_modules/.bin/* && npx prisma generate && npm run build
-    startCommand: npm run prisma:push && npm run start:prod
     envVars:
       - key: DATABASE_URL
         sync: false
