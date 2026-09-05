@@ -4,6 +4,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 RUN npm ci
 COPY . .
+RUN chmod -R +x node_modules/.bin
 RUN npm run build
 
 FROM node:20-alpine AS runner
