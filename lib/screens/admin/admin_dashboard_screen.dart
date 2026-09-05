@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../models/video_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/ebook_provider.dart';
 import '../../providers/video_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
@@ -44,25 +45,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       'logo': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150',
       'status': 'SUSPENDED',
       'ebooksCount': 15,
-    },
-  ];
-
-  final List<Map<String, String>> _pendingVideosQueue = [
-    {
-      'id': 'v_mod_1',
-      'title': 'Class 10 Physics - Light Reflection & Refraction Formulae',
-      'channel': 'Global Science Academy',
-      'url': 'https://youtu.be/dQw4w9WgXcQ',
-      'category': 'Science',
-      'submittedBy': 'Public User (Rahul)',
-    },
-    {
-      'id': 'v_mod_2',
-      'title': 'Class 12 Organic Chemistry Mechanisms Masterclass',
-      'channel': 'Chemistry Simplified',
-      'url': 'https://youtu.be/dQw4w9WgXcQ',
-      'category': 'Chemistry',
-      'submittedBy': 'Vendor (Oxford)',
     },
   ];
 
@@ -260,6 +242,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final user = ref.watch(authProvider);
     final submissions = ref.watch(videoSubmissionsProvider);
     final pendingSubmissionsQueue = submissions.where((v) => v.status == VideoStatus.pending).toList();
+    final ebookSubmissions = ref.watch(ebookSubmissionsProvider);
+    final pendingEbookQueue = ebookSubmissions.where((item) => item.status == EBookStatus.pending).toList();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -301,7 +285,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -386,6 +370,198 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
             const SizedBox(height: 20),
 
+            // Live Content Approval & Moderation Queue Hub Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.5), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.verified_user, color: Colors.green, size: 22),
+                          SizedBox(width: 8),
+                          Text(
+                            'Submission Moderation Center',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => context.push('/admin/moderation'),
+                        icon: const Icon(Icons.open_in_new, size: 14),
+                        label: const Text('Open Approvals Queue', style: TextStyle(fontSize: 11)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${pendingSubmissionsQueue.length} pending video link(s) and ${pendingEbookQueue.length} pending eBook manuscript(s) awaiting verification.',
+                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                  const Divider(height: 20),
+                  if (pendingSubmissionsQueue.isEmpty && pendingEbookQueue.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'All submissions have been approved and published!',
+                            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    )
+                  else ...[
+                    if (pendingSubmissionsQueue.isNotEmpty) ...[
+                      const Text(
+                        'Pending Videos Queue',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.orange),
+                      ),
+                      const SizedBox(height: 8),
+                      ...pendingSubmissionsQueue.take(2).map((v) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2A2A2A) : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Image.network(
+                                    v.thumbnailUrl,
+                                    width: 50,
+                                    height: 35,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(width: 50, height: 35, color: Colors.grey),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        v.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                      ),
+                                      Text('Submitter: ${v.submittedBy}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  onPressed: () {
+                                    ref.read(videoSubmissionsProvider.notifier).approveVideo(v.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('"${v.title}" Approved!'), backgroundColor: Colors.green),
+                                    );
+                                  },
+                                  child: const Text('Approve', style: TextStyle(fontSize: 11)),
+                                ),
+                              ],
+                            ),
+                          )),
+                    ],
+                    if (pendingEbookQueue.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Pending eBooks Queue',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue),
+                      ),
+                      const SizedBox(height: 8),
+                      ...pendingEbookQueue.take(2).map((item) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2A2A2A) : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Image.network(
+                                    item.ebook.coverUrl,
+                                    width: 35,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(width: 35, height: 50, color: Colors.blueGrey),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.ebook.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                      ),
+                                      Text('Class ${item.ebook.classId} • ${item.submittedBy}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  onPressed: () {
+                                    ref.read(ebookSubmissionsProvider.notifier).approveEBook(item.ebook.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('"${item.ebook.title}" Approved!'), backgroundColor: Colors.green),
+                                    );
+                                  },
+                                  child: const Text('Approve', style: TextStyle(fontSize: 11)),
+                                ),
+                              ],
+                            ),
+                          )),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
             // Admin Quick Actions & Upload Hub (Video & eBook Management)
             Container(
               padding: const EdgeInsets.all(16),
@@ -417,6 +593,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => context.push('/admin/moderation'),
+                        icon: const Icon(Icons.verified_user, size: 18),
+                        label: const Text('Moderation & Approvals Center'),
+                      ),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.redAccent,
@@ -481,33 +667,56 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             const SizedBox(height: 12),
             ..._publications.map((pub) => Card(
                   margin: const EdgeInsets.only(bottom: 10),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: NetworkImage(pub['logo']),
-                      child: const Icon(Icons.business),
-                    ),
-                    title: Text(pub['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${pub['email']} • ${pub['ebooksCount']} eBooks'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
                       children: [
-                        Chip(
-                          label: Text(
-                            pub['status'],
-                            style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                          backgroundColor: pub['status'] == 'ACTIVE' ? Colors.green : Colors.red,
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(pub['logo']),
+                          child: const Icon(Icons.business),
                         ),
-                        IconButton(
-                          icon: Icon(
-                            pub['status'] == 'ACTIVE' ? Icons.block : Icons.check_circle_outline,
-                            color: pub['status'] == 'ACTIVE' ? Colors.red : Colors.green,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(pub['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              const SizedBox(height: 2),
+                              Text('${pub['email']} • ${pub['ebooksCount']} eBooks',
+                                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                  overflow: TextOverflow.ellipsis),
+                            ],
                           ),
-                          onPressed: () {
-                            setState(() {
-                              pub['status'] = pub['status'] == 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-                            });
-                          },
+                        ),
+                        const SizedBox(width: 8),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 4,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: pub['status'] == 'ACTIVE' ? Colors.green : Colors.red,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                pub['status'],
+                                style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                pub['status'] == 'ACTIVE' ? Icons.block : Icons.check_circle_outline,
+                                color: pub['status'] == 'ACTIVE' ? Colors.red : Colors.green,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  pub['status'] = pub['status'] == 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+                                });
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -643,15 +852,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.volunteer_activism, color: Colors.pink, size: 22),
-                          SizedBox(width: 8),
-                          Text(
-                            'Creator Donations Audit Log',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ],
+                      const Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.volunteer_activism, color: Colors.pink, size: 22),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Creator Donations Audit Log',
+                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -661,7 +875,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                         child: Text(
                           'Total: ₹${totalDonations.toStringAsFixed(0)}',
-                          style: const TextStyle(color: Colors.pink, fontWeight: FontWeight.bold, fontSize: 13),
+                          style: const TextStyle(color: Colors.pink, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ),
                     ],
@@ -751,8 +965,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           Text('Channel: ${item.channelName} • Category: ${item.category} • Submitted by: ${item.submittedBy}',
                               style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           const SizedBox(height: 10),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            alignment: WrapAlignment.end,
                             children: [
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
@@ -763,7 +979,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                 icon: const Icon(Icons.close, size: 16),
                                 label: const Text('Reject'),
                               ),
-                              const SizedBox(width: 10),
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                                 onPressed: () {
@@ -774,6 +989,71 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                 },
                                 icon: const Icon(Icons.check, size: 16),
                                 label: const Text('Approve & Publish'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+            // eBook Moderation & Verification Queue Section
+            const Text('eBook Verification & Moderation Queue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            if (pendingEbookQueue.isEmpty)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: Text('No pending eBook verification requests! 📚')),
+                ),
+              )
+            else
+              ...pendingEbookQueue.map((item) => Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.picture_as_pdf, color: Colors.blueAccent),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(item.ebook.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text('Series: ${item.ebook.seriesId} • Class: ${item.ebook.classId} • Subject: ${item.ebook.subjectId}',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          const SizedBox(height: 2),
+                          Text('Publisher/Submitted by: ${item.submittedBy}',
+                              style: const TextStyle(fontSize: 11, color: Colors.amber, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            alignment: WrapAlignment.end,
+                            children: [
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                                onPressed: () {
+                                  ref.read(ebookSubmissionsProvider.notifier).rejectEBook(item.ebook.id);
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('eBook submission rejected.')));
+                                },
+                                icon: const Icon(Icons.close, size: 16),
+                                label: const Text('Reject'),
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
+                                onPressed: () {
+                                  ref.read(ebookSubmissionsProvider.notifier).approveEBook(item.ebook.id);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('eBook verified & published for Students! 🎉'), backgroundColor: Colors.green),
+                                  );
+                                },
+                                icon: const Icon(Icons.verified, size: 16),
+                                label: const Text('Verify & Approve'),
                               ),
                             ],
                           ),

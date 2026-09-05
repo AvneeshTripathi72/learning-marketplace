@@ -1,51 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/ebook_model.dart';
+import '../../../models/user_model.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/ebook_provider.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../shared/magazine/magazine_screen.dart';
 import 'pdf_viewer_screen.dart';
 
-class EBookHierarchyScreen extends StatefulWidget {
+class EBookHierarchyScreen extends ConsumerStatefulWidget {
   const EBookHierarchyScreen({super.key});
 
   @override
-  State<EBookHierarchyScreen> createState() => _EBookHierarchyScreenState();
+  ConsumerState<EBookHierarchyScreen> createState() => _EBookHierarchyScreenState();
 }
 
-class _EBookHierarchyScreenState extends State<EBookHierarchyScreen> {
+class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
   int _activeTabIndex = 0;
   String _selectedSeries = 'CBSE 2026';
   String _selectedClass = 'Class 10';
   String _selectedSubject = 'Mathematics';
 
-  final List<EBookModel> _mockEBooks = [
-    EBookModel(
-      id: 'eb_101',
-      title: 'Class 10 Mathematics - Chapter 1 Real Numbers',
-      publicationId: 'oxford_pub',
-      seriesId: 'CBSE 2026',
-      classId: 'Class 10',
-      subjectId: 'Mathematics',
-      coverUrl: 'https://via.placeholder.com/150x200',
-      fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
-    ),
-    EBookModel(
-      id: 'eb_102',
-      title: 'Class 10 Mathematics - Chapter 2 Polynomials',
-      publicationId: 'oxford_pub',
-      seriesId: 'CBSE 2026',
-      classId: 'Class 10',
-      subjectId: 'Mathematics',
-      coverUrl: 'https://via.placeholder.com/150x200',
-      fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final allSubmissions = ref.watch(ebookSubmissionsProvider);
+
+    final filteredSubmissions = allSubmissions.where((item) {
+      final matchesSeries = item.ebook.seriesId.isEmpty || item.ebook.seriesId.toLowerCase() == _selectedSeries.toLowerCase();
+      final matchesClass = item.ebook.classId.isEmpty || item.ebook.classId.toLowerCase() == _selectedClass.toLowerCase();
+      final matchesSubject = item.ebook.subjectId.isEmpty || item.ebook.subjectId.toLowerCase() == _selectedSubject.toLowerCase();
+      return matchesSeries && matchesClass && matchesSubject;
+    }).toList();
 
     return Scaffold(
       extendBody: true,
@@ -164,74 +153,122 @@ class _EBookHierarchyScreenState extends State<EBookHierarchyScreen> {
                         onSubjectChanged: (v) => setState(() => _selectedSubject = v),
                       ),
                       Expanded(
-                        child: GridView.builder(
-                          padding: const EdgeInsets.all(12),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.7,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                          itemCount: _mockEBooks.length,
-                          itemBuilder: (context, index) {
-                            final ebook = _mockEBooks[index];
-                            return Card(
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => PdfViewerScreen(ebook: ebook),
-                                    ),
-                                  );
-                                },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        color: Colors.grey[800],
-                                        child: const Center(
-                                          child: Icon(Icons.picture_as_pdf, size: 50, color: Colors.redAccent),
-                                        ),
+                        child: filteredSubmissions.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.menu_book_outlined, size: 54, color: Colors.grey),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'No eBooks found for $_selectedClass - $_selectedSubject',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                        textAlign: TextAlign.center,
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            ebook.title,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Tap "Upload eBook" to add a new document or PDF link for moderation.',
+                                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : GridView.builder(
+                                padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.65,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
+                                itemCount: filteredSubmissions.length,
+                                itemBuilder: (context, index) {
+                                  final item = filteredSubmissions[index];
+                                  final ebook = item.ebook;
+                                  return Card(
+                                    clipBehavior: Clip.antiAlias,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => PdfViewerScreen(ebook: ebook),
                                           ),
-                                          const SizedBox(height: 4),
-                                          Row(
+                                        );
+                                      },
+                                      child: Stack(
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Icon(
-                                                ebook.isDownloaded ? Icons.download_done : Icons.cloud_download,
-                                                size: 14,
-                                                color: Colors.grey,
+                                              Expanded(
+                                                child: Container(
+                                                  color: Colors.grey[800],
+                                                  child: const Center(
+                                                    child: Icon(Icons.picture_as_pdf, size: 50, color: Colors.redAccent),
+                                                  ),
+                                                ),
                                               ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                ebook.isDownloaded ? 'Downloaded' : 'Online',
-                                                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                              Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      ebook.title,
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      'By ${item.submittedBy}',
+                                                      style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ],
+                                          ),
+                                          Positioned(
+                                            top: 6,
+                                            right: 6,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: item.status == EBookStatus.approved
+                                                    ? Colors.green.withValues(alpha: 0.9)
+                                                    : item.status == EBookStatus.rejected
+                                                        ? Colors.red.withValues(alpha: 0.9)
+                                                        : Colors.amber.withValues(alpha: 0.95),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                item.status == EBookStatus.approved
+                                                    ? 'VERIFIED'
+                                                    : item.status == EBookStatus.rejected
+                                                        ? 'REJECTED'
+                                                        : 'PENDING',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
                     ],
                   )
@@ -253,11 +290,11 @@ class _EBookHierarchyScreenState extends State<EBookHierarchyScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Row(
-            children: const [
+          title: const Row(
+            children: [
               Icon(Icons.library_add, color: Colors.blue),
               SizedBox(width: 10),
-              Text('Vendor eBook Upload', style: TextStyle(fontSize: 16)),
+              Text('eBook Document Upload', style: TextStyle(fontSize: 16)),
             ],
           ),
           content: SingleChildScrollView(
@@ -319,7 +356,7 @@ class _EBookHierarchyScreenState extends State<EBookHierarchyScreen> {
             ),
             ElevatedButton.icon(
               icon: const Icon(Icons.cloud_upload),
-              label: const Text('Publish eBook'),
+              label: const Text('Submit eBook'),
               onPressed: () {
                 if (titleCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -327,27 +364,37 @@ class _EBookHierarchyScreenState extends State<EBookHierarchyScreen> {
                   );
                   return;
                 }
-                setState(() {
-                  _mockEBooks.insert(
-                    0,
-                    EBookModel(
-                      id: 'eb_vendor_${DateTime.now().millisecondsSinceEpoch}',
-                      title: titleCtrl.text.trim(),
-                      publicationId: 'vendor_pub',
-                      seriesId: series,
-                      classId: cls,
-                      subjectId: subject,
-                      coverUrl: 'https://via.placeholder.com/150x200',
-                      fileUrl: pdfUrlCtrl.text.trim().isEmpty
-                          ? 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf'
-                          : pdfUrlCtrl.text.trim(),
-                    ),
-                  );
-                });
+
+                final user = ref.read(authProvider);
+                final newEbook = EBookModel(
+                  id: 'eb_vendor_${DateTime.now().millisecondsSinceEpoch}',
+                  title: titleCtrl.text.trim(),
+                  publicationId: user?.name ?? 'Oxford Educational Press',
+                  seriesId: series,
+                  classId: cls,
+                  subjectId: subject,
+                  coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300',
+                  fileUrl: pdfUrlCtrl.text.trim().isEmpty
+                      ? 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf'
+                      : pdfUrlCtrl.text.trim(),
+                );
+
+                final isAdmin = user?.role == UserRole.admin;
+
+                ref.read(ebookSubmissionsProvider.notifier).addEBookSubmission(
+                      newEbook,
+                      submittedBy: user?.name ?? 'Vendor Publisher',
+                      autoApprove: isAdmin,
+                    );
+
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('eBook "${titleCtrl.text.trim()}" published successfully!'),
+                    content: Text(
+                      isAdmin
+                          ? 'eBook "${titleCtrl.text.trim()}" published & approved!'
+                          : 'eBook "${titleCtrl.text.trim()}" submitted for Admin Verification!',
+                    ),
                     backgroundColor: Colors.green,
                   ),
                 );

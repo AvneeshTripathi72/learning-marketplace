@@ -13,7 +13,7 @@ final currentPublicationProvider = FutureProvider<PublicationModel?>((ref) async
     email: 'contact@oxford.com',
     mobile: '+91 98765 43210',
     address: 'Oxford House, New Delhi',
-    logoUrl: 'https://via.placeholder.com/150',
+    logoUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=150',
     inquiryNumber: '+91 98765 43210',
     isActive: true,
   );

@@ -5,6 +5,20 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
   VideoSubmissionsNotifier()
       : super([
           VideoModel(
+            id: 'sub_v0',
+            title: 'CBSE Class 10 Board Exam Mathematics Masterclass',
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            platform: VideoPlatform.youtube,
+            channelName: 'Oxford Educational Press',
+            category: 'Mathematics',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop',
+            duration: '42:10',
+            viewsCount: 5400,
+            status: VideoStatus.approved,
+            submittedBy: 'Vendor (Oxford)',
+            submittedDate: DateTime.now().subtract(const Duration(days: 1)),
+          ),
+          VideoModel(
             id: 'sub_v1',
             title: 'Class 10 Physics - Light Reflection & Refraction Formulae',
             url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',

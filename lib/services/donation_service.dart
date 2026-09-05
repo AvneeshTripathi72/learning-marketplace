@@ -9,8 +9,8 @@ class DonationService {
       id: 'don_$channelId',
       channelName: 'Global Science Academy',
       upiId: 'creator@upi',
-      qrCodeUrl: 'https://via.placeholder.com/200',
-      creatorPhotoUrl: 'https://via.placeholder.com/150',
+      qrCodeUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300',
+      creatorPhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
     );
   }
 

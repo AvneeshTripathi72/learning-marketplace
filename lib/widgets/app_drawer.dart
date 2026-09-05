@@ -69,6 +69,14 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.verified_user, color: Colors.green),
+              title: const Text('Moderation & Approvals', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/admin/moderation');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.cloud_upload, color: Colors.redAccent),
               title: const Text('Upload Video Link'),
               onTap: () {

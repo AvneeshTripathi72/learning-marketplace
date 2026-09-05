@@ -190,14 +190,17 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      _selectedCategoryId == 'cat_all'
-                          ? 'Showing All Videos (${filteredVideos.length})'
-                          : '${selectedCategory.name} Videos (${filteredVideos.length})',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                    Expanded(
+                      child: Text(
+                        _selectedCategoryId == 'cat_all'
+                            ? 'Showing All Videos (${filteredVideos.length})'
+                            : '${selectedCategory.name} Videos (${filteredVideos.length})',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     ),
                     if (_selectedCategoryId != 'cat_all')
@@ -241,7 +244,7 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                         itemCount: filteredVideos.length,
                         itemBuilder: (context, index) {
                           return VideoCard(video: filteredVideos[index]);

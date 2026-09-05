@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../models/ebook_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../providers/ebook_provider.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../publication/ebook/pdf_viewer_screen.dart';
 import '../../shared/magazine/magazine_screen.dart';
 
-class PublicEbookScreen extends StatefulWidget {
+class PublicEbookScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
 
   const PublicEbookScreen({
@@ -15,10 +16,10 @@ class PublicEbookScreen extends StatefulWidget {
   });
 
   @override
-  State<PublicEbookScreen> createState() => _PublicEbookScreenState();
+  ConsumerState<PublicEbookScreen> createState() => _PublicEbookScreenState();
 }
 
-class _PublicEbookScreenState extends State<PublicEbookScreen> {
+class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
   late int _activeTabIndex;
 
   String _selectedPublication = 'All Publications';
@@ -39,33 +40,23 @@ class _PublicEbookScreenState extends State<PublicEbookScreen> {
     'S. Chand Publishing',
   ];
 
-  final List<EBookModel> _ebooks = [
-    EBookModel(
-      id: 'pub_eb1',
-      publicationId: 'oxford_pub',
-      seriesId: 'cbse_2026',
-      classId: 'class_10',
-      subjectId: 'maths',
-      title: 'Class 10 Mathematics Comprehensive Guide',
-      coverUrl: 'https://via.placeholder.com/150',
-      fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
-    ),
-    EBookModel(
-      id: 'pub_eb2',
-      publicationId: 'pearson_pub',
-      seriesId: 'cbse_2026',
-      classId: 'class_10',
-      subjectId: 'science',
-      title: 'Class 10 Physics & Chemistry Master Class',
-      coverUrl: 'https://via.placeholder.com/150',
-      fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    final allSubmissions = ref.watch(ebookSubmissionsProvider);
+    final approvedSubmissions = allSubmissions.where((item) => item.status == EBookStatus.approved).toList();
+
+    final filteredEbooks = approvedSubmissions.where((item) {
+      final ebook = item.ebook;
+      final matchesPub = _selectedPublication == 'All Publications' ||
+          ebook.publicationId.toLowerCase().contains(_selectedPublication.toLowerCase());
+      final matchesSeries = ebook.seriesId.isEmpty || ebook.seriesId.toLowerCase() == _selectedSeries.toLowerCase();
+      final matchesClass = ebook.classId.isEmpty || ebook.classId.toLowerCase() == _selectedClass.toLowerCase();
+      final matchesSubject = ebook.subjectId.isEmpty || ebook.subjectId.toLowerCase() == _selectedSubject.toLowerCase();
+      return matchesPub && matchesSeries && matchesClass && matchesSubject;
+    }).map((item) => item.ebook).toList();
 
     return Scaffold(
       extendBody: true,
@@ -185,52 +176,88 @@ class _PublicEbookScreenState extends State<PublicEbookScreen> {
                         onSubjectChanged: (v) => setState(() => _selectedSubject = v),
                       ),
                       Expanded(
-                        child: GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.75,
-                          ),
-                          itemCount: _ebooks.length,
-                          itemBuilder: (context, index) {
-                            final ebook = _ebooks[index];
-                            return Card(
-                              clipBehavior: Clip.antiAlias,
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => PdfViewerScreen(ebook: ebook),
+                        child: filteredEbooks.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.menu_book_outlined, size: 54, color: Colors.grey),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'No verified eBooks found in "$_selectedClass - $_selectedSubject"',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      const Text(
+                                        'Change filter selections above to explore available textbooks.',
+                                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : GridView.builder(
+                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.7,
+                                ),
+                                itemCount: filteredEbooks.length,
+                                itemBuilder: (context, index) {
+                                  final ebook = filteredEbooks[index];
+                                  return Card(
+                                    clipBehavior: Clip.antiAlias,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => PdfViewerScreen(ebook: ebook),
+                                          ),
+                                        );
+                                      },
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Container(
+                                              color: Colors.blueGrey[800],
+                                              child: const Center(child: Icon(Icons.picture_as_pdf, size: 48, color: Colors.redAccent)),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  ebook.title,
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  ebook.publicationId,
+                                                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   );
                                 },
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        color: Colors.blueGrey[100],
-                                        child: const Center(child: Icon(Icons.picture_as_pdf, size: 48, color: Colors.red)),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        ebook.title,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                            );
-                          },
-                        ),
                       ),
                     ],
                   )

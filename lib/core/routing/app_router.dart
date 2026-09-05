@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/admin/admin_dashboard_screen.dart';
+import '../../screens/admin/admin_moderation_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/dashboard/dashboard_screen.dart';
 import '../../screens/profile/profile_screen.dart';
@@ -102,6 +103,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => buildAnimatedPage(
           key: state.pageKey,
           child: const AdminDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/moderation',
+        pageBuilder: (context, state) => buildAnimatedPage(
+          key: state.pageKey,
+          child: const AdminModerationScreen(),
         ),
       ),
       GoRoute(
