@@ -388,7 +388,7 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  width: 380,
+                  constraints: const BoxConstraints(maxWidth: 380),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: isSelected
