@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
 import '../../../models/video_model.dart';
+import '../../../utils/web_iframe_helper.dart';
 
 class CommentItem {
   final String id;
@@ -83,19 +81,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     if (kIsWeb) {
       _youtubeViewType = 'pw-yt-player-${widget.video.id}-${DateTime.now().millisecondsSinceEpoch}';
       final embedUrl = _extractEmbedUrl(widget.video.url);
-      ui_web.platformViewRegistry.registerViewFactory(
-        _youtubeViewType,
-        (int viewId) {
-          final iframe = html.IFrameElement()
-            ..src = embedUrl
-            ..style.border = 'none'
-            ..style.width = '100%'
-            ..style.height = '100%'
-            ..allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-            ..allowFullscreen = true;
-          return iframe;
-        },
-      );
+      registerIframe(_youtubeViewType, embedUrl);
     }
   }
 

@@ -3,6 +3,7 @@ import '../../../models/video_model.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../../widgets/video_card.dart';
+import '../../public/public_hub/category_browse_screen.dart';
 
 class PublicationYoutubeScreen extends StatefulWidget {
   const PublicationYoutubeScreen({super.key});
@@ -12,6 +13,7 @@ class PublicationYoutubeScreen extends StatefulWidget {
 }
 
 class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
+  int _activeTab = 0;
   String _selectedSeries = 'CBSE 2026';
   String _selectedClass = 'Class 10';
   String _selectedSubject = 'Mathematics';
@@ -49,36 +51,123 @@ class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       extendBody: true,
       appBar: AppBar(
-        title: const Text('Publication YouTube Channel'),
+        title: Text(_activeTab == 0 ? 'Publication Channel' : 'Public Video Hub'),
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       body: Column(
         children: [
-          HierarchyPicker(
-            seriesList: const ['CBSE 2026', 'ICSE 2026', 'State Board'],
-            classList: const ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
-            subjectList: const ['Mathematics', 'Science', 'English', 'Hindi'],
-            selectedSeries: _selectedSeries,
-            selectedClass: _selectedClass,
-            selectedSubject: _selectedSubject,
-            onSeriesChanged: (v) => setState(() => _selectedSeries = v),
-            onClassChanged: (v) => setState(() => _selectedClass = v),
-            onSubjectChanged: (v) => setState(() => _selectedSubject = v),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: _mockVideos.length,
-              itemBuilder: (context, index) {
-                final video = _mockVideos[index];
-                return VideoCard(
-                  video: video,
-                );
-              },
+          // Segmented Toggle Header
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E5EA),
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _activeTab = 0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      decoration: BoxDecoration(
+                        color: _activeTab == 0 ? theme.colorScheme.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.ondemand_video,
+                            size: 18,
+                            color: _activeTab == 0 ? Colors.white : theme.textTheme.bodyMedium?.color,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Publication Channel',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: _activeTab == 0 ? Colors.white : theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _activeTab = 1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      decoration: BoxDecoration(
+                        color: _activeTab == 1 ? theme.colorScheme.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.public,
+                            size: 18,
+                            color: _activeTab == 1 ? Colors.white : theme.textTheme.bodyMedium?.color,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Public Video Hub',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: _activeTab == 1 ? Colors.white : theme.textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Body Content
+          Expanded(
+            child: _activeTab == 0
+                ? Column(
+                    children: [
+                      HierarchyPicker(
+                        seriesList: const ['CBSE 2026', 'ICSE 2026', 'State Board'],
+                        classList: const ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
+                        subjectList: const ['Mathematics', 'Science', 'English', 'Hindi'],
+                        selectedSeries: _selectedSeries,
+                        selectedClass: _selectedClass,
+                        selectedSubject: _selectedSubject,
+                        onSeriesChanged: (v) => setState(() => _selectedSeries = v),
+                        onClassChanged: (v) => setState(() => _selectedClass = v),
+                        onSubjectChanged: (v) => setState(() => _selectedSubject = v),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: _mockVideos.length,
+                          itemBuilder: (context, index) {
+                            return VideoCard(
+                              video: _mockVideos[index],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  )
+                : const CategoryBrowseScreen(),
           ),
         ],
       ),
