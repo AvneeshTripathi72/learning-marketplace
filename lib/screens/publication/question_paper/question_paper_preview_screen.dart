@@ -278,17 +278,21 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'MODEL ANSWER KEY & MARKING SCHEME',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          const Expanded(
+                            child: Text(
+                              'MODEL ANSWER KEY & MARKING SCHEME',
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                          SwitchListTile(
-                            dense: true,
-                            title: const Text('Show Solutions'),
-                            value: _showAnswers,
-                            onChanged: (val) => setState(() => _showAnswers = val),
+                          Row(
+                            children: [
+                              const Text('Show Solutions', style: TextStyle(fontSize: 12)),
+                              Switch(
+                                value: _showAnswers,
+                                onChanged: (val) => setState(() => _showAnswers = val),
+                              ),
+                            ],
                           ),
                         ],
                       ),
