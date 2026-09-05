@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/api_endpoints.dart';
-import '../../models/user_model.dart';
+import '../../models/video_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/video_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 
@@ -256,6 +257,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider);
+    final submissions = ref.watch(videoSubmissionsProvider);
+    final pendingSubmissionsQueue = submissions.where((v) => v.status == VideoStatus.pending).toList();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -651,7 +654,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             // Video Moderation Queue Section
             const Text('Video Moderation Queue (PRD Section 5.4)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            if (_pendingVideosQueue.isEmpty)
+            if (pendingSubmissionsQueue.isEmpty)
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(16),
@@ -659,7 +662,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 ),
               )
             else
-              ..._pendingVideosQueue.map((item) => Card(
+              ...pendingSubmissionsQueue.map((item) => Card(
                     margin: const EdgeInsets.only(bottom: 10),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -671,12 +674,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               const Icon(Icons.play_circle_fill, color: Colors.red),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                child: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          Text('Channel: ${item['channel']} • Submitted by: ${item['submittedBy']}',
+                          Text('Channel: ${item.channelName} • Category: ${item.category} • Submitted by: ${item.submittedBy}',
                               style: const TextStyle(fontSize: 12, color: Colors.grey)),
                           const SizedBox(height: 10),
                           Row(
@@ -685,7 +688,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
                                 onPressed: () {
-                                  setState(() => _pendingVideosQueue.removeWhere((v) => v['id'] == item['id']));
+                                  ref.read(videoSubmissionsProvider.notifier).rejectVideo(item.id);
                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video submission rejected.')));
                                 },
                                 icon: const Icon(Icons.close, size: 16),
@@ -695,7 +698,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                                 onPressed: () {
-                                  setState(() => _pendingVideosQueue.removeWhere((v) => v['id'] == item['id']));
+                                  ref.read(videoSubmissionsProvider.notifier).approveVideo(item.id);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Video approved & published to Public Hub! 🎉'), backgroundColor: Colors.green),
                                   );

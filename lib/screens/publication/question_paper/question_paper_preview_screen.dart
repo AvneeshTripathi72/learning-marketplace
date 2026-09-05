@@ -351,9 +351,11 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
       ),
       child: Text(
         title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 13,
+          fontSize: 12,
           color: Theme.of(context).colorScheme.primary,
         ),
       ),

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../models/video_model.dart';
+import '../../../providers/video_provider.dart';
 
-class UploadVideoScreen extends StatefulWidget {
+class UploadVideoScreen extends ConsumerStatefulWidget {
   const UploadVideoScreen({super.key});
 
   @override
-  State<UploadVideoScreen> createState() => _UploadVideoScreenState();
+  ConsumerState<UploadVideoScreen> createState() => _UploadVideoScreenState();
 }
 
-class _UploadVideoScreenState extends State<UploadVideoScreen> {
+class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
   final _urlController = TextEditingController();
   final _channelController = TextEditingController();
   final _tagsController = TextEditingController();
@@ -25,6 +29,16 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
     'Technology',
   ];
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _urlController.dispose();
+    _channelController.dispose();
+    _tagsController.dispose();
+    _keywordsController.dispose();
+    super.dispose();
+  }
+
   bool _isValidVideoUrl(String url) {
     final lower = url.toLowerCase();
     return lower.contains('youtube.com') ||
@@ -33,17 +47,53 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
         lower.contains('facebook.com');
   }
 
+  VideoPlatform _detectPlatform(String url) {
+    final lower = url.toLowerCase();
+    if (lower.contains('instagram')) return VideoPlatform.instagram;
+    if (lower.contains('facebook')) return VideoPlatform.facebook;
+    return VideoPlatform.youtube;
+  }
+
   void _submitVideo() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    final url = _urlController.text.trim();
+    final platform = _detectPlatform(url);
+    final title = _titleController.text.trim().isNotEmpty
+        ? _titleController.text.trim()
+        : 'Uploaded Video - $_selectedCategory';
+    final channelName = _channelController.text.trim().isNotEmpty
+        ? _channelController.text.trim()
+        : 'User Channel';
+
+    final newVideo = VideoModel(
+      id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      url: url,
+      platform: platform,
+      channelName: channelName,
+      category: _selectedCategory,
+      thumbnailUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&auto=format&fit=crop',
+      duration: '15:00',
+      viewsCount: 0,
+      status: VideoStatus.pending,
+      submittedBy: 'Public User (You)',
+      submittedDate: DateTime.now(),
+    );
+
+    ref.read(videoSubmissionsProvider.notifier).addVideoSubmission(newVideo);
 
     if (mounted) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Video URL submitted for Admin Moderation!')),
+        const SnackBar(
+          content: Text('Video URL submitted for Admin Moderation!'),
+          backgroundColor: Colors.green,
+        ),
       );
       context.push('/pub/hub/my-uploads');
     }
@@ -62,6 +112,17 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Video Title',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.title),
+                  hintText: 'e.g. Class 10 Physics Motion Chapter',
+                ),
+                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a video title' : null,
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _urlController,
                 decoration: const InputDecoration(
@@ -87,7 +148,7 @@ class _UploadVideoScreenState extends State<UploadVideoScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/video_model.dart';
 import '../../../providers/category_provider.dart';
+import '../../../providers/video_provider.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/category_chip_list.dart';
 import '../../../widgets/video_card.dart';
@@ -108,6 +109,10 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(enabledCategoriesProvider);
+    final submissions = ref.watch(videoSubmissionsProvider);
+    final approvedSubmissions = submissions.where((v) => v.status == VideoStatus.approved).toList();
+    final combinedVideos = [...approvedSubmissions, ..._allPublicVideos];
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -130,7 +135,7 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
           );
 
           // Filter videos
-          final filteredVideos = _allPublicVideos.where((v) {
+          final filteredVideos = combinedVideos.where((v) {
             final matchesCategory = _selectedCategoryId == 'cat_all' ||
                 v.category.toLowerCase() == selectedCategory.name.toLowerCase();
             final matchesSearch = _searchQuery.isEmpty ||
