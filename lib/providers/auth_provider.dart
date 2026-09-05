@@ -10,44 +10,69 @@ final secureStorageProvider = Provider((ref) => SecureStorageService());
 class AuthNotifier extends StateNotifier<UserModel?> {
   final SecureStorageService _storage;
 
-  AuthNotifier(this._storage) : super(null);
-
   final Map<String, Map<String, dynamic>> _registeredUsers = {
-    'student@gmail.com': {
-      'name': 'Rahul Sharma (Student)',
-      'password': 'password',
-      'role': UserRole.public,
+    'admin@system.com': {
+      'name': 'System Administrator',
+      'password': 'Admin@12345',
+      'role': UserRole.admin,
       'publicationId': null,
     },
     'vendor@oxford.com': {
       'name': 'Oxford Publication Vendor',
-      'password': 'password',
+      'password': 'Vendor@12345',
       'role': UserRole.publication,
       'publicationId': 'oxford_pub',
     },
-    'admin@system.com': {
-      'name': 'System Administrator',
-      'password': 'password',
-      'role': UserRole.admin,
+    'student@gmail.com': {
+      'name': 'Rahul Sharma (Student)',
+      'password': 'Student@12345',
+      'role': UserRole.public,
       'publicationId': null,
     },
     'hariom.info07@gmail.com': {
       'name': 'Hariom (Student)',
-      'password': 'password',
+      'password': 'Hariom@12345',
       'role': UserRole.public,
       'publicationId': null,
     },
   };
 
+  AuthNotifier(this._storage) : super(null) {
+    _initPersistentStorage();
+  }
+
+  Future<void> _initPersistentStorage() async {
+    try {
+      final storedUsers = await _storage.getRegisteredUsers();
+      if (storedUsers != null && storedUsers.isNotEmpty) {
+        storedUsers.forEach((key, val) {
+          _registeredUsers[key] = {
+            'name': val['name'] ?? key.split('@').first,
+            'password': val['password'] ?? 'Password@12345',
+            'role': val['role'] == 'admin'
+                ? UserRole.admin
+                : (val['role'] == 'publication' ? UserRole.publication : UserRole.public),
+            'publicationId': val['publicationId'],
+          };
+        });
+      }
+      final savedUser = await _storage.getCurrentUser();
+      if (savedUser != null) {
+        state = savedUser;
+      }
+    } catch (_) {}
+  }
+
   void login(UserModel user, String token) {
     _storage.saveToken(token);
+    _storage.saveCurrentUser(user);
     state = user;
   }
 
   Future<UserModel?> loginWithCredentials(String email, String password) async {
     final cleanEmail = email.trim().toLowerCase();
 
-    // 1. Try real HTTP backend endpoint POST /auth/login
+    // 1. Try production HTTP backend endpoint POST /auth/login
     try {
       final response = await http.post(
         Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.login}'),
@@ -61,7 +86,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         final token = data['token'] ?? 'backend_token_${DateTime.now().millisecondsSinceEpoch}';
 
         UserRole role = UserRole.public;
-        if (userJson['role'] == 'PUBLICATION') {
+        if (userJson['role'] == 'PUBLICATION' || userJson['role'] == 'VENDOR') {
           role = UserRole.publication;
         } else if (userJson['role'] == 'ADMIN') {
           role = UserRole.admin;
@@ -80,11 +105,12 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       }
     } catch (_) {}
 
-    // 2. Check registered accounts map
+    // 2. Check persistent DB registered accounts map with strict password matching
     if (_registeredUsers.containsKey(cleanEmail)) {
       final acc = _registeredUsers[cleanEmail]!;
       final storedPass = acc['password'] as String?;
-      if (storedPass == null || storedPass == password || password.length >= 4) {
+
+      if (storedPass != null && storedPass == password) {
         final user = UserModel(
           id: 'user_${cleanEmail.hashCode}',
           name: acc['name'] as String,
@@ -94,40 +120,10 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         );
         login(user, 'local_token_${DateTime.now().millisecondsSinceEpoch}');
         return user;
+      } else {
+        // Wrong password entered - strict authentication failure!
+        return null;
       }
-    }
-
-    // 3. Fallback for any valid email with 4+ char password: auto-generate user session
-    if (password.length >= 4) {
-      final isPub = cleanEmail.contains('pub') || cleanEmail.contains('oxford') || cleanEmail.contains('vendor');
-      final isAdmin = cleanEmail.contains('admin');
-      final name = cleanEmail.split('@').first;
-      final formattedName = name[0].toUpperCase() + name.substring(1);
-
-      UserRole role = UserRole.public;
-      if (isAdmin) {
-        role = UserRole.admin;
-      } else if (isPub) {
-        role = UserRole.publication;
-      }
-
-      final user = UserModel(
-        id: 'user_${cleanEmail.hashCode}',
-        name: isAdmin ? '$formattedName Admin' : (isPub ? '$formattedName Publication' : '$formattedName (Student)'),
-        email: cleanEmail,
-        role: role,
-        publicationId: isPub ? 'pub_${cleanEmail.split('@').first}' : null,
-      );
-
-      _registeredUsers[cleanEmail] = {
-        'name': user.name,
-        'password': password,
-        'role': user.role,
-        'publicationId': user.publicationId,
-      };
-
-      login(user, 'local_token_${DateTime.now().millisecondsSinceEpoch}');
-      return user;
     }
 
     return null;
@@ -139,13 +135,31 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     required String password,
     required String roleStr,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    UserRole role = UserRole.public;
+    if (roleStr.toUpperCase() == 'PUBLICATION' || roleStr.toUpperCase() == 'VENDOR') {
+      role = UserRole.publication;
+    } else if (roleStr.toUpperCase() == 'ADMIN') {
+      role = UserRole.admin;
+    }
+
+    // Save registered user credentials persistently
+    _registeredUsers[cleanEmail] = {
+      'name': name,
+      'password': password,
+      'role': role.name,
+      'publicationId': role == UserRole.publication ? 'pub_${cleanEmail.split('@').first}' : null,
+    };
+
+    await _storage.saveRegisteredUsers(_registeredUsers);
+
     try {
       final response = await http.post(
         Uri.parse('${ApiEndpoints.baseUrl}/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': name,
-          'email': email,
+          'email': cleanEmail,
           'password': password,
           'role': roleStr,
         }),
@@ -161,8 +175,8 @@ class AuthNotifier extends StateNotifier<UserModel?> {
   Future<void> loginAsPublicationAdmin() async {
     final user = UserModel(
       id: 'pub_admin_1',
-      email: 'admin@publication.com',
-      name: 'Oxford Publication Admin',
+      email: 'vendor@oxford.com',
+      name: 'Oxford Publication Vendor',
       role: UserRole.publication,
       publicationId: 'pub_oxford_1',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
@@ -185,12 +199,14 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
   void updateProfile({String? name, String? email, String? mobile, String? avatarUrl}) {
     if (state != null) {
-      state = state!.copyWith(
+      final updated = state!.copyWith(
         name: name,
         email: email,
         mobile: mobile,
         avatarUrl: avatarUrl,
       );
+      state = updated;
+      _storage.saveCurrentUser(updated);
     }
   }
 
