@@ -4,7 +4,7 @@ services:
     env: node
     rootDir: backend
     plan: free
-    buildCommand: npm install --include=dev && npm run prisma:generate && npm run build
+    buildCommand: npm install --production=false && chmod +x ./node_modules/.bin/* && npx prisma generate && npm run build
     startCommand: npm run prisma:push && npm run start:prod
     envVars:
       - key: DATABASE_URL
