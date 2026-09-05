@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../models/video_model.dart';
 import '../../providers/auth_provider.dart';
@@ -379,9 +380,77 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               children: [
                 _buildKpiCard('Total Publishers', '${_publications.length}', Icons.domain, Colors.blue, isDark),
                 _buildKpiCard('Total eBooks', '148', Icons.menu_book, Colors.purple, isDark),
-                _buildKpiCard('Pending Videos', '${_pendingVideosQueue.length}', Icons.video_library, Colors.orange, isDark),
+                _buildKpiCard('Pending Videos', '${pendingSubmissionsQueue.length}', Icons.video_library, Colors.orange, isDark),
                 _buildKpiCard('Ad Revenue', '₹2,48,500', Icons.monetization_on, Colors.green, isDark),
               ],
+            ),
+            const SizedBox(height: 20),
+
+            // Admin Quick Actions & Upload Hub (Video & eBook Management)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.bolt, color: Colors.amber, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Admin Direct Upload & Content Hub',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Directly upload videos, manage eBook library hierarchy, and inspect submissions.',
+                    style: TextStyle(color: Colors.grey, fontSize: 11),
+                  ),
+                  const Divider(height: 20),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => context.push('/pub/hub/upload'),
+                        icon: const Icon(Icons.cloud_upload, size: 18),
+                        label: const Text('Upload / Submit Video Link'),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () => context.push('/pub/ebook'),
+                        icon: const Icon(Icons.menu_book, size: 18),
+                        label: const Text('Manage & Upload eBooks'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/pub/hub/my-uploads'),
+                        icon: const Icon(Icons.video_collection, size: 18),
+                        label: const Text('All Video Submissions'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/magazines'),
+                        icon: const Icon(Icons.picture_in_picture, size: 18),
+                        label: const Text('Educational Magazines'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 

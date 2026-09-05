@@ -68,6 +68,30 @@ class AppDrawer extends ConsumerWidget {
                 context.go('/admin/dashboard');
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.cloud_upload, color: Colors.redAccent),
+              title: const Text('Upload Video Link'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/pub/hub/upload');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book, color: Colors.blueAccent),
+              title: const Text('Manage eBooks & Catalog'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/pub/ebook');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_collection, color: Colors.indigo),
+              title: const Text('All Video Submissions'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/pub/hub/my-uploads');
+              },
+            ),
             const Divider(),
           ],
 
