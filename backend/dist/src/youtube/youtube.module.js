@@ -10,11 +10,13 @@ exports.YouTubeModule = void 0;
 const common_1 = require("@nestjs/common");
 const youtube_service_1 = require("./youtube.service");
 const youtube_controller_1 = require("./youtube.controller");
+const auth_module_1 = require("../auth/auth.module");
 let YouTubeModule = class YouTubeModule {
 };
 exports.YouTubeModule = YouTubeModule;
 exports.YouTubeModule = YouTubeModule = __decorate([
     (0, common_1.Module)({
+        imports: [auth_module_1.AuthModule],
         controllers: [youtube_controller_1.YouTubeController],
         providers: [youtube_service_1.YouTubeService],
         exports: [youtube_service_1.YouTubeService],

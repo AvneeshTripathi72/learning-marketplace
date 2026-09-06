@@ -10,11 +10,13 @@ exports.DonationModule = void 0;
 const common_1 = require("@nestjs/common");
 const donation_service_1 = require("./donation.service");
 const donation_controller_1 = require("./donation.controller");
+const auth_module_1 = require("../auth/auth.module");
 let DonationModule = class DonationModule {
 };
 exports.DonationModule = DonationModule;
 exports.DonationModule = DonationModule = __decorate([
     (0, common_1.Module)({
+        imports: [auth_module_1.AuthModule],
         controllers: [donation_controller_1.DonationController],
         providers: [donation_service_1.DonationService],
         exports: [donation_service_1.DonationService],

@@ -10,11 +10,13 @@ exports.PublicationModule = void 0;
 const common_1 = require("@nestjs/common");
 const publication_service_1 = require("./publication.service");
 const publication_controller_1 = require("./publication.controller");
+const auth_module_1 = require("../auth/auth.module");
 let PublicationModule = class PublicationModule {
 };
 exports.PublicationModule = PublicationModule;
 exports.PublicationModule = PublicationModule = __decorate([
     (0, common_1.Module)({
+        imports: [auth_module_1.AuthModule],
         controllers: [publication_controller_1.PublicationController],
         providers: [publication_service_1.PublicationService],
         exports: [publication_service_1.PublicationService],

@@ -16,8 +16,8 @@ exports.EBookController = void 0;
 const common_1 = require("@nestjs/common");
 const ebook_service_1 = require("./ebook.service");
 const create_ebook_dto_1 = require("./dto/create-ebook.dto");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
-const roles_guard_1 = require("../auth/guards/roles.guard");
+const permissions_decorator_1 = require("../auth/decorators/permissions.decorator");
+const access_control_guard_1 = require("../auth/guards/access-control.guard");
 const enums_1 = require("../common/enums");
 let EBookController = class EBookController {
     constructor(service) {
@@ -43,8 +43,8 @@ __decorate([
 ], EBookController.prototype, "findBySubject", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(enums_1.UserRole.ADMIN),
+    (0, common_1.UseGuards)(access_control_guard_1.AccessControlGuard),
+    (0, permissions_decorator_1.RequirePermissions)({ module: 'ebook', action: 'CREATE', roles: [enums_1.UserRole.ADMIN] }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_ebook_dto_1.CreateEBookDto]),
@@ -52,8 +52,8 @@ __decorate([
 ], EBookController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id/status'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(enums_1.UserRole.ADMIN),
+    (0, common_1.UseGuards)(access_control_guard_1.AccessControlGuard),
+    (0, permissions_decorator_1.RequirePermissions)({ module: 'ebook', feature: 'toggle-status', action: 'UPDATE', roles: [enums_1.UserRole.ADMIN] }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)('isActive')),
     __metadata("design:type", Function),

@@ -16,9 +16,9 @@ exports.SubscriptionController = void 0;
 const common_1 = require("@nestjs/common");
 const subscription_service_1 = require("./subscription.service");
 const create_subscription_dto_1 = require("./dto/create-subscription.dto");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
-const roles_guard_1 = require("../auth/guards/roles.guard");
 const enums_1 = require("../common/enums");
+const permissions_decorator_1 = require("../auth/decorators/permissions.decorator");
+const access_control_guard_1 = require("../auth/guards/access-control.guard");
 let SubscriptionController = class SubscriptionController {
     constructor(service) {
         this.service = service;
@@ -49,8 +49,8 @@ __decorate([
 ], SubscriptionController.prototype, "getPublicationSubscription", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(enums_1.UserRole.PUBLICATION, enums_1.UserRole.ADMIN),
+    (0, common_1.UseGuards)(access_control_guard_1.AccessControlGuard),
+    (0, permissions_decorator_1.RequirePermissions)({ module: 'subscription', action: 'ALL', roles: [enums_1.UserRole.PUBLICATION, enums_1.UserRole.ADMIN] }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_subscription_dto_1.CreateSubscriptionDto]),

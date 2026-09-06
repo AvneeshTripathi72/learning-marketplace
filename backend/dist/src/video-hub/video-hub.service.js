@@ -18,11 +18,12 @@ let VideoHubService = class VideoHubService {
     }
     async submitVideo(dto, userId) {
         const categoryName = dto.category || 'Educational';
-        let { data: category } = await this.supabase.client
+        let { data: categories } = await this.supabase.client
             .from('Category')
             .select('*')
             .ilike('name', categoryName)
-            .single();
+            .limit(1);
+        let category = categories && categories.length > 0 ? categories[0] : null;
         if (!category) {
             const { data: newCategory, error } = await this.supabase.client
                 .from('Category')
@@ -33,27 +34,41 @@ let VideoHubService = class VideoHubService {
                 throw new common_1.InternalServerErrorException(error.message);
             category = newCategory;
         }
-        let { data: user } = await this.supabase.client
-            .from('User')
-            .select('*')
-            .or(`id.eq.${userId},email.eq.hariom.info07@gmail.com`)
-            .limit(1)
-            .single();
-        if (!user) {
-            const { data: firstUser } = await this.supabase.client
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+        let user = null;
+        if (isUuid) {
+            const { data: found } = await this.supabase.client
                 .from('User')
                 .select('*')
-                .limit(1)
-                .single();
-            user = firstUser;
+                .eq('id', userId)
+                .limit(1);
+            if (found && found.length > 0)
+                user = found[0];
+        }
+        if (!user) {
+            const { data: foundByEmail } = await this.supabase.client
+                .from('User')
+                .select('*')
+                .eq('email', 'student@gmail.com')
+                .limit(1);
+            if (foundByEmail && foundByEmail.length > 0)
+                user = foundByEmail[0];
+        }
+        if (!user) {
+            const { data: anyUser } = await this.supabase.client
+                .from('User')
+                .select('*')
+                .limit(1);
+            if (anyUser && anyUser.length > 0)
+                user = anyUser[0];
         }
         if (!user) {
             const { data: newUser, error } = await this.supabase.client
                 .from('User')
                 .insert({
                 name: 'Public Student User',
-                email: 'public.student@ebook.app',
-                password: 'Password123!',
+                email: 'student@gmail.com',
+                password: '$2a$10$e8pA8vK/hT61Xp0pL8g5uO3.0YxXW.mH9a0B2C3D4E5F6G7H8I9J',
                 role: 'PUBLIC',
             })
                 .select()

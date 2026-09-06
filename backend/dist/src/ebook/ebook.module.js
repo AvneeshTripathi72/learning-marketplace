@@ -10,11 +10,13 @@ exports.EBookModule = void 0;
 const common_1 = require("@nestjs/common");
 const ebook_service_1 = require("./ebook.service");
 const ebook_controller_1 = require("./ebook.controller");
+const auth_module_1 = require("../auth/auth.module");
 let EBookModule = class EBookModule {
 };
 exports.EBookModule = EBookModule;
 exports.EBookModule = EBookModule = __decorate([
     (0, common_1.Module)({
+        imports: [auth_module_1.AuthModule],
         controllers: [ebook_controller_1.EBookController],
         providers: [ebook_service_1.EBookService],
         exports: [ebook_service_1.EBookService],

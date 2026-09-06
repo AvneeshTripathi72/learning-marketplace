@@ -12,9 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsController = void 0;
 const common_1 = require("@nestjs/common");
 const reports_service_1 = require("./reports.service");
-const roles_decorator_1 = require("../auth/decorators/roles.decorator");
-const roles_guard_1 = require("../auth/guards/roles.guard");
 const enums_1 = require("../common/enums");
+const permissions_decorator_1 = require("../auth/decorators/permissions.decorator");
+const access_control_guard_1 = require("../auth/guards/access-control.guard");
 let ReportsController = class ReportsController {
     constructor(service) {
         this.service = service;
@@ -35,8 +35,8 @@ __decorate([
 ], ReportsController.prototype, "getLeaderboard", null);
 __decorate([
     (0, common_1.Get)('revenue'),
-    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(enums_1.UserRole.ADMIN),
+    (0, common_1.UseGuards)(access_control_guard_1.AccessControlGuard),
+    (0, permissions_decorator_1.RequirePermissions)({ module: 'reports', action: 'ALL', roles: [enums_1.UserRole.ADMIN] }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
