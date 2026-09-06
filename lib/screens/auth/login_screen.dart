@@ -1501,7 +1501,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           setState(() => _isLoading = false);
                         }
                       },
-                    );
+                    ),
                   const SizedBox(height: 28),
 
                   // Footer Toggle Navigation Text Link
