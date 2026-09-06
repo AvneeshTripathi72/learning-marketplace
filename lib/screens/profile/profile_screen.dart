@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,20 +20,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _biometricEnabled = false;
 
   final List<String> _avatars = [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
-    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200',
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+    'https://ui-avatars.com/api/?name=Hariom+Student&background=0000D1&color=fff&size=200&bold=true',
+    'https://ui-avatars.com/api/?name=Academic+Pro&background=FF2D55&color=fff&size=200&bold=true',
+    'https://ui-avatars.com/api/?name=Scholar+Star&background=00A86B&color=fff&size=200&bold=true',
+    'https://ui-avatars.com/api/?name=Master+Mind&background=7C4DFF&color=fff&size=200&bold=true',
+    'https://ui-avatars.com/api/?name=Top+Ranker&background=FF9100&color=fff&size=200&bold=true',
+    'https://ui-avatars.com/api/?name=Oxford+User&background=00E5FF&color=fff&size=200&bold=true',
   ];
 
   // ---------------------------------------------------------------------------
-  // BULLETPROOF AVATAR WIDGET (Never shows blank white circle)
+  // BULLETPROOF AVATAR WIDGET (Supports Base64 uploads & HTTP network images)
   // ---------------------------------------------------------------------------
   Widget _buildUserAvatar(UserModel? user, {double radius = 34}) {
-    final initialLetter = (user != null && user.name.isNotEmpty) ? user.name[0].toUpperCase() : 'U';
+    final initialLetter = (user != null && user.name.isNotEmpty) ? user.name[0].toUpperCase() : 'H';
     final avatarUrl = user?.avatarUrl;
+
+    Widget avatarChild;
+
+    if (avatarUrl != null && (avatarUrl.startsWith('data:image') || avatarUrl.startsWith('data:'))) {
+      try {
+        final base64Str = avatarUrl.contains(',') ? avatarUrl.split(',').last : avatarUrl;
+        final bytes = base64Decode(base64Str);
+        avatarChild = Image.memory(
+          bytes,
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildFallbackInitialText(initialLetter, radius),
+        );
+      } catch (e) {
+        avatarChild = _buildFallbackInitialText(initialLetter, radius);
+      }
+    } else if (avatarUrl != null && avatarUrl.startsWith('http')) {
+      avatarChild = Image.network(
+        avatarUrl,
+        width: radius * 2,
+        height: radius * 2,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackInitialText(initialLetter, radius),
+      );
+    } else {
+      avatarChild = _buildFallbackInitialText(initialLetter, radius);
+    }
 
     return Container(
       padding: const EdgeInsets.all(2.5),
@@ -47,32 +76,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           height: radius * 2,
           color: const Color(0xFF0000D1),
           alignment: Alignment.center,
-          child: (avatarUrl != null && avatarUrl.startsWith('http'))
-              ? Image.network(
-                  avatarUrl,
-                  width: radius * 2,
-                  height: radius * 2,
-                  fit: BoxFit.cover,
-                  errorBuilder: (ctx, err, stack) {
-                    return Text(
-                      initialLetter,
-                      style: TextStyle(
-                        fontSize: radius * 0.75,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    );
-                  },
-                )
-              : Text(
-                  initialLetter,
-                  style: TextStyle(
-                    fontSize: radius * 0.75,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+          child: avatarChild,
         ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackInitialText(String initialLetter, double radius) {
+    return Text(
+      initialLetter,
+      style: TextStyle(
+        fontSize: radius * 0.75,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
       ),
     );
   }

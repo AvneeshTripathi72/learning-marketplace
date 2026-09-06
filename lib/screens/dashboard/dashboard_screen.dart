@@ -474,7 +474,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 230,
+              height: 295,
               child: recommendedAsync.when(
                 data: (videos) => ListView.builder(
                   scrollDirection: Axis.horizontal,

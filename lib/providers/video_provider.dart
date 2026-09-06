@@ -71,7 +71,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
 
           return VideoModel(
             id: item['id'],
-            title: item['title'] ?? 'Uploaded Video Link',
+            title: item['title'] ?? item['channelName'] ?? 'Uploaded Video Link',
             url: item['url'] ?? '',
             platform: VideoPlatform.youtube,
             channelName: item['channelName'] ?? 'User Channel',
@@ -85,11 +85,11 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
           );
         }).toList();
 
-        // Merge cloud videos with local state
-        final existingIds = state.map((e) => e.id).toSet();
-        final newItems = cloudVideos.where((cv) => !existingIds.contains(cv.id)).toList();
+        // Merge cloud videos with local state while avoiding duplicates
+        final cloudIds = cloudVideos.map((e) => e.id).toSet();
+        final localOnly = state.where((v) => !cloudIds.contains(v.id)).toList();
 
-        state = [...newItems, ...state];
+        state = [...cloudVideos, ...localOnly];
       }
     } catch (_) {}
   }

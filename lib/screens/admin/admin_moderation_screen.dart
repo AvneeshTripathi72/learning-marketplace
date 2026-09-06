@@ -4,6 +4,7 @@ import '../../models/video_model.dart';
 import '../../providers/ebook_provider.dart';
 import '../../providers/video_provider.dart';
 import '../publication/ebook/pdf_viewer_screen.dart';
+import '../shared/video_player/video_player_screen.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 
@@ -195,7 +196,6 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
               itemBuilder: (context, index) {
                 final video = pendingVideos[index];
                 return Container(
-                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -208,110 +208,161 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VideoPlayerScreen(video: video),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              video.thumbnailUrl,
-                              width: 100,
-                              height: 65,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                width: 100,
-                                height: 65,
-                                color: Colors.grey.shade800,
-                                child: const Icon(Icons.movie, color: Colors.white70),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  video.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Channel: ${video.channelName} • Submitter: ${video.submittedBy}',
-                                  style: const TextStyle(color: Colors.grey, fontSize: 11),
-                                ),
-                                const SizedBox(height: 2),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    'PENDING APPROVAL',
-                                    style: TextStyle(
-                                      color: Colors.orange.shade800,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      video.thumbnailUrl,
+                                      width: 100,
+                                      height: 65,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        width: 100,
+                                        height: 65,
+                                        color: Colors.grey.shade800,
+                                        child: const Icon(Icons.movie, color: Colors.white70),
+                                      ),
                                     ),
                                   ),
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      video.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Channel: ${video.channelName} • Submitter: ${video.submittedBy}',
+                                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'PENDING APPROVAL',
+                                        style: TextStyle(
+                                          color: Colors.orange.shade800,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Watch / Preview Video Button
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0000D1),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => VideoPlayerScreen(video: video),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.play_circle_fill, size: 16),
+                                label: const Text('Preview Video', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                              ),
+                              Row(
+                                children: [
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                      side: const BorderSide(color: Colors.red),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () {
+                                      ref.read(videoSubmissionsProvider.notifier).rejectVideo(video.id);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Video submission rejected.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.close, size: 14),
+                                    label: const Text('Reject', style: TextStyle(fontSize: 11)),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () {
+                                      ref.read(videoSubmissionsProvider.notifier).approveVideo(video.id);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('"${video.title}" Approved! Published to Video Hub.'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.check, size: 14),
+                                    label: const Text('Approve', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const Divider(height: 16),
-                      Wrap(
-                        alignment: WrapAlignment.end,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                              side: const BorderSide(color: Colors.red),
-                            ),
-                            onPressed: () {
-                              ref.read(videoSubmissionsProvider.notifier).rejectVideo(video.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Video submission rejected.'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.close, size: 16),
-                            label: const Text('Reject'),
-                          ),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () {
-                              ref.read(videoSubmissionsProvider.notifier).approveVideo(video.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('"${video.title}" Approved! Published to Video Hub.'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.check, size: 16),
-                            label: const Text('Approve Video'),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 );
               },

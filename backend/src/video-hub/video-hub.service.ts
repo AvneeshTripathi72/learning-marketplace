@@ -24,6 +24,16 @@ export class VideoHubService {
     if (!user) {
       user = await this.prisma.user.findFirst();
     }
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          name: 'Public Student User',
+          email: 'public.student@ebook.app',
+          password: 'Password123!',
+          role: 'PUBLIC',
+        },
+      });
+    }
 
     let platform = 'YOUTUBE';
     const urlLower = (dto.url || '').toLowerCase();
@@ -36,7 +46,7 @@ export class VideoHubService {
         platform: platform as any,
         channelName: dto.channelName || 'User Channel',
         categoryId: category.id,
-        submittedById: user ? user.id : 'user_demo',
+        submittedById: user.id,
         status: 'PENDING',
       },
     });

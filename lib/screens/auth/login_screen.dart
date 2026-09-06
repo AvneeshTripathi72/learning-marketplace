@@ -16,7 +16,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final PageController _pageController;
-  int _currentStep = 7;
+  int _currentStep = 0;
 
   // Selected Onboarding Options
   String? _selectedGoal;
@@ -39,7 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 7);
+    _pageController = PageController(initialPage: 0);
   }
 
   @override
