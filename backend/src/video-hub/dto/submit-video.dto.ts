@@ -1,18 +1,26 @@
-import { IsEnum, IsNotEmpty, IsString, IsUrl } from 'class-validator';
-import { VideoPlatform } from '@prisma/client';
+import { IsOptional, IsString } from 'class-validator';
 
 export class SubmitVideoDto {
-  @IsUrl()
+  @IsString()
   url: string;
 
-  @IsEnum(VideoPlatform)
-  platform: VideoPlatform;
-
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  channelName: string;
+  title?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  categoryId: string;
+  platform?: any;
+
+  @IsOptional()
+  @IsString()
+  channelName?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
 }

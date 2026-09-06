@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import '../../../core/constants/api_endpoints.dart';
 import '../../../models/video_model.dart';
 import '../../../providers/video_provider.dart';
 
@@ -59,8 +62,6 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
 
     setState(() => _isSubmitting = true);
 
-    await Future.delayed(const Duration(milliseconds: 500));
-
     final url = _urlController.text.trim();
     final platform = _detectPlatform(url);
     final title = _titleController.text.trim().isNotEmpty
@@ -85,13 +86,30 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
       submittedDate: DateTime.now(),
     );
 
+    // 1. Post to Render Cloud Database API
+    try {
+      await http.post(
+        Uri.parse('${ApiEndpoints.baseUrl}/video-hub/submit'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'url': url,
+          'title': title,
+          'platform': platform.name.toUpperCase(),
+          'channelName': channelName,
+          'category': _selectedCategory,
+        }),
+      ).timeout(const Duration(seconds: 10));
+    } catch (_) {}
+
+    // 2. Add to Riverpod Provider & refresh Cloud Queue
     ref.read(videoSubmissionsProvider.notifier).addVideoSubmission(newVideo);
+    await ref.read(videoSubmissionsProvider.notifier).fetchCloudQueue();
 
     if (mounted) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Video URL submitted for Admin Moderation!'),
+          content: Text('Video URL submitted to Cloud DB for Admin Moderation! 🎉'),
           backgroundColor: Colors.green,
         ),
       );

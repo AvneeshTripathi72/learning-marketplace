@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/constants/api_endpoints.dart';
 import '../models/video_model.dart';
 
 class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
@@ -46,13 +49,56 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
             submittedBy: 'Vendor (Oxford)',
             submittedDate: DateTime.now().subtract(const Duration(hours: 5)),
           ),
-        ]);
+        ]) {
+    fetchCloudQueue();
+  }
+
+  Future<void> fetchCloudQueue() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/video-hub/admin/queue'),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List listData = jsonDecode(response.body);
+        final cloudVideos = listData.map((item) {
+          final submittedUser = item['submittedBy'];
+          final submitterName = submittedUser != null ? (submittedUser['name'] ?? submittedUser['email']) : 'Mobile User';
+
+          VideoStatus vStatus = VideoStatus.pending;
+          if (item['status'] == 'APPROVED') vStatus = VideoStatus.approved;
+          if (item['status'] == 'REJECTED') vStatus = VideoStatus.rejected;
+
+          return VideoModel(
+            id: item['id'],
+            title: item['title'] ?? 'Uploaded Video Link',
+            url: item['url'] ?? '',
+            platform: VideoPlatform.youtube,
+            channelName: item['channelName'] ?? 'User Channel',
+            category: item['category'] != null ? (item['category']['name'] ?? 'Educational') : 'Educational',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&auto=format&fit=crop',
+            duration: '15:00',
+            viewsCount: 0,
+            status: vStatus,
+            submittedBy: submitterName,
+            submittedDate: item['submittedAt'] != null ? DateTime.parse(item['submittedAt']) : DateTime.now(),
+          );
+        }).toList();
+
+        // Merge cloud videos with local state
+        final existingIds = state.map((e) => e.id).toSet();
+        final newItems = cloudVideos.where((cv) => !existingIds.contains(cv.id)).toList();
+
+        state = [...newItems, ...state];
+      }
+    } catch (_) {}
+  }
 
   void addVideoSubmission(VideoModel video) {
     state = [video, ...state];
   }
 
-  void approveVideo(String videoId) {
+  Future<void> approveVideo(String videoId) async {
     state = state.map((v) {
       if (v.id == videoId) {
         return VideoModel(
@@ -72,9 +118,17 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
       }
       return v;
     }).toList();
+
+    try {
+      await http.patch(
+        Uri.parse('${ApiEndpoints.baseUrl}/video-hub/admin/moderate/$videoId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'status': 'APPROVED'}),
+      ).timeout(const Duration(seconds: 8));
+    } catch (_) {}
   }
 
-  void rejectVideo(String videoId) {
+  Future<void> rejectVideo(String videoId) async {
     state = state.map((v) {
       if (v.id == videoId) {
         return VideoModel(
@@ -94,6 +148,14 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
       }
       return v;
     }).toList();
+
+    try {
+      await http.patch(
+        Uri.parse('${ApiEndpoints.baseUrl}/video-hub/admin/moderate/$videoId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'status': 'REJECTED'}),
+      ).timeout(const Duration(seconds: 8));
+    } catch (_) {}
   }
 }
 

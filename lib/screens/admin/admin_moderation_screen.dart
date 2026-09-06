@@ -16,6 +16,14 @@ class AdminModerationScreen extends ConsumerStatefulWidget {
 
 class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(videoSubmissionsProvider.notifier).fetchCloudQueue();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final videoSubmissions = ref.watch(videoSubmissionsProvider);
     final pendingVideos = videoSubmissions.where((v) => v.status == VideoStatus.pending).toList();
@@ -43,6 +51,24 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Sync Cloud Database Queue',
+              onPressed: () async {
+                await ref.read(videoSubmissionsProvider.notifier).fetchCloudQueue();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('🔄 Cloud DB Queue synced! Latest submissions loaded.'),
+                      backgroundColor: Colors.blue,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
           bottom: TabBar(
             indicatorColor: Colors.amber,
             indicatorWeight: 3,
