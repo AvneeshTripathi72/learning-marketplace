@@ -86,9 +86,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      body: SwipeNavigationWrapper(
+        currentIndex: 0,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Greeting Header Card
@@ -342,7 +344,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 2.1,
+              childAspectRatio: 1.65,
               children: [
                 _buildMenuTile(
                   context,
@@ -517,8 +519,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMetricCard(
     BuildContext context, {

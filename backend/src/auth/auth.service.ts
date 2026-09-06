@@ -12,17 +12,25 @@ export class AuthService {
   constructor(private prisma: PrismaService) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (existing) throw new BadRequestException('User email already registered');
+    const cleanEmail = dto.email.trim().toLowerCase();
+    const existing = await this.prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (existing) throw new BadRequestException('User email already registered. Please login instead.');
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+    
+    let pubId: string | null = null;
+    if (dto.publicationId) {
+      const pubExists = await this.prisma.publication.findUnique({ where: { id: dto.publicationId } });
+      if (pubExists) pubId = dto.publicationId;
+    }
+
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
-        email: dto.email,
+        email: cleanEmail,
         password: hashedPassword,
         role: dto.role,
-        publicationId: dto.publicationId,
+        publicationId: pubId,
       },
     });
 

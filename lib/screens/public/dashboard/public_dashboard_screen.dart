@@ -69,7 +69,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -164,7 +164,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 2.1,
+              childAspectRatio: 1.65,
               children: [
                 _buildMenuTile(
                   context,

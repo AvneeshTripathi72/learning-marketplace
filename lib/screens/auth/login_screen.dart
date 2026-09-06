@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/notification_service.dart';
 import '../../widgets/animated_card.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -72,96 +74,102 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _loginAsRole(UserRole role) async {
-    final auth = ref.read(authProvider.notifier);
-    if (role == UserRole.publication) {
-      await auth.loginWithCredentials('vendor@oxford.com', 'Vendor@12345');
-      if (mounted) context.go('/dashboard');
-    } else {
-      await auth.loginWithCredentials('student@gmail.com', 'Student@12345');
-      if (mounted) context.go('/public/dashboard');
+  bool _isValidEmail(String email) {
+    final clean = email.trim().toLowerCase();
+    if (clean.isEmpty) return false;
+    if (clean.endsWith('@gmail.co') || clean.endsWith('@yahoo.co') || clean.endsWith('@outlook.co')) {
+      return false;
     }
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$',
+    );
+    return emailRegex.hasMatch(clean);
   }
 
-  void _loginWithGoogle() async {
-    final role = _selectedRole == 'publisher' ? UserRole.publication : UserRole.public;
-    _loginAsRole(role);
+  bool _isValidPassword(String password) {
+    final hasUppercase = RegExp(r'[A-Z]').hasMatch(password);
+    final hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\+=/\\]').hasMatch(password);
+    return password.length >= 6 && hasUppercase && hasSpecialChar;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = AppTheme.lightTheme;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top Header Bar with Back Button, Progress Bar, Theme Switcher & Close
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  // Back Arrow Button
-                  SizedBox(
-                    width: 40,
-                    child: _currentStep > 0
-                        ? IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                            onPressed: _prevStep,
-                            tooltip: 'Back',
-                          )
-                        : const SizedBox.shrink(),
-                  ),
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Top Header Bar with Back Button, Progress Bar, Theme Switcher & Close
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    // Back Arrow Button
+                    SizedBox(
+                      width: 40,
+                      child: _currentStep > 0
+                          ? IconButton(
+                              icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                              onPressed: _prevStep,
+                              tooltip: 'Back',
+                            )
+                          : const SizedBox.shrink(),
+                    ),
 
-                  // Animated Progress Bar (Steps 1 to 7)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: _currentStep == 0 ? 0.05 : (_currentStep / 7.0),
-                          minHeight: 6,
-                          backgroundColor: theme.dividerColor.withValues(alpha: 0.2),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.primary,
+                    // Animated Progress Bar (Steps 1 to 7)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: _currentStep == 0 ? 0.05 : (_currentStep / 7.0),
+                            minHeight: 6,
+                            backgroundColor: theme.dividerColor.withValues(alpha: 0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Close / Skip to Login Hub
-                  if (_currentStep < 7)
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 22),
-                      tooltip: 'Skip Onboarding',
-                      onPressed: () => _goToStep(7),
-                    ),
-                ],
+                    // Close / Skip to Login Hub
+                    if (_currentStep < 7)
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 22),
+                        tooltip: 'Skip Onboarding',
+                        onPressed: () => _goToStep(7),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1),
+              const Divider(height: 1),
 
-            // PageView carrying Onboarding Steps 0 through 7
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(), // Managed via Continue / Back buttons
-                onPageChanged: (page) => setState(() => _currentStep = page),
-                children: [
-                  _buildStep0Hero(theme),
-                  _buildStep1Goals(theme),
-                  _buildStep2Reach(theme),
-                  _buildStep3Role(theme),
-                  _buildStep4Routine(theme),
-                  _buildStep5Notifications(theme),
-                  _buildStep6Testimonial(theme),
-                  _buildStep7LoginHub(theme),
-                ],
+              // PageView carrying Onboarding Steps 0 through 7
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(), // Managed via Continue / Back buttons
+                  onPageChanged: (page) => setState(() => _currentStep = page),
+                  children: [
+                    _buildStep0Hero(theme),
+                    _buildStep1Goals(theme),
+                    _buildStep2Reach(theme),
+                    _buildStep3Role(theme),
+                    _buildStep4Routine(theme),
+                    _buildStep5Notifications(theme),
+                    _buildStep6Testimonial(theme),
+                    _buildStep7LoginHub(theme),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -584,7 +592,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.78,
+                  childAspectRatio: 0.88,
                 ),
                 itemCount: roles.length,
                 itemBuilder: (context, index) {
@@ -844,7 +852,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Container(height: 30, width: 1, color: theme.dividerColor),
                         Expanded(
                           child: TextButton(
-                            onPressed: () {
+                            onPressed: () async {
+                              await NotificationService().requestPermission();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.notifications_active, color: Colors.white, size: 20),
+                                        SizedBox(width: 8),
+                                        Text('Notifications allowed! 🔔', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.blueAccent,
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
                               _nextStep();
                             },
                             child: const Text(
@@ -1393,15 +1417,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             });
                             return;
                           }
-                          if (password != confirmPassword) {
+                          if (!_isValidEmail(email)) {
                             setState(() {
-                              _errorMessage = 'Passwords do not match. Please re-enter matching passwords.';
+                              _errorMessage = 'Invalid email address. Enter a valid email (e.g. user@gmail.com).';
                             });
                             return;
                           }
-                          if (password.length < 6) {
+                          if (!_isValidPassword(password)) {
                             setState(() {
-                              _errorMessage = 'Password must be at least 6 characters long.';
+                              _errorMessage = 'Password must be at least 6 characters, with at least 1 Uppercase letter (A-Z) and 1 Special character (e.g. @, #, \$, !).';
+                            });
+                            return;
+                          }
+                          if (password != confirmPassword) {
+                            setState(() {
+                              _errorMessage = 'Passwords do not match. Please re-enter matching passwords.';
                             });
                             return;
                           }
@@ -1412,56 +1442,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             });
                             return;
                           }
+                          if (!_isValidEmail(email)) {
+                            setState(() {
+                              _errorMessage = 'Please enter a valid email address.';
+                            });
+                            return;
+                          }
                         }
 
                         final auth = ref.read(authProvider.notifier);
                         UserModel? user;
 
                         if (_isSignUpMode) {
-                          await auth.registerAccountOnly(
+                          final regResult = await auth.registerAccountOnly(
                             name: name,
                             email: email,
                             password: password,
                             roleStr: _selectedRegisterRole,
                           );
                           if (mounted) {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => AlertDialog(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                title: const Row(
-                                  children: [
-                                    Icon(Icons.check_circle, color: Colors.green, size: 28),
-                                    SizedBox(width: 10),
-                                    Text('Account Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                            if (regResult['success'] == true) {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => AlertDialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  title: const Row(
+                                    children: [
+                                      Icon(Icons.check_circle, color: Colors.green, size: 28),
+                                      SizedBox(width: 10),
+                                      Text('Account Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                    ],
+                                  ),
+                                  content: Text(
+                                    'Your account ($email) has been created & synced successfully!\n\nPlease click "Sign In Now" to log into your account.',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  actions: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: theme.colorScheme.primary,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                        setState(() {
+                                          _isSignUpMode = false;
+                                          _errorMessage = null;
+                                          _passwordController.clear();
+                                          _confirmPasswordController.clear();
+                                        });
+                                      },
+                                      child: const Text('Sign In Now'),
+                                    ),
                                   ],
                                 ),
-                                content: Text(
-                                  'Your account ($email) has been created successfully!\n\nPlease click "Sign In Now" to log into your account.',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                actions: [
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: theme.colorScheme.primary,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      setState(() {
-                                        _isSignUpMode = false;
-                                        _errorMessage = null;
-                                        _passwordController.clear();
-                                        _confirmPasswordController.clear();
-                                      });
-                                    },
-                                    child: const Text('Sign In Now'),
-                                  ),
-                                ],
-                              ),
-                            );
+                              );
+                            } else {
+                              setState(() {
+                                _errorMessage = regResult['message'] ?? 'Registration failed. Please try again.';
+                              });
+                            }
                           }
                         } else {
                           user = await auth.loginWithCredentials(email, password);
@@ -1489,62 +1531,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Divider (Or / OR)
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.6))),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                        child: Text(
-                          'Or',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.6))),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Continue with Google Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                        side: BorderSide(
-                          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E5EE),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: _loginWithGoogle,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.g_mobiledata, size: 28, color: Colors.redAccent),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Continue with Google',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: theme.textTheme.bodyLarge?.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
                   const SizedBox(height: 28),
 
                   // Footer Toggle Navigation Text Link

@@ -151,7 +151,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     return null;
   }
 
-  Future<bool> registerAccountOnly({
+  Future<Map<String, dynamic>> registerAccountOnly({
     required String name,
     required String email,
     required String password,
@@ -165,15 +165,53 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       role = UserRole.admin;
     }
 
-    // Save registered user credentials in memory map
-    _registeredUsers[cleanEmail] = {
-      'name': name,
-      'password': password,
-      'role': role,
-      'publicationId': role == UserRole.publication ? 'pub_${cleanEmail.split('@').first}' : null,
-    };
+    final reqRoleStr = role == UserRole.publication ? 'PUBLICATION' : 'PUBLIC';
 
-    // Serialize map to JSON format for disk storage
+    // 1. Send registration request to Cloud Backend Database
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiEndpoints.baseUrl}/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': name,
+          'email': cleanEmail,
+          'password': password,
+          'role': reqRoleStr,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Saved in Render Cloud DB! Also update local map
+        _registeredUsers[cleanEmail] = {
+          'name': name,
+          'password': password,
+          'role': role,
+        };
+        await _saveUsersToStorage();
+        return {'success': true};
+      } else {
+        try {
+          final data = jsonDecode(response.body);
+          final msg = data['message'];
+          final errorText = msg is List ? msg.join(', ') : (msg ?? 'Registration failed on server.');
+          return {'success': false, 'message': errorText.toString()};
+        } catch (_) {
+          return {'success': false, 'message': 'Registration failed on server (${response.statusCode}).'};
+        }
+      }
+    } catch (e) {
+      // Network/offline fallback: save to local device storage
+      _registeredUsers[cleanEmail] = {
+        'name': name,
+        'password': password,
+        'role': role,
+      };
+      await _saveUsersToStorage();
+      return {'success': true};
+    }
+  }
+
+  Future<void> _saveUsersToStorage() async {
     final serializableUsers = <String, Map<String, dynamic>>{};
     _registeredUsers.forEach((key, value) {
       serializableUsers[key] = {
@@ -183,26 +221,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         'publicationId': value['publicationId'],
       };
     });
-
     await _storage.saveRegisteredUsers(serializableUsers);
-
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiEndpoints.baseUrl}/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': name,
-          'email': cleanEmail,
-          'password': password,
-          'role': roleStr,
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      }
-    } catch (_) {}
-    return true;
   }
 
   void updateProfile({String? name, String? email, String? mobile, String? avatarUrl}) {

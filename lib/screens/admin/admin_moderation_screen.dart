@@ -244,8 +244,10 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                         ],
                       ),
                       const Divider(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
@@ -264,7 +266,6 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                             icon: const Icon(Icons.close, size: 16),
                             label: const Text('Reject'),
                           ),
-                          const SizedBox(width: 10),
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
@@ -527,8 +528,10 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                         ],
                       ),
                       const Divider(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
@@ -547,7 +550,6 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                             icon: const Icon(Icons.close, size: 16),
                             label: const Text('Reject'),
                           ),
-                          const SizedBox(width: 10),
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
