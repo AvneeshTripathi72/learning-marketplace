@@ -11,6 +11,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -50,6 +51,8 @@ flutter {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    
     // Ensure AndroidX and Google Play Services are compatible (as per fix for checkReleaseAarMetadata)
     implementation("androidx.core:core:1.12.0")
     implementation("com.google.android.gms:play-services-base:18.2.0")
