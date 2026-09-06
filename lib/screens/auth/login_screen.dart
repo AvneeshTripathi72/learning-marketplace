@@ -1496,7 +1496,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             }
                           }
                         }
-                        }
 
                         if (mounted) {
                           setState(() => _isLoading = false);
