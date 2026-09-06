@@ -93,6 +93,14 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.picture_as_pdf, color: Colors.deepOrange),
+              title: const Text('Upload PDF eBook'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/pub/ebook');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.menu_book, color: Colors.blueAccent),
               title: const Text('Manage eBooks & Catalog'),
               onTap: () {
