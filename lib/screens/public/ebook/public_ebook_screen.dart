@@ -465,9 +465,10 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                                           ),
                                         ],
                                       ),
-                                    );
-                                  },
-                                ),
+                                    ),
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   )
