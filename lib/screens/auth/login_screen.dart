@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/animated_card.dart';
 import '../../widgets/core/premium_textfield.dart';
@@ -100,60 +101,72 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppTheme.lightTheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Theme(
-      data: theme,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Top Header Bar with Back Button, Progress Bar, Theme Switcher & Close
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    // Back Arrow Button
-                    SizedBox(
-                      width: 40,
-                      child: _currentStep > 0
-                          ? IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                              onPressed: _prevStep,
-                              tooltip: 'Back',
-                            )
-                          : const SizedBox.shrink(),
-                    ),
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top Header Bar with Back Button, Progress Bar, Theme Switcher & Close
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  // Back Arrow Button
+                  SizedBox(
+                    width: 40,
+                    child: _currentStep > 0
+                        ? IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                            onPressed: _prevStep,
+                            tooltip: 'Back',
+                          )
+                        : const SizedBox.shrink(),
+                  ),
 
-                    // Animated Progress Bar (Steps 1 to 7)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: _currentStep == 0 ? 0.05 : (_currentStep / 7.0),
-                            minHeight: 6,
-                            backgroundColor: theme.dividerColor.withValues(alpha: 0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.primary,
-                            ),
+                  // Animated Progress Bar (Steps 1 to 7)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: _currentStep == 0 ? 0.05 : (_currentStep / 7.0),
+                          minHeight: 6,
+                          backgroundColor: theme.dividerColor.withValues(alpha: 0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.primary,
                           ),
                         ),
                       ),
                     ),
+                  ),
 
-                    // Close / Skip to Login Hub
-                    if (_currentStep < 7)
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 22),
-                        tooltip: 'Skip Onboarding',
-                        onPressed: () => _goToStep(7),
-                      ),
-                  ],
-                ),
+                  // Theme Mode Switcher
+                  IconButton(
+                    icon: Icon(
+                      isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                      size: 20,
+                      color: isDark ? Colors.amber : Colors.orange,
+                    ),
+                    tooltip: 'Toggle Dark/Light Mode',
+                    onPressed: () {
+                      ref.read(themeModeProvider.notifier).toggleTheme(isDark);
+                    },
+                  ),
+
+                  // Close / Skip to Login Hub
+                  if (_currentStep < 7)
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 22),
+                      tooltip: 'Skip Onboarding',
+                      onPressed: () => _goToStep(7),
+                    ),
+                ],
               ),
+            ),
               const Divider(height: 1),
 
               // PageView carrying Onboarding Steps 0 through 7
