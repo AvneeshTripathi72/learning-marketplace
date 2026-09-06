@@ -525,7 +525,7 @@ class _AdminVideoManagementScreenState extends ConsumerState<AdminVideoManagemen
                   Wrap(
                     spacing: 12,
                     runSpacing: 10,
-                    crossAlignment: WrapCrossAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       DropdownButton<String>(
                         value: _statusFilter,
