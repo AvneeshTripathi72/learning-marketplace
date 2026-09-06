@@ -1569,6 +1569,68 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // -----------------------------------------------------------
+                  // DEV TESTING BYPASS SECTION
+                  // -----------------------------------------------------------
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      '🛠️ QUICK ACCESS BYPASS (TESTING)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        color: theme.textTheme.bodySmall?.color,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+                          foregroundColor: Colors.redAccent,
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          _emailController.text = 'avanishadmin@gmail.com';
+                          _passwordController.text = 'Avneesh@123';
+                        },
+                        icon: const Icon(Icons.admin_panel_settings, size: 16),
+                        label: const Text('Admin'),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
+                          foregroundColor: Colors.blueAccent,
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          _emailController.text = 'public@test.com';
+                          _passwordController.text = 'Public@123';
+                        },
+                        icon: const Icon(Icons.school, size: 16),
+                        label: const Text('Public'),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orangeAccent.withValues(alpha: 0.1),
+                          foregroundColor: Colors.orangeAccent,
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          _emailController.text = 'pub1@test.com';
+                          _passwordController.text = 'Pub@123';
+                        },
+                        icon: const Icon(Icons.business, size: 16),
+                        label: const Text('Vendor'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
