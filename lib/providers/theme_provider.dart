@@ -6,7 +6,7 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static const String _themeKey = 'app_theme_mode_v1';
 
-  ThemeModeNotifier() : super(ThemeMode.light) {
+  ThemeModeNotifier() : super(ThemeMode.system) {
     _loadSavedTheme();
   }
 
@@ -24,12 +24,16 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   void setThemeMode(ThemeMode mode) {
     state = mode;
     try {
-      _storage.write(key: _themeKey, value: mode == ThemeMode.dark ? 'dark' : 'light');
+      if (mode == ThemeMode.system) {
+        _storage.delete(key: _themeKey);
+      } else {
+        _storage.write(key: _themeKey, value: mode == ThemeMode.dark ? 'dark' : 'light');
+      }
     } catch (_) {}
   }
 
-  void toggleTheme() {
-    final next = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+  void toggleTheme(bool isCurrentlyDark) {
+    final next = isCurrentlyDark ? ThemeMode.light : ThemeMode.dark;
     setThemeMode(next);
   }
 }

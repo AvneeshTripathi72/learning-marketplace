@@ -12,6 +12,7 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
     final isPublication = user?.role == UserRole.publication;
     final isAdmin = user?.role == UserRole.admin;
@@ -119,20 +120,7 @@ class AppDrawer extends ConsumerWidget {
             const Divider(),
           ],
 
-          // Theme Switcher Toggle Switch
-          SwitchListTile(
-            secondary: Icon(
-              themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
-              color: themeMode == ThemeMode.dark ? Colors.amber : Colors.orange,
-            ),
-            title: const Text('Dark Mode Theme'),
-            subtitle: Text(themeMode == ThemeMode.dark ? 'Enabled' : 'Disabled'),
-            value: themeMode == ThemeMode.dark,
-            onChanged: (val) {
-              ref.read(themeModeProvider.notifier).toggleTheme();
-            },
-          ),
-          const Divider(),
+
 
           ListTile(
             leading: const Icon(Icons.dashboard),
@@ -263,6 +251,22 @@ class AppDrawer extends ConsumerWidget {
               context.push('/donate/creator_001');
             },
           ),
+          const Divider(),
+
+          // Theme Switcher Toggle Switch
+          SwitchListTile(
+            secondary: Icon(
+              isDark ? Icons.dark_mode : Icons.light_mode,
+              color: isDark ? Colors.amber : Colors.orange,
+            ),
+            title: const Text('Dark Mode Theme'),
+            subtitle: Text(isDark ? 'Enabled' : 'Disabled'),
+            value: isDark,
+            onChanged: (val) {
+              ref.read(themeModeProvider.notifier).toggleTheme(isDark);
+            },
+          ),
+          const Divider(),
 
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.grey),
