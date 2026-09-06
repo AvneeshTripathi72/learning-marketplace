@@ -6,7 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
 import '../../../services/storage_service.dart';
 import '../../../core/constants/api_endpoints.dart';
-import '../../../models/video_model.dart';
+import '../../../models/user_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/video_provider.dart';
 
 class UploadVideoScreen extends ConsumerStatefulWidget {
