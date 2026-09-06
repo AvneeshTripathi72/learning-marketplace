@@ -9,7 +9,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "node -e \"try{require('fs').chmodSync('node_modules/.bin/prisma','755')}catch(e){}\" && prisma generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
