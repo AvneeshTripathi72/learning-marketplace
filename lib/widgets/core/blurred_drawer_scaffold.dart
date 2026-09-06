@@ -45,7 +45,7 @@ class _BlurredDrawerScaffoldState extends State<BlurredDrawerScaffold> {
       extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       appBar: widget.appBar,
       drawer: widget.drawer,
-      bottomNavigationBar: widget.bottomNavigationBar,
+      bottomNavigationBar: _isDrawerOpen ? null : widget.bottomNavigationBar,
       floatingActionButton: widget.floatingActionButton,
       floatingActionButtonLocation: widget.floatingActionButtonLocation,
       onDrawerChanged: (isOpen) {
