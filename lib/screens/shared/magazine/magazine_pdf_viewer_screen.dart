@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../models/magazine_model.dart';
 import '../../../utils/web_iframe_helper.dart';
 
@@ -17,10 +18,12 @@ class MagazinePdfViewerScreen extends StatefulWidget {
 class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
   late PdfViewerController _pdfViewerController;
   late TransformationController _transformationController;
+  WebViewController? _webViewController;
   int _currentPage = 1;
   int _totalPages = 0;
   bool _isLoading = true;
   bool _pdfLoadError = false;
+  bool _isHtmlFlipbook = false;
   String _pdfViewType = '';
   double _currentScale = 1.0;
 
@@ -30,18 +33,27 @@ class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
     _pdfViewerController = PdfViewerController();
     _transformationController = TransformationController();
 
+    String targetUrl = widget.magazine.pdfUrl.trim();
+    if (targetUrl.isEmpty) {
+      targetUrl = 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
+    }
+
+    _isHtmlFlipbook = targetUrl.toLowerCase().endsWith('.html') ||
+        targetUrl.toLowerCase().contains('/mobile/') ||
+        targetUrl.toLowerCase().contains('aspirebookscompany') ||
+        targetUrl.toLowerCase().contains('index.html');
+
     if (kIsWeb) {
       _pdfViewType = 'mag-pdf-iframe-${widget.magazine.id}-${DateTime.now().millisecondsSinceEpoch}';
-      String targetUrl = widget.magazine.pdfUrl.isNotEmpty
-          ? widget.magazine.pdfUrl
-          : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
-      final isHtml = targetUrl.toLowerCase().endsWith('.html') ||
-          targetUrl.toLowerCase().contains('/mobile/') ||
-          targetUrl.toLowerCase().contains('aspirebookscompany');
-      final embedUrl = isHtml
+      final embedUrl = _isHtmlFlipbook
           ? targetUrl
           : 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}';
       registerIframe(_pdfViewType, embedUrl);
+      _isLoading = false;
+    } else if (_isHtmlFlipbook) {
+      _webViewController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..loadRequest(Uri.parse(targetUrl));
       _isLoading = false;
     }
   }
@@ -149,6 +161,8 @@ class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
               scaleEnabled: true,
               child: HtmlElementView(viewType: _pdfViewType),
             )
+          else if (_webViewController != null)
+            WebViewWidget(controller: _webViewController!)
           else
             SfPdfViewer.network(
               widget.magazine.pdfUrl.isNotEmpty

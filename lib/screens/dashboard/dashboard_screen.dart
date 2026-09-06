@@ -488,7 +488,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   itemBuilder: (context, index) => VideoCard(
                     video: videos[index],
                     width: 260,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VideoPlayerScreen(video: videos[index]),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../../models/ebook_model.dart';
 import '../../../utils/web_iframe_helper.dart';
 
@@ -18,6 +19,7 @@ class PdfViewerScreen extends StatefulWidget {
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
   late PdfViewerController _pdfViewerController;
   late TransformationController _transformationController;
+  WebViewController? _webViewController;
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
@@ -31,18 +33,27 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _transformationController = TransformationController();
     _checkUrlValidity();
 
+    String targetUrl = widget.ebook.fileUrl.trim();
+    if (targetUrl.isEmpty) {
+      targetUrl = 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
+    }
+
+    final isHtml = targetUrl.toLowerCase().endsWith('.html') ||
+        targetUrl.toLowerCase().contains('/mobile/') ||
+        targetUrl.toLowerCase().contains('aspirebookscompany') ||
+        targetUrl.toLowerCase().contains('index.html');
+
     if (kIsWeb) {
       _pdfViewType = 'ebook-pdf-iframe-${widget.ebook.id}-${DateTime.now().millisecondsSinceEpoch}';
-      String targetUrl = widget.ebook.fileUrl.isNotEmpty
-          ? widget.ebook.fileUrl
-          : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
-      final isHtml = targetUrl.toLowerCase().endsWith('.html') ||
-          targetUrl.toLowerCase().contains('/mobile/') ||
-          targetUrl.toLowerCase().contains('aspirebookscompany');
       final embedUrl = isHtml
           ? targetUrl
           : 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}';
       registerIframe(_pdfViewType, embedUrl);
+      _isLoading = false;
+    } else if (isHtml && !widget.ebook.isDownloaded) {
+      _webViewController = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..loadRequest(Uri.parse(targetUrl));
       _isLoading = false;
     }
   }
@@ -160,20 +171,22 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     scaleEnabled: true,
                     child: HtmlElementView(viewType: _pdfViewType),
                   )
-                : isLocal
-                    ? SfPdfViewer.file(
-                        File(widget.ebook.localPath!),
-                        controller: _pdfViewerController,
-                        onDocumentLoaded: (_) => setState(() => _isLoading = false),
-                        onDocumentLoadFailed: (details) {
-                          setState(() {
-                            _isLoading = false;
-                            _hasError = true;
-                            _errorMessage = details.description;
-                          });
-                        },
-                      )
-                    : SfPdfViewer.network(
+                : _webViewController != null
+                    ? WebViewWidget(controller: _webViewController!)
+                    : isLocal
+                        ? SfPdfViewer.file(
+                            File(widget.ebook.localPath!),
+                            controller: _pdfViewerController,
+                            onDocumentLoaded: (_) => setState(() => _isLoading = false),
+                            onDocumentLoadFailed: (details) {
+                              setState(() {
+                                _isLoading = false;
+                                _hasError = true;
+                                _errorMessage = details.description;
+                              });
+                            },
+                          )
+                        : SfPdfViewer.network(
                         widget.ebook.fileUrl.isNotEmpty
                             ? widget.ebook.fileUrl
                             : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',

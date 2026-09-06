@@ -10,6 +10,7 @@ import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/category_chip_list.dart';
 import '../../../widgets/notification_modal.dart';
 import '../../../widgets/video_card.dart';
+import '../../shared/video_player/video_player_screen.dart';
 
 class PublicDashboardScreen extends ConsumerStatefulWidget {
   const PublicDashboardScreen({super.key});
@@ -303,7 +304,14 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
                   itemBuilder: (context, index) => VideoCard(
                     video: videos[index],
                     width: 260,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VideoPlayerScreen(video: videos[index]),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
