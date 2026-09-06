@@ -707,6 +707,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       {'id': 'break', 'icon': Icons.local_pizza, 'title': 'Quick break', 'sub': 'Between classes or lunch time'},
       {'id': 'night', 'icon': Icons.nights_stay, 'title': 'Nightly ritual', 'sub': 'After dinner or before bed'},
       {'id': 'flexible', 'icon': Icons.schedule, 'title': 'Another time', 'sub': 'Flexible daily routine'},
+      {'id': 'skip', 'icon': Icons.skip_next_outlined, 'title': 'Skip for now', 'sub': 'Decide your daily routine later'},
     ];
 
     return SingleChildScrollView(
@@ -794,6 +795,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: const Text(
                     'Continue',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    setState(() => _selectedRoutine = 'skip');
+                    _nextStep();
+                  },
+                  child: Text(
+                    'Skip this step',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                    ),
                   ),
                 ),
               ),
