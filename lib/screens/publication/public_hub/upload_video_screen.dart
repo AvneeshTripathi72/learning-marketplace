@@ -9,6 +9,7 @@ import '../../../core/constants/api_endpoints.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/video_provider.dart';
+import '../../../models/video_model.dart';
 
 class UploadVideoScreen extends ConsumerStatefulWidget {
   const UploadVideoScreen({super.key});
