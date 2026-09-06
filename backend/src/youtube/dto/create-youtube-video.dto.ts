@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
-import { VideoPlatform } from '@prisma/client';
+import { VideoPlatform } from '../../common/enums';
 
 export class CreateYouTubeVideoDto {
   @IsUrl()

@@ -11,30 +11,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 let ReportsService = class ReportsService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
     async getLeaderboard() {
-        return this.prisma.video.findMany({
-            take: 10,
-            where: { status: 'APPROVED' },
-            include: { category: true },
-            orderBy: { submittedAt: 'desc' },
-        });
+        const { data, error } = await this.supabase.client
+            .from('Video')
+            .select('*, category:Category(*)')
+            .eq('status', 'APPROVED')
+            .order('submittedAt', { ascending: false })
+            .limit(10);
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
     async getRevenueSummary() {
-        const totalPayments = await this.prisma.payment.aggregate({
-            where: { status: 'SUCCESSFUL' },
-            _sum: { amount: true },
-        });
-        return { totalRevenue: totalPayments._sum.amount || 0 };
+        const { data, error } = await this.supabase.client
+            .from('Payment')
+            .select('amount')
+            .eq('status', 'SUCCESSFUL');
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        const totalRevenue = data.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+        return { totalRevenue };
     }
 };
 exports.ReportsService = ReportsService;
 exports.ReportsService = ReportsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

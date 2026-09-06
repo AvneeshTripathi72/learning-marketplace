@@ -18,7 +18,7 @@ const youtube_service_1 = require("./youtube.service");
 const create_youtube_video_dto_1 = require("./dto/create-youtube-video.dto");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const roles_guard_1 = require("../auth/guards/roles.guard");
-const client_1 = require("@prisma/client");
+const enums_1 = require("../common/enums");
 let YouTubeController = class YouTubeController {
     constructor(service) {
         this.service = service;
@@ -42,7 +42,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.PUBLICATION, client_1.UserRole.ADMIN),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.PUBLICATION, enums_1.UserRole.ADMIN),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),

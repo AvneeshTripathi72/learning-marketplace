@@ -11,36 +11,56 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VideoHubService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 let VideoHubService = class VideoHubService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
     async submitVideo(dto, userId) {
         const categoryName = dto.category || 'Educational';
-        let category = await this.prisma.category.findFirst({
-            where: { name: { equals: categoryName, mode: 'insensitive' } },
-        });
+        let { data: category } = await this.supabase.client
+            .from('Category')
+            .select('*')
+            .ilike('name', categoryName)
+            .single();
         if (!category) {
-            category = await this.prisma.category.create({
-                data: { name: categoryName, isEnabled: true },
-            });
+            const { data: newCategory, error } = await this.supabase.client
+                .from('Category')
+                .insert({ name: categoryName, isEnabled: true })
+                .select()
+                .single();
+            if (error)
+                throw new common_1.InternalServerErrorException(error.message);
+            category = newCategory;
         }
-        let user = await this.prisma.user.findFirst({
-            where: { OR: [{ id: userId }, { email: 'hariom.info07@gmail.com' }] },
-        });
+        let { data: user } = await this.supabase.client
+            .from('User')
+            .select('*')
+            .or(`id.eq.${userId},email.eq.hariom.info07@gmail.com`)
+            .limit(1)
+            .single();
         if (!user) {
-            user = await this.prisma.user.findFirst();
+            const { data: firstUser } = await this.supabase.client
+                .from('User')
+                .select('*')
+                .limit(1)
+                .single();
+            user = firstUser;
         }
         if (!user) {
-            user = await this.prisma.user.create({
-                data: {
-                    name: 'Public Student User',
-                    email: 'public.student@ebook.app',
-                    password: 'Password123!',
-                    role: 'PUBLIC',
-                },
-            });
+            const { data: newUser, error } = await this.supabase.client
+                .from('User')
+                .insert({
+                name: 'Public Student User',
+                email: 'public.student@ebook.app',
+                password: 'Password123!',
+                role: 'PUBLIC',
+            })
+                .select()
+                .single();
+            if (error)
+                throw new common_1.InternalServerErrorException(error.message);
+            user = newUser;
         }
         let platform = 'YOUTUBE';
         const urlLower = (dto.url || '').toLowerCase();
@@ -48,49 +68,73 @@ let VideoHubService = class VideoHubService {
             platform = 'INSTAGRAM';
         if (urlLower.includes('facebook'))
             platform = 'FACEBOOK';
-        return this.prisma.video.create({
-            data: {
-                url: dto.url,
-                platform: platform,
-                channelName: dto.channelName || 'User Channel',
-                categoryId: category.id,
-                submittedById: user.id,
-                status: 'PENDING',
-            },
-        });
+        const { data: video, error } = await this.supabase.client
+            .from('Video')
+            .insert({
+            url: dto.url,
+            platform: platform,
+            channelName: dto.channelName || 'User Channel',
+            categoryId: category.id,
+            submittedById: user.id,
+            status: 'PENDING',
+        })
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return video;
     }
     async getMyUploads(userId) {
-        return this.prisma.video.findMany({
-            where: {
-                OR: [
-                    { submittedById: userId },
-                    { submittedBy: { email: 'hariom.info07@gmail.com' } },
-                ],
-            },
-            include: { category: true },
-            orderBy: { submittedAt: 'desc' },
-        });
+        const { data: adminUser } = await this.supabase.client
+            .from('User')
+            .select('id')
+            .eq('email', 'hariom.info07@gmail.com')
+            .single();
+        let orQuery = `submittedById.eq.${userId}`;
+        if (adminUser) {
+            orQuery += `,submittedById.eq.${adminUser.id}`;
+        }
+        const { data, error } = await this.supabase.client
+            .from('Video')
+            .select('*, category:Category(*)')
+            .or(orQuery)
+            .order('submittedAt', { ascending: false });
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
     async getPendingQueue() {
-        return this.prisma.video.findMany({
-            where: { status: 'PENDING' },
-            include: { submittedBy: true, category: true },
-            orderBy: { submittedAt: 'desc' },
-        });
+        const { data, error } = await this.supabase.client
+            .from('Video')
+            .select('*, submittedBy:User(*), category:Category(*)')
+            .eq('status', 'PENDING')
+            .order('submittedAt', { ascending: false });
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
     async moderateVideo(id, status) {
-        const video = await this.prisma.video.findUnique({ where: { id } });
-        if (!video)
+        const { data: video, error: findError } = await this.supabase.client
+            .from('Video')
+            .select('*')
+            .eq('id', id)
+            .single();
+        if (findError || !video)
             throw new common_1.NotFoundException('Video not found');
-        return this.prisma.video.update({
-            where: { id },
-            data: { status },
-        });
+        const { data, error: updateError } = await this.supabase.client
+            .from('Video')
+            .update({ status })
+            .eq('id', id)
+            .select()
+            .single();
+        if (updateError)
+            throw new common_1.InternalServerErrorException(updateError.message);
+        return data;
     }
 };
 exports.VideoHubService = VideoHubService;
 exports.VideoHubService = VideoHubService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], VideoHubService);
 //# sourceMappingURL=video-hub.service.js.map

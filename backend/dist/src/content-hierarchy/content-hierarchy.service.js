@@ -11,24 +11,42 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentHierarchyService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 let ContentHierarchyService = class ContentHierarchyService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
-    getSeries(publicationId) {
-        return this.prisma.series.findMany({ where: { publicationId } });
+    async getSeries(publicationId) {
+        const { data, error } = await this.supabase.client
+            .from('Series')
+            .select('*')
+            .eq('publicationId', publicationId);
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
-    getClasses(seriesId) {
-        return this.prisma.class.findMany({ where: { seriesId } });
+    async getClasses(seriesId) {
+        const { data, error } = await this.supabase.client
+            .from('Class')
+            .select('*')
+            .eq('seriesId', seriesId);
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
-    getSubjects(classId) {
-        return this.prisma.subject.findMany({ where: { classId } });
+    async getSubjects(classId) {
+        const { data, error } = await this.supabase.client
+            .from('Subject')
+            .select('*')
+            .eq('classId', classId);
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
 };
 exports.ContentHierarchyService = ContentHierarchyService;
 exports.ContentHierarchyService = ContentHierarchyService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], ContentHierarchyService);
 //# sourceMappingURL=content-hierarchy.service.js.map

@@ -66,17 +66,17 @@ class RazorpayPaymentService {
                   child: const Icon(Icons.flash_on, color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Razorpay Trusted Checkout',
                         style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
                         'Test Mode • API Key: $razorpayTestKey',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
                       ),
                     ],
                   ),

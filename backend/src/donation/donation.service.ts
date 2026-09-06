@@ -1,18 +1,30 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateDonationDto } from './dto/create-donation.dto';
 
 @Injectable()
 export class DonationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
   async findByChannel(channelName: string) {
-    const donation = await this.prisma.donation.findFirst({ where: { channelName } });
-    if (!donation) throw new NotFoundException('Creator donation details not found');
-    return donation;
+    const { data, error } = await this.supabase.client
+      .from('Donation')
+      .select('*')
+      .eq('channelName', channelName)
+      .single();
+
+    if (error || !data) throw new NotFoundException('Creator donation details not found');
+    return data;
   }
 
-  create(dto: CreateDonationDto) {
-    return this.prisma.donation.create({ data: dto });
+  async create(dto: CreateDonationDto) {
+    const { data, error } = await this.supabase.client
+      .from('Donation')
+      .insert(dto)
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 }

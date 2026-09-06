@@ -1,26 +1,35 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateYouTubeVideoDto } from './dto/create-youtube-video.dto';
 
 @Injectable()
 export class YouTubeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
-  findBySubject(subjectId: string) {
-    return this.prisma.video.findMany({
-      where: { subjectId, status: 'APPROVED' },
-      include: { category: true },
-      orderBy: { submittedAt: 'desc' },
-    });
+  async findBySubject(subjectId: string) {
+    const { data, error } = await this.supabase.client
+      .from('Video')
+      .select('*, category:Category(*)')
+      .eq('subjectId', subjectId)
+      .eq('status', 'APPROVED')
+      .order('submittedAt', { ascending: false });
+    
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
-  create(dto: CreateYouTubeVideoDto, userId: string) {
-    return this.prisma.video.create({
-      data: {
+  async create(dto: CreateYouTubeVideoDto, userId: string) {
+    const { data, error } = await this.supabase.client
+      .from('Video')
+      .insert({
         ...dto,
         submittedById: userId,
         status: 'APPROVED',
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 }

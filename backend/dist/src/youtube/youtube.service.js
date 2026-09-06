@@ -11,31 +11,40 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.YouTubeService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 let YouTubeService = class YouTubeService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
-    findBySubject(subjectId) {
-        return this.prisma.video.findMany({
-            where: { subjectId, status: 'APPROVED' },
-            include: { category: true },
-            orderBy: { submittedAt: 'desc' },
-        });
+    async findBySubject(subjectId) {
+        const { data, error } = await this.supabase.client
+            .from('Video')
+            .select('*, category:Category(*)')
+            .eq('subjectId', subjectId)
+            .eq('status', 'APPROVED')
+            .order('submittedAt', { ascending: false });
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
-    create(dto, userId) {
-        return this.prisma.video.create({
-            data: {
-                ...dto,
-                submittedById: userId,
-                status: 'APPROVED',
-            },
-        });
+    async create(dto, userId) {
+        const { data, error } = await this.supabase.client
+            .from('Video')
+            .insert({
+            ...dto,
+            submittedById: userId,
+            status: 'APPROVED',
+        })
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
 };
 exports.YouTubeService = YouTubeService;
 exports.YouTubeService = YouTubeService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], YouTubeService);
 //# sourceMappingURL=youtube.service.js.map

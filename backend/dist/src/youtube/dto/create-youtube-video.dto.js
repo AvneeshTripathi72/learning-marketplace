@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateYouTubeVideoDto = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
+const enums_1 = require("../../common/enums");
 class CreateYouTubeVideoDto {
 }
 exports.CreateYouTubeVideoDto = CreateYouTubeVideoDto;
@@ -20,7 +20,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateYouTubeVideoDto.prototype, "url", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.VideoPlatform),
+    (0, class_validator_1.IsEnum)(enums_1.VideoPlatform),
     __metadata("design:type", String)
 ], CreateYouTubeVideoDto.prototype, "platform", void 0);
 __decorate([

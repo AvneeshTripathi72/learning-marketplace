@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
-import { PackageTier, SubscriptionStatus } from '@prisma/client';
+import { PackageTier, SubscriptionStatus } from '../common/enums';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
   getPackages() {
     return [
@@ -17,11 +17,19 @@ export class SubscriptionService {
   }
 
   async getPublicationSubscription(publicationId: string) {
-    const sub = await this.prisma.subscription.findFirst({
-      where: { publicationId, status: SubscriptionStatus.ACTIVE },
-      orderBy: { endDate: 'desc' },
-      include: { payment: true },
-    });
+    const { data: sub, error } = await this.supabase.client
+      .from('Subscription')
+      .select('*, payment:Payment(*)')
+      .eq('publicationId', publicationId)
+      .eq('status', SubscriptionStatus.ACTIVE)
+      .order('endDate', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      // Ignore not found errors for this particular check, throw others
+      throw new InternalServerErrorException(error.message);
+    }
     return sub || { status: SubscriptionStatus.INACTIVE, package: null };
   }
 
@@ -30,15 +38,20 @@ export class SubscriptionService {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + dto.durationMonths);
 
-    return this.prisma.subscription.create({
-      data: {
+    const { data, error } = await this.supabase.client
+      .from('Subscription')
+      .insert({
         publicationId: dto.publicationId,
         package: dto.package,
-        startDate,
-        endDate,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
         status: SubscriptionStatus.ACTIVE,
         paymentId: dto.paymentId,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 }

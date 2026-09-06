@@ -1595,9 +1595,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           foregroundColor: Colors.redAccent,
                           elevation: 0,
                         ),
-                        onPressed: () {
-                          _emailController.text = 'avanishadmin@gmail.com';
-                          _passwordController.text = 'Avneesh@123';
+                        onPressed: () async {
+                          _emailController.text = 'admin@system.com';
+                          _passwordController.text = 'Admin@12345';
+                          final user = await ref.read(authProvider.notifier).loginWithCredentials('admin@system.com', 'Admin@12345');
+                          if (user != null && mounted) context.go('/admin/dashboard');
                         },
                         icon: const Icon(Icons.admin_panel_settings, size: 16),
                         label: const Text('Admin'),
@@ -1608,9 +1610,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           foregroundColor: Colors.blueAccent,
                           elevation: 0,
                         ),
-                        onPressed: () {
-                          _emailController.text = 'public@test.com';
-                          _passwordController.text = 'Public@123';
+                        onPressed: () async {
+                          _emailController.text = 'student@gmail.com';
+                          _passwordController.text = 'Student@12345';
+                          final user = await ref.read(authProvider.notifier).loginWithCredentials('student@gmail.com', 'Student@12345');
+                          if (user != null && mounted) context.go('/public/dashboard');
                         },
                         icon: const Icon(Icons.school, size: 16),
                         label: const Text('Public'),
@@ -1621,9 +1625,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           foregroundColor: Colors.orangeAccent,
                           elevation: 0,
                         ),
-                        onPressed: () {
-                          _emailController.text = 'pub1@test.com';
-                          _passwordController.text = 'Pub@123';
+                        onPressed: () async {
+                          _emailController.text = 'vendor@oxford.com';
+                          _passwordController.text = 'Vendor@12345';
+                          final user = await ref.read(authProvider.notifier).loginWithCredentials('vendor@oxford.com', 'Vendor@12345');
+                          if (user != null && mounted) context.go('/dashboard');
                         },
                         icon: const Icon(Icons.business, size: 16),
                         label: const Text('Vendor'),

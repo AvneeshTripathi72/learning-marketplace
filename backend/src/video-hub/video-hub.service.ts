@@ -1,38 +1,58 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class VideoHubService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
   async submitVideo(dto: any, userId: string) {
     const categoryName = dto.category || 'Educational';
 
-    let category = await this.prisma.category.findFirst({
-      where: { name: { equals: categoryName, mode: 'insensitive' } },
-    });
+    let { data: category } = await this.supabase.client
+      .from('Category')
+      .select('*')
+      .ilike('name', categoryName)
+      .single();
 
     if (!category) {
-      category = await this.prisma.category.create({
-        data: { name: categoryName, isEnabled: true },
-      });
+      const { data: newCategory, error } = await this.supabase.client
+        .from('Category')
+        .insert({ name: categoryName, isEnabled: true })
+        .select()
+        .single();
+      if (error) throw new InternalServerErrorException(error.message);
+      category = newCategory;
     }
 
-    let user = await this.prisma.user.findFirst({
-      where: { OR: [{ id: userId }, { email: 'hariom.info07@gmail.com' }] },
-    });
+    let { data: user } = await this.supabase.client
+      .from('User')
+      .select('*')
+      .or(`id.eq.${userId},email.eq.hariom.info07@gmail.com`)
+      .limit(1)
+      .single();
+
     if (!user) {
-      user = await this.prisma.user.findFirst();
+      const { data: firstUser } = await this.supabase.client
+        .from('User')
+        .select('*')
+        .limit(1)
+        .single();
+      user = firstUser;
     }
+    
     if (!user) {
-      user = await this.prisma.user.create({
-        data: {
+      const { data: newUser, error } = await this.supabase.client
+        .from('User')
+        .insert({
           name: 'Public Student User',
           email: 'public.student@ebook.app',
           password: 'Password123!',
           role: 'PUBLIC',
-        },
-      });
+        })
+        .select()
+        .single();
+      if (error) throw new InternalServerErrorException(error.message);
+      user = newUser;
     }
 
     let platform = 'YOUTUBE';
@@ -40,46 +60,75 @@ export class VideoHubService {
     if (urlLower.includes('instagram')) platform = 'INSTAGRAM';
     if (urlLower.includes('facebook')) platform = 'FACEBOOK';
 
-    return this.prisma.video.create({
-      data: {
+    const { data: video, error } = await this.supabase.client
+      .from('Video')
+      .insert({
         url: dto.url,
-        platform: platform as any,
+        platform: platform,
         channelName: dto.channelName || 'User Channel',
         categoryId: category.id,
         submittedById: user.id,
         status: 'PENDING',
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return video;
   }
 
   async getMyUploads(userId: string) {
-    return this.prisma.video.findMany({
-      where: {
-        OR: [
-          { submittedById: userId },
-          { submittedBy: { email: 'hariom.info07@gmail.com' } },
-        ],
-      },
-      include: { category: true },
-      orderBy: { submittedAt: 'desc' },
-    });
+    // Supabase JS doesn't easily support deeply nested OR filters across relations like Prisma does in one query
+    // So we fetch user with the email to get ID first
+    const { data: adminUser } = await this.supabase.client
+      .from('User')
+      .select('id')
+      .eq('email', 'hariom.info07@gmail.com')
+      .single();
+
+    let orQuery = `submittedById.eq.${userId}`;
+    if (adminUser) {
+        orQuery += `,submittedById.eq.${adminUser.id}`;
+    }
+
+    const { data, error } = await this.supabase.client
+      .from('Video')
+      .select('*, category:Category(*)')
+      .or(orQuery)
+      .order('submittedAt', { ascending: false });
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
   async getPendingQueue() {
-    return this.prisma.video.findMany({
-      where: { status: 'PENDING' },
-      include: { submittedBy: true, category: true },
-      orderBy: { submittedAt: 'desc' },
-    });
+    const { data, error } = await this.supabase.client
+      .from('Video')
+      .select('*, submittedBy:User(*), category:Category(*)')
+      .eq('status', 'PENDING')
+      .order('submittedAt', { ascending: false });
+
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
   async moderateVideo(id: string, status: any) {
-    const video = await this.prisma.video.findUnique({ where: { id } });
-    if (!video) throw new NotFoundException('Video not found');
+    const { data: video, error: findError } = await this.supabase.client
+      .from('Video')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    return this.prisma.video.update({
-      where: { id },
-      data: { status },
-    });
+    if (findError || !video) throw new NotFoundException('Video not found');
+
+    const { data, error: updateError } = await this.supabase.client
+      .from('Video')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw new InternalServerErrorException(updateError.message);
+    return data;
   }
 }

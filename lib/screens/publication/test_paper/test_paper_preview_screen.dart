@@ -168,9 +168,9 @@ class _TestPaperPreviewScreenState extends State<TestPaperPreviewScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0)),
                     ),
-                    child: Column(
+                    child: const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text('TEST ANSWER KEY & SOLUTIONS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         Divider(),
                         SizedBox(height: 8),

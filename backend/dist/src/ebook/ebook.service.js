@@ -11,27 +11,53 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EBookService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 let EBookService = class EBookService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
-    findBySubject(subjectId) {
-        return this.prisma.eBook.findMany({ where: { subjectId, isActive: true } });
+    async findBySubject(subjectId) {
+        const { data, error } = await this.supabase.client
+            .from('EBook')
+            .select('*')
+            .eq('subjectId', subjectId)
+            .eq('isActive', true);
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
-    create(dto) {
-        return this.prisma.eBook.create({ data: dto });
+    async create(dto) {
+        const { data, error } = await this.supabase.client
+            .from('EBook')
+            .insert(dto)
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
     async toggleStatus(id, isActive) {
-        const ebook = await this.prisma.eBook.findUnique({ where: { id } });
-        if (!ebook)
+        const { data: ebook, error: findError } = await this.supabase.client
+            .from('EBook')
+            .select('*')
+            .eq('id', id)
+            .single();
+        if (findError || !ebook)
             throw new common_1.NotFoundException('eBook not found');
-        return this.prisma.eBook.update({ where: { id }, data: { isActive } });
+        const { data, error: updateError } = await this.supabase.client
+            .from('EBook')
+            .update({ isActive })
+            .eq('id', id)
+            .select()
+            .single();
+        if (updateError)
+            throw new common_1.InternalServerErrorException(updateError.message);
+        return data;
     }
 };
 exports.EBookService = EBookService;
 exports.EBookService = EBookService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], EBookService);
 //# sourceMappingURL=ebook.service.js.map

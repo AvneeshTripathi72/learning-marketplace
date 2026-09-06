@@ -85,7 +85,7 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                         ? null
                         : [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
+                              color: Colors.black.withValues(alpha: 0.06),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
@@ -101,7 +101,7 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -165,9 +165,9 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                             color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
                           ),
                         ),
-                        child: Column(
+                        child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'GENERAL INSTRUCTIONS:',
                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
@@ -225,7 +225,7 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                         border: Border.all(color: Colors.amber.shade700, width: 1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 12,
                           ),
                         ],
@@ -365,9 +365,9 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
       ),
       child: Text(
         title,
@@ -414,7 +414,7 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15)
                         : isDark
                             ? const Color(0xFF2A2A2A)
                             : const Color(0xFFF5F5F7),
@@ -506,7 +506,7 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

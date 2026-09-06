@@ -1,19 +1,34 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class ContentHierarchyService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
-  getSeries(publicationId: string) {
-    return this.prisma.series.findMany({ where: { publicationId } });
+  async getSeries(publicationId: string) {
+    const { data, error } = await this.supabase.client
+      .from('Series')
+      .select('*')
+      .eq('publicationId', publicationId);
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
-  getClasses(seriesId: string) {
-    return this.prisma.class.findMany({ where: { seriesId } });
+  async getClasses(seriesId: string) {
+    const { data, error } = await this.supabase.client
+      .from('Class')
+      .select('*')
+      .eq('seriesId', seriesId);
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
-  getSubjects(classId: string) {
-    return this.prisma.subject.findMany({ where: { classId } });
+  async getSubjects(classId: string) {
+    const { data, error } = await this.supabase.client
+      .from('Subject')
+      .select('*')
+      .eq('classId', classId);
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 }

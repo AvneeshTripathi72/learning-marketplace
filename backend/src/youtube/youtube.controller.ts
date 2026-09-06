@@ -3,7 +3,7 @@ import { YouTubeService } from './youtube.service';
 import { CreateYouTubeVideoDto } from './dto/create-youtube-video.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../common/enums';
 
 @Controller('youtube')
 export class YouTubeController {

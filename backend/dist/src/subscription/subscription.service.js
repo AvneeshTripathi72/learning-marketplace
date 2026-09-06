@@ -11,47 +11,58 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubscriptionService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
-const client_1 = require("@prisma/client");
+const supabase_service_1 = require("../supabase/supabase.service");
+const enums_1 = require("../common/enums");
 let SubscriptionService = class SubscriptionService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
     getPackages() {
         return [
-            { tier: client_1.PackageTier.SILVER, price: 999, videoLimit: 10, name: 'Silver Tier' },
-            { tier: client_1.PackageTier.BRONZE, price: 1999, videoLimit: 25, name: 'Bronze Tier' },
-            { tier: client_1.PackageTier.GOLD, price: 3999, videoLimit: 50, name: 'Gold Tier' },
-            { tier: client_1.PackageTier.DIAMOND, price: 7999, videoLimit: -1, name: 'Diamond Unlimited' },
+            { tier: enums_1.PackageTier.SILVER, price: 999, videoLimit: 10, name: 'Silver Tier' },
+            { tier: enums_1.PackageTier.BRONZE, price: 1999, videoLimit: 25, name: 'Bronze Tier' },
+            { tier: enums_1.PackageTier.GOLD, price: 3999, videoLimit: 50, name: 'Gold Tier' },
+            { tier: enums_1.PackageTier.DIAMOND, price: 7999, videoLimit: -1, name: 'Diamond Unlimited' },
         ];
     }
     async getPublicationSubscription(publicationId) {
-        const sub = await this.prisma.subscription.findFirst({
-            where: { publicationId, status: client_1.SubscriptionStatus.ACTIVE },
-            orderBy: { endDate: 'desc' },
-            include: { payment: true },
-        });
-        return sub || { status: client_1.SubscriptionStatus.INACTIVE, package: null };
+        const { data: sub, error } = await this.supabase.client
+            .from('Subscription')
+            .select('*, payment:Payment(*)')
+            .eq('publicationId', publicationId)
+            .eq('status', enums_1.SubscriptionStatus.ACTIVE)
+            .order('endDate', { ascending: false })
+            .limit(1)
+            .single();
+        if (error && error.code !== 'PGRST116') {
+            throw new common_1.InternalServerErrorException(error.message);
+        }
+        return sub || { status: enums_1.SubscriptionStatus.INACTIVE, package: null };
     }
     async createSubscription(dto) {
         const startDate = new Date();
         const endDate = new Date();
         endDate.setMonth(endDate.getMonth() + dto.durationMonths);
-        return this.prisma.subscription.create({
-            data: {
-                publicationId: dto.publicationId,
-                package: dto.package,
-                startDate,
-                endDate,
-                status: client_1.SubscriptionStatus.ACTIVE,
-                paymentId: dto.paymentId,
-            },
-        });
+        const { data, error } = await this.supabase.client
+            .from('Subscription')
+            .insert({
+            publicationId: dto.publicationId,
+            package: dto.package,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            status: enums_1.SubscriptionStatus.ACTIVE,
+            paymentId: dto.paymentId,
+        })
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
 };
 exports.SubscriptionService = SubscriptionService;
 exports.SubscriptionService = SubscriptionService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], SubscriptionService);
 //# sourceMappingURL=subscription.service.js.map

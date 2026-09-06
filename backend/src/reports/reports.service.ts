@@ -1,24 +1,32 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class ReportsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
   async getLeaderboard() {
-    return this.prisma.video.findMany({
-      take: 10,
-      where: { status: 'APPROVED' },
-      include: { category: true },
-      orderBy: { submittedAt: 'desc' },
-    });
+    const { data, error } = await this.supabase.client
+      .from('Video')
+      .select('*, category:Category(*)')
+      .eq('status', 'APPROVED')
+      .order('submittedAt', { ascending: false })
+      .limit(10);
+      
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
   async getRevenueSummary() {
-    const totalPayments = await this.prisma.payment.aggregate({
-      where: { status: 'SUCCESSFUL' },
-      _sum: { amount: true },
-    });
-    return { totalRevenue: totalPayments._sum.amount || 0 };
+    const { data, error } = await this.supabase.client
+      .from('Payment')
+      .select('amount')
+      .eq('status', 'SUCCESSFUL');
+      
+    if (error) throw new InternalServerErrorException(error.message);
+    
+    // Sum amounts in JS since direct aggregate in postgrest requires RPC
+    const totalRevenue = data.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+    return { totalRevenue };
   }
 }

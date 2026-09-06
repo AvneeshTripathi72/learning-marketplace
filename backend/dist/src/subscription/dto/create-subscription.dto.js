@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateSubscriptionDto = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
+const enums_1 = require("../../common/enums");
 class CreateSubscriptionDto {
 }
 exports.CreateSubscriptionDto = CreateSubscriptionDto;
@@ -21,7 +21,7 @@ __decorate([
     __metadata("design:type", String)
 ], CreateSubscriptionDto.prototype, "publicationId", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.PackageTier),
+    (0, class_validator_1.IsEnum)(enums_1.PackageTier),
     __metadata("design:type", String)
 ], CreateSubscriptionDto.prototype, "package", void 0);
 __decorate([

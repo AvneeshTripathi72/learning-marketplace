@@ -3,7 +3,7 @@ import { EBookService } from './ebook.service';
 import { CreateEBookDto } from './dto/create-ebook.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../common/enums';
 
 @Controller('ebooks')
 export class EBookController {

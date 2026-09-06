@@ -7,29 +7,22 @@ export declare class AuthController {
     register(dto: RegisterDto): Promise<{
         token: string;
         user: {
-            id: string;
-            name: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-            publicationId: string;
+            id: any;
+            name: any;
+            email: any;
+            role: any;
+            publicationId: any;
         };
     }>;
     login(dto: LoginDto): Promise<{
         token: string;
         user: {
-            id: string;
-            name: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-            publicationId: string;
+            id: any;
+            name: any;
+            email: any;
+            role: any;
+            publicationId: any;
         };
     }>;
-    getAllUsers(): Promise<{
-        email: string;
-        name: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        publicationId: string;
-        id: string;
-        createdAt: Date;
-    }[]>;
+    getAllUsers(): Promise<any>;
 }

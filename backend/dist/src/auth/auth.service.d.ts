@@ -1,38 +1,31 @@
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 export declare class AuthService {
-    private prisma;
+    private supabase;
     private readonly logger;
     private readonly jwtSecret;
-    constructor(prisma: PrismaService);
+    constructor(supabase: SupabaseService);
     register(dto: RegisterDto): Promise<{
         token: string;
         user: {
-            id: string;
-            name: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-            publicationId: string;
+            id: any;
+            name: any;
+            email: any;
+            role: any;
+            publicationId: any;
         };
     }>;
     login(dto: LoginDto): Promise<{
         token: string;
         user: {
-            id: string;
-            name: string;
-            email: string;
-            role: import(".prisma/client").$Enums.UserRole;
-            publicationId: string;
+            id: any;
+            name: any;
+            email: any;
+            role: any;
+            publicationId: any;
         };
     }>;
-    getAllUsers(): Promise<{
-        email: string;
-        name: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        publicationId: string;
-        id: string;
-        createdAt: Date;
-    }[]>;
+    getAllUsers(): Promise<any>;
     private generateToken;
 }

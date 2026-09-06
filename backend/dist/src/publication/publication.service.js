@@ -11,43 +11,68 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PublicationService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 let PublicationService = class PublicationService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
     async findAll() {
-        return this.prisma.publication.findMany({
-            orderBy: { createdAt: 'desc' },
-        });
+        const { data, error } = await this.supabase.client
+            .from('Publication')
+            .select('*')
+            .order('createdAt', { ascending: false });
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
     async findOne(id) {
-        const pub = await this.prisma.publication.findUnique({ where: { id } });
-        if (!pub)
+        const { data, error } = await this.supabase.client
+            .from('Publication')
+            .select('*')
+            .eq('id', id)
+            .single();
+        if (error || !data)
             throw new common_1.NotFoundException('Publication not found');
-        return pub;
+        return data;
     }
     async create(dto) {
-        return this.prisma.publication.create({ data: dto });
+        const { data, error } = await this.supabase.client
+            .from('Publication')
+            .insert(dto)
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
     async update(id, dto) {
         await this.findOne(id);
-        return this.prisma.publication.update({
-            where: { id },
-            data: dto,
-        });
+        const { data, error } = await this.supabase.client
+            .from('Publication')
+            .update(dto)
+            .eq('id', id)
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
     async toggleStatus(id, isActive) {
         await this.findOne(id);
-        return this.prisma.publication.update({
-            where: { id },
-            data: { isActive },
-        });
+        const { data, error } = await this.supabase.client
+            .from('Publication')
+            .update({ isActive })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
 };
 exports.PublicationService = PublicationService;
 exports.PublicationService = PublicationService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], PublicationService);
 //# sourceMappingURL=publication.service.js.map

@@ -1,15 +1,15 @@
-import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
 export declare class PaymentService {
-    private prisma;
+    private supabase;
     private readonly webhookSecret;
-    constructor(prisma: PrismaService);
+    constructor(supabase: SupabaseService);
     verifyDoubleCheck(dto: VerifyPaymentDto): Promise<{
         transactionId: string;
         publicationId: string;
         isVerified: boolean;
-        paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
-        subscriptionStatus: import(".prisma/client").$Enums.SubscriptionStatus;
+        paymentStatus: any;
+        subscriptionStatus: any;
     }>;
     handleWebhook(body: any, signature: string): Promise<{
         status: string;

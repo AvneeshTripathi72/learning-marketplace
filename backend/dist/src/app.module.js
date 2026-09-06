@@ -8,7 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_module_1 = require("./prisma/prisma.module");
+const supabase_module_1 = require("./supabase/supabase.module");
 const auth_module_1 = require("./auth/auth.module");
 const publication_module_1 = require("./publication/publication.module");
 const content_hierarchy_module_1 = require("./content-hierarchy/content-hierarchy.module");
@@ -27,7 +27,7 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            prisma_module_1.PrismaModule,
+            supabase_module_1.SupabaseModule,
             auth_module_1.AuthModule,
             publication_module_1.PublicationModule,
             content_hierarchy_module_1.ContentHierarchyModule,

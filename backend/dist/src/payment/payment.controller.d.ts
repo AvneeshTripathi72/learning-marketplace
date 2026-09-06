@@ -7,8 +7,8 @@ export declare class PaymentController {
         transactionId: string;
         publicationId: string;
         isVerified: boolean;
-        paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
-        subscriptionStatus: import(".prisma/client").$Enums.SubscriptionStatus;
+        paymentStatus: any;
+        subscriptionStatus: any;
     }>;
     handleWebhook(body: any, signature: string): Promise<{
         status: string;

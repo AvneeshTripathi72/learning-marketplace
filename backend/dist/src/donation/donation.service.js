@@ -11,24 +11,35 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DonationService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const supabase_service_1 = require("../supabase/supabase.service");
 let DonationService = class DonationService {
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(supabase) {
+        this.supabase = supabase;
     }
     async findByChannel(channelName) {
-        const donation = await this.prisma.donation.findFirst({ where: { channelName } });
-        if (!donation)
+        const { data, error } = await this.supabase.client
+            .from('Donation')
+            .select('*')
+            .eq('channelName', channelName)
+            .single();
+        if (error || !data)
             throw new common_1.NotFoundException('Creator donation details not found');
-        return donation;
+        return data;
     }
-    create(dto) {
-        return this.prisma.donation.create({ data: dto });
+    async create(dto) {
+        const { data, error } = await this.supabase.client
+            .from('Donation')
+            .insert(dto)
+            .select()
+            .single();
+        if (error)
+            throw new common_1.InternalServerErrorException(error.message);
+        return data;
     }
 };
 exports.DonationService = DonationService;
 exports.DonationService = DonationService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [supabase_service_1.SupabaseService])
 ], DonationService);
 //# sourceMappingURL=donation.service.js.map

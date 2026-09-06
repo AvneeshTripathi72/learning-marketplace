@@ -11,12 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModerateVideoDto = void 0;
 const class_validator_1 = require("class-validator");
-const client_1 = require("@prisma/client");
+const enums_1 = require("../../common/enums");
 class ModerateVideoDto {
 }
 exports.ModerateVideoDto = ModerateVideoDto;
 __decorate([
-    (0, class_validator_1.IsEnum)(client_1.VideoStatus),
+    (0, class_validator_1.IsEnum)(enums_1.VideoStatus),
     __metadata("design:type", String)
 ], ModerateVideoDto.prototype, "status", void 0);
 //# sourceMappingURL=moderate-video.dto.js.map

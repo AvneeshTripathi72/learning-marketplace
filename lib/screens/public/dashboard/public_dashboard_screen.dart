@@ -84,7 +84,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
                 gradient: LinearGradient(
                   colors: [
                     theme.colorScheme.secondary,
-                    theme.colorScheme.secondary.withOpacity(0.85),
+                    theme.colorScheme.secondary.withValues(alpha: 0.85),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,

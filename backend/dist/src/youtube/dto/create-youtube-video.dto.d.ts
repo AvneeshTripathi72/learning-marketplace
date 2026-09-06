@@ -1,4 +1,4 @@
-import { VideoPlatform } from '@prisma/client';
+import { VideoPlatform } from '../../common/enums';
 export declare class CreateYouTubeVideoDto {
     url: string;
     platform: VideoPlatform;

@@ -18,7 +18,7 @@ const donation_service_1 = require("./donation.service");
 const create_donation_dto_1 = require("./dto/create-donation.dto");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const roles_guard_1 = require("../auth/guards/roles.guard");
-const client_1 = require("@prisma/client");
+const enums_1 = require("../common/enums");
 let DonationController = class DonationController {
     constructor(service) {
         this.service = service;
@@ -41,7 +41,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.ADMIN),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_donation_dto_1.CreateDonationDto]),

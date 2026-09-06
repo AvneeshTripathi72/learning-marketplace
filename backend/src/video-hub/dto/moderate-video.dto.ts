@@ -1,5 +1,5 @@
 import { IsEnum } from 'class-validator';
-import { VideoStatus } from '@prisma/client';
+import { VideoStatus } from '../../common/enums';
 
 export class ModerateVideoDto {
   @IsEnum(VideoStatus)

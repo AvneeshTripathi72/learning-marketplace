@@ -1,22 +1,50 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
 import { CreateEBookDto } from './dto/create-ebook.dto';
 
 @Injectable()
 export class EBookService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private supabase: SupabaseService) {}
 
-  findBySubject(subjectId: string) {
-    return this.prisma.eBook.findMany({ where: { subjectId, isActive: true } });
+  async findBySubject(subjectId: string) {
+    const { data, error } = await this.supabase.client
+      .from('EBook')
+      .select('*')
+      .eq('subjectId', subjectId)
+      .eq('isActive', true);
+    
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
-  create(dto: CreateEBookDto) {
-    return this.prisma.eBook.create({ data: dto });
+  async create(dto: CreateEBookDto) {
+    const { data, error } = await this.supabase.client
+      .from('EBook')
+      .insert(dto)
+      .select()
+      .single();
+      
+    if (error) throw new InternalServerErrorException(error.message);
+    return data;
   }
 
   async toggleStatus(id: string, isActive: boolean) {
-    const ebook = await this.prisma.eBook.findUnique({ where: { id } });
-    if (!ebook) throw new NotFoundException('eBook not found');
-    return this.prisma.eBook.update({ where: { id }, data: { isActive } });
+    const { data: ebook, error: findError } = await this.supabase.client
+      .from('EBook')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (findError || !ebook) throw new NotFoundException('eBook not found');
+
+    const { data, error: updateError } = await this.supabase.client
+      .from('EBook')
+      .update({ isActive })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw new InternalServerErrorException(updateError.message);
+    return data;
   }
 }

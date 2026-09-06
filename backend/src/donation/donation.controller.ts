@@ -3,7 +3,7 @@ import { DonationService } from './donation.service';
 import { CreateDonationDto } from './dto/create-donation.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../common/enums';
 
 @Controller('donations')
 export class DonationController {
