@@ -48,3 +48,9 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Ensure AndroidX and Google Play Services are compatible (as per fix for checkReleaseAarMetadata)
+    implementation("androidx.core:core:1.12.0")
+    implementation("com.google.android.gms:play-services-base:18.2.0")
+}

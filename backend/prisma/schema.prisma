@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -25,6 +26,10 @@ model User {
   videos        Video[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@index([publicationId])
 }
 
 model Publication {
@@ -40,6 +45,8 @@ model Publication {
   users         User[]
   subscriptions Subscription[]
   createdAt     DateTime       @default(now())
+
+  @@index([email])
 }
 
 model Series {
@@ -48,6 +55,8 @@ model Series {
   publicationId String
   publication   Publication @relation(fields: [publicationId], references: [id])
   classes       Class[]
+
+  @@index([publicationId])
 }
 
 model Class {
@@ -56,6 +65,8 @@ model Class {
   seriesId String
   series   Series    @relation(fields: [seriesId], references: [id])
   subjects Subject[]
+
+  @@index([seriesId])
 }
 
 model Subject {
@@ -65,6 +76,8 @@ model Subject {
   class   Class   @relation(fields: [classId], references: [id])
   ebooks  EBook[]
   videos  Video[]
+
+  @@index([classId])
 }
 
 model EBook {
@@ -75,6 +88,8 @@ model EBook {
   coverUrl  String
   fileUrl   String
   isActive  Boolean @default(true)
+
+  @@index([subjectId])
 }
 
 enum VideoPlatform {
@@ -104,6 +119,11 @@ model Video {
   subjectId     String?
   subject       Subject?      @relation(fields: [subjectId], references: [id])
   submittedAt   DateTime      @default(now())
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([submittedById])
+  @@index([subjectId])
 }
 
 model Category {
@@ -137,6 +157,9 @@ model Subscription {
   status        SubscriptionStatus
   paymentId     String
   payment       Payment            @relation(fields: [paymentId], references: [id])
+
+  @@index([publicationId])
+  @@index([paymentId])
 }
 
 enum PaymentStatus {
