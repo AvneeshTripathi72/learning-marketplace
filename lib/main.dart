@@ -3,10 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/theme_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/constants/api_endpoints.dart';
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  await Supabase.initialize(
+    url: ApiEndpoints.supabaseUrl,
+    anonKey: ApiEndpoints.supabaseAnonKey,
+  );
+
   try {
     await NotificationService().initialize();
   } catch (_) {}

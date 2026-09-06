@@ -5,7 +5,10 @@ import '../../providers/ebook_provider.dart';
 import '../../providers/video_provider.dart';
 import '../publication/ebook/pdf_viewer_screen.dart';
 import '../shared/video_player/video_player_screen.dart';
+import '../../widgets/animated_card.dart';
 import '../../widgets/app_drawer.dart';
+import '../../widgets/core/blurred_drawer_scaffold.dart';
+import '../../widgets/core/skeleton_loader.dart';
 import '../../widgets/bottom_nav_bar.dart';
 
 class AdminModerationScreen extends ConsumerStatefulWidget {
@@ -39,7 +42,7 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
+      child: BlurredDrawerScaffold(
         drawer: const AppDrawer(),
         appBar: AppBar(
           title: const Row(

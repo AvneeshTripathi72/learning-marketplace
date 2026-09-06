@@ -7,6 +7,7 @@ import '../../../providers/magazine_provider.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import 'magazine_pdf_viewer_screen.dart';
+import '../../../widgets/core/blurred_drawer_scaffold.dart';
 
 class MagazineScreen extends ConsumerWidget {
   const MagazineScreen({super.key});
@@ -16,7 +17,7 @@ class MagazineScreen extends ConsumerWidget {
     final user = ref.watch(authProvider);
     final isVendorOrAdmin = user?.role == UserRole.publication || user?.role == UserRole.admin;
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(

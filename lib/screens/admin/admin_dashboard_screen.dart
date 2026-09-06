@@ -14,6 +14,7 @@ import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/core/metric_card.dart';
 import '../../widgets/core/premium_card.dart';
 import '../../widgets/admin/admin_revenue_chart.dart';
+import '../../widgets/core/blurred_drawer_scaffold.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -385,7 +386,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       return matchesSearch;
     }).toList();
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(

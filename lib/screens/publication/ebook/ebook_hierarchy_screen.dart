@@ -11,6 +11,7 @@ import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../shared/magazine/magazine_screen.dart';
 import 'pdf_viewer_screen.dart';
+import '../../../widgets/core/blurred_drawer_scaffold.dart';
 
 class EBookHierarchyScreen extends ConsumerStatefulWidget {
   const EBookHierarchyScreen({super.key});
@@ -38,7 +39,7 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
       return matchesSeries && matchesClass && matchesSubject;
     }).toList();
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(

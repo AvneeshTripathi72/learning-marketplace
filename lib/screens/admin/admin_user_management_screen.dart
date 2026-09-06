@@ -5,6 +5,7 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/core/blurred_drawer_scaffold.dart';
 
 class SystemAccountModel {
   final String id;
@@ -147,7 +148,7 @@ class _AdminUserManagementScreenState extends ConsumerState<AdminUserManagementS
       return u.name.toLowerCase().contains(q) || u.email.toLowerCase().contains(q);
     }).toList();
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('User & Vendor Management'),

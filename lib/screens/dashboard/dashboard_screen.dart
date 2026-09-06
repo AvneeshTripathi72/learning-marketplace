@@ -15,6 +15,7 @@ import '../../widgets/core/skeleton_loader.dart';
 import '../../widgets/core/empty_state_view.dart';
 import '../../widgets/notification_modal.dart';
 import '../shared/video_player/video_player_screen.dart';
+import '../../widgets/core/blurred_drawer_scaffold.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -46,7 +47,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final theme = Theme.of(context);
     final isPublication = user?.role == UserRole.publication;
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(

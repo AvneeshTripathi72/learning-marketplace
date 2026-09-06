@@ -11,6 +11,7 @@ import '../../../widgets/category_chip_list.dart';
 import '../../../widgets/notification_modal.dart';
 import '../../../widgets/video_card.dart';
 import '../../shared/video_player/video_player_screen.dart';
+import '../../../widgets/core/blurred_drawer_scaffold.dart';
 
 class PublicDashboardScreen extends ConsumerStatefulWidget {
   const PublicDashboardScreen({super.key});
@@ -39,7 +40,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
     final recommendedAsync = ref.watch(publicRecommendedVideosProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(

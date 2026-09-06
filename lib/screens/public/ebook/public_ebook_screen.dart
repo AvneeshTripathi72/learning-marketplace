@@ -8,6 +8,7 @@ import '../../../widgets/core/debounced_search_bar.dart';
 import '../../../widgets/core/empty_state_view.dart';
 import '../../publication/ebook/pdf_viewer_screen.dart';
 import '../../shared/magazine/magazine_screen.dart';
+import '../../../widgets/core/blurred_drawer_scaffold.dart';
 
 class PublicEbookScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -63,7 +64,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
       return matchesPub && matchesSeries && matchesClass && matchesSubject && matchesSearch;
     }).map((item) => item.ebook).toList();
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       extendBody: true,
       drawer: const AppDrawer(),
       appBar: AppBar(

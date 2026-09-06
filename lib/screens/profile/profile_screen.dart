@@ -16,6 +16,7 @@ import '../../utils/image_picker_helper.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/notification_modal.dart';
+import '../../widgets/core/blurred_drawer_scaffold.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -747,7 +748,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final containerBg = isDark ? const Color(0xFF1E1E26) : Colors.white;
     final iconBgColor = isDark ? const Color(0xFF2A2A38) : const Color(0xFFF0EEFF);
 
-    return Scaffold(
+    return BlurredDrawerScaffold(
       backgroundColor: isDark ? const Color(0xFF121216) : const Color(0xFFF5F7FB),
       extendBody: true,
       drawer: const AppDrawer(),
