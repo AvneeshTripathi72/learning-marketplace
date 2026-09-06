@@ -6,6 +6,9 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/notification_service.dart';
 import '../../widgets/animated_card.dart';
+import '../../widgets/core/premium_textfield.dart';
+import '../../widgets/core/premium_button.dart';
+import '../../widgets/core/feedback_snackbar.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -17,6 +20,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final PageController _pageController;
   int _currentStep = 0;
+  bool _isLoading = false;
 
   // Selected Onboarding Options
   String? _selectedGoal;
@@ -1247,66 +1251,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 18),
 
                     // Full Name Input (Sign Up)
-                    TextField(
+                    PremiumTextField(
                       controller: _nameController,
-                      decoration: buildInputDecoration(
-                        _selectedRegisterRole == 'PUBLICATION'
-                            ? 'Publication / Vendor Name'
-                            : 'Full Name',
-                        Icons.person_outline,
-                      ),
+                      label: _selectedRegisterRole == 'PUBLICATION' ? 'Publication / Vendor Name' : 'Full Name',
+                      hint: 'Enter your name',
+                      prefixIcon: Icons.person_outline,
                     ),
                     const SizedBox(height: 14),
                   ],
 
                   // Email Address Input
-                  TextField(
+                  PremiumTextField(
                     controller: _emailController,
+                    label: 'Email Address',
+                    hint: 'name@example.com',
                     keyboardType: TextInputType.emailAddress,
-                    decoration: buildInputDecoration(
-                      'Email Address',
-                      Icons.email_outlined,
-                    ),
+                    prefixIcon: Icons.email_outlined,
                   ),
                   const SizedBox(height: 14),
 
                   // Password Input
-                  TextField(
+                  PremiumTextField(
                     controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: buildInputDecoration(
-                      'Password',
-                      Icons.lock_outline,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          size: 20,
-                        ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                      ),
-                    ),
+                    label: 'Password',
+                    hint: 'Enter your password',
+                    isPassword: true,
+                    prefixIcon: Icons.lock_outline,
                   ),
 
                   // Confirm Password Field (Sign Up Mode)
                   if (_isSignUpMode) ...[
                     const SizedBox(height: 14),
-                    TextField(
+                    PremiumTextField(
                       controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      decoration: buildInputDecoration(
-                        'Confirm Password',
-                        Icons.lock_reset_outlined,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            size: 20,
-                          ),
-                          onPressed: () =>
-                              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                        ),
-                      ),
+                      label: 'Confirm Password',
+                      hint: 'Re-enter your password',
+                      isPassword: true,
+                      prefixIcon: Icons.lock_reset_outlined,
                     ),
                   ],
 
@@ -1390,20 +1371,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 22),
 
                   // Main Primary Button (Log In / Register)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        elevation: 2,
-                        shadowColor: primaryColor.withValues(alpha: 0.4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: () async {
+                  PremiumButton(
+                    text: _isSignUpMode ? 'Create Account' : 'Log In',
+                    isLoading: _isLoading,
+                    onPressed: () async {
                         setState(() => _errorMessage = null);
                         final email = _emailController.text.trim();
                         final password = _passwordController.text.trim();
@@ -1450,6 +1421,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           }
                         }
 
+                        setState(() => _isLoading = true);
                         final auth = ref.read(authProvider.notifier);
                         UserModel? user;
 
@@ -1524,13 +1496,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             }
                           }
                         }
+                        }
+
+                        if (mounted) {
+                          setState(() => _isLoading = false);
+                        }
                       },
-                      child: Text(
-                        _isSignUpMode ? 'Register' : 'Log In',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
+                    );
                   const SizedBox(height: 28),
 
                   // Footer Toggle Navigation Text Link

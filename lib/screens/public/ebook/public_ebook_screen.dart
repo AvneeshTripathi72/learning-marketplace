@@ -4,6 +4,7 @@ import '../../../providers/ebook_provider.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
+import '../../../widgets/core/debounced_search_bar.dart';
 import '../../publication/ebook/pdf_viewer_screen.dart';
 import '../../shared/magazine/magazine_screen.dart';
 
@@ -26,6 +27,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
   String _selectedSeries = 'CBSE 2026';
   String _selectedClass = 'Class 10';
   String _selectedSubject = 'Mathematics';
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -55,7 +57,10 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
       final matchesSeries = ebook.seriesId.isEmpty || ebook.seriesId.toLowerCase() == _selectedSeries.toLowerCase();
       final matchesClass = ebook.classId.isEmpty || ebook.classId.toLowerCase() == _selectedClass.toLowerCase();
       final matchesSubject = ebook.subjectId.isEmpty || ebook.subjectId.toLowerCase() == _selectedSubject.toLowerCase();
-      return matchesPub && matchesSeries && matchesClass && matchesSubject;
+      final matchesSearch = _searchQuery.isEmpty || 
+          ebook.title.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+          ebook.description.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesPub && matchesSeries && matchesClass && matchesSubject && matchesSearch;
     }).map((item) => item.ebook).toList();
 
     return Scaffold(
@@ -149,6 +154,13 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                 ? Column(
                     children: [
                       Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: DebouncedSearchBar(
+                          hintText: 'Search eBooks by title or description...',
+                          onChanged: (val) => setState(() => _searchQuery = val),
+                        ),
+                      ),
+                      Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
                         child: DropdownButtonFormField<String>(
                           isExpanded: true,
@@ -177,28 +189,10 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                       ),
                       Expanded(
                         child: filteredEbooks.isEmpty
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.menu_book_outlined, size: 54, color: Colors.grey),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'No verified eBooks found in "$_selectedClass - $_selectedSubject"',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      const Text(
-                                        'Change filter selections above to explore available textbooks.',
-                                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                            ? EmptyStateView(
+                                icon: Icons.menu_book_outlined,
+                                title: 'No verified eBooks found in "$_selectedClass - $_selectedSubject"',
+                                message: 'Change filter selections above to explore available textbooks.',
                               )
                             : GridView.builder(
                                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),

@@ -21,7 +21,7 @@ class MagazineNotifier extends StateNotifier<List<MagazineModel>> {
         final loaded = list.map((item) => MagazineModel.fromJson(item as Map<String, dynamic>)).toList();
         _customMagazines.clear();
         _customMagazines.addAll(loaded);
-        state = [..._customMagazines, ..._initialMagazines];
+        state = [..._customMagazines];
       }
     } catch (e) {
       debugPrint('Error loading saved magazines: $e');
@@ -31,7 +31,7 @@ class MagazineNotifier extends StateNotifier<List<MagazineModel>> {
   Future<void> addMagazine(MagazineModel magazine) async {
     _customMagazines.removeWhere((m) => m.id == magazine.id);
     _customMagazines.insert(0, magazine);
-    state = [..._customMagazines, ..._initialMagazines];
+    state = [..._customMagazines];
     try {
       final jsonStr = jsonEncode(_customMagazines.map((m) => m.toJson()).toList());
       await _storage.write(key: _storageKey, value: jsonStr);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/video_model.dart';
 import '../screens/shared/video_player/video_player_screen.dart';
 
@@ -74,11 +75,15 @@ class _VideoCardState extends State<VideoCard> {
                 children: [
                   AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: Image.network(
-                      fallbackThumbnail,
+                    child: CachedNetworkImage(
+                      imageUrl: fallbackThumbnail,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      placeholder: (context, url) => Container(
+                        color: Colors.black12,
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                      errorWidget: (context, url, error) => Container(
                         color: Colors.black87,
                         child: const Center(
                           child: Icon(Icons.play_circle_fill, size: 54, color: Colors.white70),

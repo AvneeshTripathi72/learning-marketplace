@@ -89,6 +89,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/restricted';
       }
 
+      // Intercept non-admin users attempting /admin routes
+      if (user.role != UserRole.admin && state.matchedLocation.startsWith('/admin')) {
+        return '/restricted';
+      }
+
       return null;
     },
     routes: [

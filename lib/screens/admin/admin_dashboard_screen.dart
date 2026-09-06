@@ -11,6 +11,8 @@ import '../../providers/payment_provider.dart';
 import '../../providers/video_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/core/metric_card.dart';
+import '../../widgets/admin/admin_revenue_chart.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -545,21 +547,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
             const SizedBox(height: 20),
 
+            // Revenue Chart
+            const AdminRevenueChart(),
+            
+            const SizedBox(height: 20),
+
             // Live Content Approval & Moderation Queue Hub Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.5), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+            PremiumCard(
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1540,46 +1535,28 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildKpiCard(String title, String value, IconData icon, Color color, bool isDark, {VoidCallback? onTap}) {
-    return InkWell(
+  Widget _buildKpiCard(String title, String valueStr, IconData icon, Color color, bool isDark, {VoidCallback? onTap}) {
+    double parsedValue = 0.0;
+    String prefix = '';
+    String cleanStr = valueStr;
+    
+    if (valueStr.startsWith('?')) {
+      prefix = '?';
+      cleanStr = valueStr.substring(1).replaceAll(',', '');
+    } else {
+      cleanStr = valueStr.replaceAll(',', '');
+    }
+    
+    parsedValue = double.tryParse(cleanStr) ?? 0.0;
+
+    return MetricCard(
+      title: title,
+      value: parsedValue,
+      valuePrefix: prefix,
+      isInt: prefix.isEmpty,
+      icon: icon,
+      color: color,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, color: color, size: 22),
-                Expanded(
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.end,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

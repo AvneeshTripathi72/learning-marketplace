@@ -11,7 +11,8 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/category_chip_list.dart';
 import '../../widgets/video_card.dart';
-
+import '../../widgets/core/skeleton_loader.dart';
+import '../../widgets/core/empty_state_view.dart';
 import '../../widgets/notification_modal.dart';
 import '../shared/video_player/video_player_screen.dart';
 
@@ -498,9 +499,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     },
                   ),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) =>
-                    const Text('Error loading recommended videos'),
+                loading: () => ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 3,
+                  itemBuilder: (context, index) => const Padding(
+                    padding: EdgeInsets.only(right: 16.0),
+                    child: SkeletonLoader(width: 260, height: 295, borderRadius: 12),
+                  ),
+                ),
+                error: (_, __) => const EmptyStateView(
+                  icon: Icons.error_outline,
+                  title: 'Failed to load',
+                  message: 'Could not load recommended videos.',
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -532,8 +543,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     },
                   ),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const Text('Error loading recent videos'),
+                loading: () => ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 3,
+                  itemBuilder: (context, index) => const Padding(
+                    padding: EdgeInsets.only(right: 16.0),
+                    child: SkeletonLoader(width: 260, height: 295, borderRadius: 12),
+                  ),
+                ),
+                error: (_, __) => const EmptyStateView(
+                  icon: Icons.error_outline,
+                  title: 'Failed to load',
+                  message: 'Could not load recently viewed videos.',
+                ),
               ),
             ),
           ],

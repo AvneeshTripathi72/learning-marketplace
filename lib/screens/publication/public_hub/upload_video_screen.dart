@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
+import '../../../services/storage_service.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../../../models/video_model.dart';
 import '../../../providers/video_provider.dart';
@@ -23,6 +25,9 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
   final _keywordsController = TextEditingController();
   String _selectedCategory = 'Educational';
   bool _isSubmitting = false;
+  PlatformFile? _selectedVideoFile;
+  double _uploadProgress = 0.0;
+  final StorageService _storageService = StorageService();
 
   final List<String> _categories = [
     'Educational',
@@ -51,19 +56,47 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
   }
 
   VideoPlatform _detectPlatform(String url) {
+    if (_selectedVideoFile != null) return VideoPlatform.youtube; // Defaulting direct uploads to standard player
     final lower = url.toLowerCase();
     if (lower.contains('instagram')) return VideoPlatform.instagram;
     if (lower.contains('facebook')) return VideoPlatform.facebook;
     return VideoPlatform.youtube;
   }
 
+  Future<void> _pickVideoFile() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.video);
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        _selectedVideoFile = result.files.first;
+        _urlController.text = ''; // Clear URL if file selected
+      });
+    }
+  }
+
   void _submitVideo() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() && _selectedVideoFile == null) return;
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _uploadProgress = 0.0;
+    });
 
-    final url = _urlController.text.trim();
-    final platform = _detectPlatform(url);
+    String finalUrl = _urlController.text.trim();
+    if (_selectedVideoFile != null) {
+      finalUrl = await _storageService.uploadVideo(_selectedVideoFile!, onProgress: (progress) {
+        setState(() {
+          _uploadProgress = progress;
+        });
+      }) ?? '';
+    }
+
+    if (finalUrl.isEmpty) {
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to get video URL')));
+      return;
+    }
+
+    final platform = _detectPlatform(finalUrl);
     final title = _titleController.text.trim().isNotEmpty
         ? _titleController.text.trim()
         : 'Uploaded Video - $_selectedCategory';
@@ -74,7 +107,7 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
     final newVideo = VideoModel(
       id: 'sub_${DateTime.now().millisecondsSinceEpoch}',
       title: title,
-      url: url,
+      url: finalUrl,
       platform: platform,
       channelName: channelName,
       category: _selectedCategory,
@@ -92,7 +125,7 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
         Uri.parse('${ApiEndpoints.baseUrl}/video-hub/submit'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'url': url,
+          'url': finalUrl,
           'title': title,
           'platform': platform.name.toUpperCase(),
           'channelName': channelName,
@@ -106,10 +139,13 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
     await ref.read(videoSubmissionsProvider.notifier).fetchCloudQueue();
 
     if (mounted) {
-      setState(() => _isSubmitting = false);
+      setState(() {
+        _isSubmitting = false;
+        _uploadProgress = 0.0;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Video URL submitted to Cloud DB for Admin Moderation! 🎉'),
+          content: Text('Video submitted to Cloud DB for Admin Moderation! 🎉'),
           backgroundColor: Colors.green,
         ),
       );
@@ -143,17 +179,36 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _urlController,
+                enabled: _selectedVideoFile == null,
                 decoration: const InputDecoration(
                   labelText: 'Video URL (YouTube / Instagram / Facebook)',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.link),
                 ),
                 validator: (val) {
-                  if (val == null || val.isEmpty) return 'Please enter a video URL';
+                  if (_selectedVideoFile != null) return null;
+                  if (val == null || val.isEmpty) return 'Please enter a video URL or select a file';
                   if (!_isValidVideoUrl(val)) return 'Must be a YouTube, Instagram, or Facebook link';
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+              const Center(child: Text("OR", style: TextStyle(fontWeight: FontWeight.bold))),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _pickVideoFile,
+                icon: const Icon(Icons.video_file),
+                label: Text(_selectedVideoFile != null ? 'Selected: ${_selectedVideoFile!.name}' : 'Select Video File (MP4)'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  minimumSize: const Size.fromHeight(48),
+                ),
+              ),
+              if (_selectedVideoFile != null)
+                TextButton(
+                  onPressed: () => setState(() => _selectedVideoFile = null),
+                  child: const Text('Remove File', style: TextStyle(color: Colors.red)),
+                ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _channelController,
@@ -195,7 +250,13 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
                   hintText: 'e.g. Class10, BoardExam2026',
                 ),
               ),
-              const SizedBox(height: 24),
+              if (_isSubmitting && _selectedVideoFile != null) ...[
+                const SizedBox(height: 16),
+                LinearProgressIndicator(value: _uploadProgress),
+                const SizedBox(height: 8),
+                Text('${(_uploadProgress * 100).toStringAsFixed(0)}% Uploaded', textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+              ],
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -204,7 +265,7 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
                   icon: _isSubmitting
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.cloud_upload),
-                  label: Text(_isSubmitting ? 'Submitting Link...' : 'Submit Video Link for Moderation'),
+                  label: Text(_isSubmitting ? 'Submitting...' : 'Submit Video for Moderation'),
                 ),
               ),
             ],

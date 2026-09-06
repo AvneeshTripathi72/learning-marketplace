@@ -4,6 +4,8 @@ import '../../../models/ebook_model.dart';
 import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/ebook_provider.dart';
+import '../../../services/storage_service.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
@@ -285,6 +287,10 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
     String series = _selectedSeries;
     String cls = _selectedClass;
     String subject = _selectedSubject;
+    PlatformFile? selectedPdfFile;
+    bool isUploading = false;
+    double uploadProgress = 0.0;
+    final StorageService storageService = StorageService();
 
     showDialog(
       context: context,
@@ -346,6 +352,37 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                     prefixIcon: Icon(Icons.picture_as_pdf),
                   ),
                 ),
+                const SizedBox(height: 12),
+                const Center(child: Text("OR", style: TextStyle(fontWeight: FontWeight.bold))),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: isUploading ? null : () async {
+                    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+                    if (result != null && result.files.isNotEmpty) {
+                      setDialogState(() {
+                        selectedPdfFile = result.files.first;
+                        pdfUrlCtrl.text = ''; // Clear URL if file selected
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.picture_as_pdf),
+                  label: Text(selectedPdfFile != null ? 'Selected: ${selectedPdfFile!.name}' : 'Select PDF File'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+                if (selectedPdfFile != null)
+                  TextButton(
+                    onPressed: isUploading ? null : () => setDialogState(() => selectedPdfFile = null),
+                    child: const Text('Remove File', style: TextStyle(color: Colors.red)),
+                  ),
+                if (isUploading && selectedPdfFile != null) ...[
+                  const SizedBox(height: 16),
+                  LinearProgressIndicator(value: uploadProgress),
+                  const SizedBox(height: 8),
+                  Text('${(uploadProgress * 100).toStringAsFixed(0)}% Uploaded', textAlign: TextAlign.center),
+                ],
               ],
             ),
           ),
@@ -357,11 +394,37 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
             ElevatedButton.icon(
               icon: const Icon(Icons.cloud_upload),
               label: const Text('Submit eBook'),
-              onPressed: () {
+              onPressed: isUploading ? null : () async {
                 if (titleCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Please enter eBook title')),
                   );
+                  return;
+                }
+                if (pdfUrlCtrl.text.trim().isEmpty && selectedPdfFile == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter eBook URL or select a PDF file')),
+                  );
+                  return;
+                }
+
+                setDialogState(() {
+                  isUploading = true;
+                  uploadProgress = 0.0;
+                });
+
+                String finalUrl = pdfUrlCtrl.text.trim();
+                if (selectedPdfFile != null) {
+                  finalUrl = await storageService.uploadPDF(selectedPdfFile!, onProgress: (progress) {
+                    setDialogState(() {
+                      uploadProgress = progress;
+                    });
+                  }) ?? '';
+                }
+
+                if (finalUrl.isEmpty) {
+                  setDialogState(() => isUploading = false);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to get PDF URL')));
                   return;
                 }
 
@@ -374,9 +437,7 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                   classId: cls,
                   subjectId: subject,
                   coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300',
-                  fileUrl: pdfUrlCtrl.text.trim().isEmpty
-                      ? 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf'
-                      : pdfUrlCtrl.text.trim(),
+                  fileUrl: finalUrl,
                 );
 
                 final isAdmin = user?.role == UserRole.admin;
@@ -387,17 +448,19 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                       autoApprove: isAdmin,
                     );
 
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isAdmin
-                          ? 'eBook "${titleCtrl.text.trim()}" published & approved!'
-                          : 'eBook "${titleCtrl.text.trim()}" submitted for Admin Verification!',
+                if (context.mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        isAdmin
+                            ? 'eBook "${titleCtrl.text.trim()}" published & approved!'
+                            : 'eBook "${titleCtrl.text.trim()}" submitted for Admin Verification!',
+                      ),
+                      backgroundColor: Colors.green,
                     ),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                  );
+                }
               },
             ),
           ],
