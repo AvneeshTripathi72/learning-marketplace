@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../models/ebook_model.dart';
+import '../../../models/user_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/ebook_provider.dart';
 import '../../../services/storage_service.dart';
 import '../../../widgets/app_drawer.dart';
@@ -273,6 +275,10 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
     final elevatedColor = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F3);
     final accentPrimary = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
 
+    final currentUser = ref.watch(authProvider);
+    final isPublisherOrAdmin = currentUser != null &&
+        (currentUser.role == UserRole.publication || currentUser.role == UserRole.admin);
+
     final allSubmissions = ref.watch(ebookSubmissionsProvider);
     final approvedSubmissions = allSubmissions.where((item) => item.status == EBookStatus.approved).toList();
 
@@ -302,51 +308,53 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
             fontSize: 18,
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 14.0),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(
-                  colors: [accentPrimary, accentPrimary.withOpacity(0.8)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: accentPrimary.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () => _showUploadPdfModal(context),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    child: Row(
-                      children: [
-                        Icon(Icons.picture_as_pdf, size: 16, color: Colors.white),
-                        SizedBox(width: 6),
-                        Text(
-                          'Upload PDF',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+        actions: isPublisherOrAdmin
+            ? [
+                Padding(
+                  padding: const EdgeInsets.only(right: 14.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      gradient: LinearGradient(
+                        colors: [accentPrimary, accentPrimary.withOpacity(0.8)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentPrimary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => _showUploadPdfModal(context),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          child: Row(
+                            children: [
+                              Icon(Icons.picture_as_pdf, size: 16, color: Colors.white),
+                              SizedBox(width: 6),
+                              Text(
+                                'Upload PDF',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-        ],
+              ]
+            : [],
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
       body: Container(
@@ -533,9 +541,11 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                               ? EmptyStateView(
                                   icon: Icons.picture_as_pdf_rounded,
                                   title: 'No eBooks found for $_selectedClass - $_selectedSubject',
-                                  message: 'Tap "Upload eBook PDF" to publish new learning material or PDF document link to this catalog.',
-                                  actionText: 'Upload eBook PDF',
-                                  onAction: () => _showUploadPdfModal(context),
+                                  message: isPublisherOrAdmin
+                                      ? 'Tap "Upload eBook PDF" to publish new learning material or PDF document link to this catalog.'
+                                      : 'No eBook learning materials available for $_selectedClass - $_selectedSubject yet.',
+                                  actionText: isPublisherOrAdmin ? 'Upload eBook PDF' : null,
+                                  onAction: isPublisherOrAdmin ? () => _showUploadPdfModal(context) : null,
                                 )
                               : GridView.builder(
                                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
