@@ -358,7 +358,11 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: isUploading ? null : () async {
-                    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf'],
+                      withData: true,
+                    );
                     if (result != null && result.files.isNotEmpty) {
                       setDialogState(() {
                         selectedPdfFile = result.files.first;

@@ -64,7 +64,7 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
   }
 
   Future<void> _pickVideoFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.video);
+    final result = await FilePicker.platform.pickFiles(type: FileType.video, withData: true);
     if (result != null && result.files.isNotEmpty) {
       setState(() {
         _selectedVideoFile = result.files.first;
