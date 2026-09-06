@@ -12,6 +12,7 @@ import '../../providers/video_provider.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/core/metric_card.dart';
+import '../../widgets/core/premium_card.dart';
 import '../../widgets/admin/admin_revenue_chart.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
