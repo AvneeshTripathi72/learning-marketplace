@@ -7,6 +7,7 @@ class SecureStorageService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   static const String _usersKey = 'app_registered_users_db_v1';
   static const String _currentUserKey = 'app_current_user_session_v1';
+  static const String _biometricKey = 'app_biometric_security_enabled_v1';
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: AppConstants.tokenKey, value: token);
@@ -57,9 +58,9 @@ class SecureStorageService {
       }
     } catch (_) {}
     return null;
-  // Biometric Security Persistence
-  static const String _biometricKey = 'app_biometric_security_enabled_v1';
+  }
 
+  // Biometric Security Persistence
   Future<void> saveBiometricEnabled(bool enabled) async {
     try {
       await _storage.write(key: _biometricKey, value: enabled ? 'true' : 'false');
@@ -74,4 +75,3 @@ class SecureStorageService {
     return false;
   }
 }
-

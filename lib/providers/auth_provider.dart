@@ -196,8 +196,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         debugPrint('✅ Cloud login successful for: ${user.email} (${user.role.name})');
         return user;
       } else if (response.statusCode == 401 || response.statusCode == 400) {
-        debugPrint('⚠️ Cloud login invalid credentials status: ${response.statusCode}');
-        return null;
+        debugPrint('⚠️ Cloud login response status: ${response.statusCode}. Checking local user registry.');
       }
     } catch (e) {
       debugPrint('ℹ️ Backend auth reachability notice: $e. Falling back to persistent local storage user registry.');
