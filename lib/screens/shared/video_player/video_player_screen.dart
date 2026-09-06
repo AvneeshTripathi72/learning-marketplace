@@ -86,16 +86,27 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Future<void> _launchVideoUrl() async {
-    String targetUrl = widget.video.url;
+    String targetUrl = widget.video.url.trim();
     if (targetUrl.isEmpty || !targetUrl.startsWith('http')) {
       targetUrl = 'https://www.youtube.com/watch?v=kffacxfA7G4';
     }
     final uri = Uri.parse(targetUrl);
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(uri);
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint('Failed to launch externalApplication: $e');
+      }
+      if (!launched) {
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+        } catch (e) {
+          debugPrint('Failed to launch inAppBrowserView: $e');
+        }
+      }
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
       debugPrint('Error launching video URL: $e');
@@ -194,9 +205,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 color: Colors.black,
                 child: kIsWeb && _youtubeViewType.isNotEmpty
                     ? HtmlElementView(viewType: _youtubeViewType)
-                    : Stack(
-                        alignment: Alignment.center,
-                        children: [
+                    : GestureDetector(
+                        onTap: _launchVideoUrl,
+                        behavior: HitTestBehavior.opaque,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
                           // Video Thumbnail Background
                           Image.network(
                             fallbackThumbnail,
@@ -329,6 +343,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             ),
                           ],
                         ),
+                      ),
               ),
 
               // 2. VIDEO TITLE & METADATA SECTION

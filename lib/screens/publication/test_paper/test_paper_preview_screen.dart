@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/test_paper_model.dart';
 
 class TestPaperPreviewScreen extends StatefulWidget {
@@ -134,6 +135,19 @@ class _TestPaperPreviewScreenState extends State<TestPaperPreviewScreen> {
                             'Please use the "Paper Sheet" tab to view the compiled test paper.',
                             textAlign: TextAlign.center,
                             style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final uri = Uri.parse(widget.result.testPdfUrl);
+                              try {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (_) {
+                                await launchUrl(uri);
+                              }
+                            },
+                            icon: const Icon(Icons.open_in_browser, size: 16),
+                            label: const Text('Open PDF in External App'),
                           ),
                         ],
                       ),

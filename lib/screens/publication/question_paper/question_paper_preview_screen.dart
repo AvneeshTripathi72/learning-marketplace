@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/question_paper_model.dart';
 
 class QuestionPaperPreviewScreen extends StatefulWidget {
@@ -248,12 +249,31 @@ class _QuestionPaperPreviewScreenState extends State<QuestionPaperPreviewScreen>
                             ),
                           ),
                           const SizedBox(height: 20),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              DefaultTabController.of(context).animateTo(0);
-                            },
-                            icon: const Icon(Icons.article),
-                            label: const Text('View Rendered Question Paper'),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  DefaultTabController.of(context).animateTo(0);
+                                },
+                                icon: const Icon(Icons.article),
+                                label: const Text('View Rendered Paper'),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: () async {
+                                  final uri = Uri.parse(widget.result.pdfUrl);
+                                  try {
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  } catch (_) {
+                                    await launchUrl(uri);
+                                  }
+                                },
+                                icon: const Icon(Icons.open_in_browser),
+                                label: const Text('Open PDF in External App'),
+                              ),
+                            ],
                           ),
                         ],
                       ),

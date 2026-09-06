@@ -52,8 +52,17 @@ class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
         : 'https://aspirebookscompany.info/2025/English/2/mobile/index.html';
     final uri = Uri.parse(url);
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {}
+      if (!launched) {
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+        } catch (_) {}
+      }
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
       debugPrint('Error launching external flipbook: $e');
@@ -230,20 +239,36 @@ class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isLoading = true;
-                            _pdfLoadError = false;
-                          });
-                        },
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry Loading PDF Stream'),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isLoading = true;
+                                _pdfLoadError = false;
+                              });
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry Loading PDF Stream'),
+                          ),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.blueAccent,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            onPressed: _openExternalFlipbook,
+                            icon: const Icon(Icons.open_in_browser),
+                            label: const Text('Open in Browser'),
+                          ),
+                        ],
                       ),
                     ],
                   ),

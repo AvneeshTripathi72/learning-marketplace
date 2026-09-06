@@ -64,8 +64,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         : 'https://aspirebookscompany.info/2025/English/2/mobile/index.html';
     final uri = Uri.parse(url);
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {}
+      if (!launched) {
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+        } catch (_) {}
+      }
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
       debugPrint('Error launching external flipbook: $e');
@@ -270,8 +279,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 10,
+                            runSpacing: 10,
                             children: [
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
@@ -283,6 +294,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                 },
                                 icon: const Icon(Icons.refresh, size: 16),
                                 label: const Text('Retry PDF Stream'),
+                              ),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
+                                onPressed: _openExternalFlipbook,
+                                icon: const Icon(Icons.open_in_browser, size: 16),
+                                label: const Text('Open in Browser'),
                               ),
                             ],
                           ),
