@@ -1,5 +1,5 @@
 class ApiEndpoints {
-  static const String baseUrl = 'https://ebook-backend-imn2.onrender.com/api/v1';
+  static const String baseUrl = 'https://learning-marketplace.vercel.app/api/v1';
 
   // Auth
   static const String login = '/auth/login';

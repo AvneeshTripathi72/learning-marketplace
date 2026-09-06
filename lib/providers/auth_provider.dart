@@ -10,48 +10,7 @@ final secureStorageProvider = Provider((ref) => SecureStorageService());
 class AuthNotifier extends StateNotifier<UserModel?> {
   final SecureStorageService _storage;
 
-  final Map<String, Map<String, dynamic>> _registeredUsers = {
-    'admin@system.com': {
-      'id': 'usr_admin_001',
-      'name': 'System Administrator',
-      'password': 'Admin@12345',
-      'role': UserRole.admin,
-      'publicationId': null,
-      'mobile': '+91 9800000000',
-      'avatarUrl': null,
-      'isBlocked': false,
-    },
-    'vendor@oxford.com': {
-      'id': 'pub_oxford_001',
-      'name': 'Oxford Publication Vendor',
-      'password': 'Vendor@12345',
-      'role': UserRole.publication,
-      'publicationId': 'oxford_pub',
-      'mobile': '+91 9876543210',
-      'avatarUrl': null,
-      'isBlocked': false,
-    },
-    'student@gmail.com': {
-      'id': 'usr_student_101',
-      'name': 'Rahul Sharma (Student)',
-      'password': 'Student@12345',
-      'role': UserRole.public,
-      'publicationId': null,
-      'mobile': '+91 9811223344',
-      'avatarUrl': null,
-      'isBlocked': false,
-    },
-    'hariom.info07@gmail.com': {
-      'id': 'usr_hariom_102',
-      'name': 'Hariom (Student)',
-      'password': 'Hariom2005.',
-      'role': UserRole.public,
-      'publicationId': null,
-      'mobile': '+91 9765432109',
-      'avatarUrl': null,
-      'isBlocked': false,
-    },
-  };
+  final Map<String, Map<String, dynamic>> _registeredUsers = {};
 
   AuthNotifier(this._storage) : super(null) {
     _initPersistentStorage();
