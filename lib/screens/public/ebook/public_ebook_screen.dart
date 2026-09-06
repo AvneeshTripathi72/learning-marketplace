@@ -59,8 +59,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
       final matchesClass = ebook.classId.isEmpty || ebook.classId.toLowerCase() == _selectedClass.toLowerCase();
       final matchesSubject = ebook.subjectId.isEmpty || ebook.subjectId.toLowerCase() == _selectedSubject.toLowerCase();
       final matchesSearch = _searchQuery.isEmpty || 
-          ebook.title.toLowerCase().contains(_searchQuery.toLowerCase()) || 
-          ebook.description.toLowerCase().contains(_searchQuery.toLowerCase());
+          ebook.title.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesPub && matchesSeries && matchesClass && matchesSubject && matchesSearch;
     }).map((item) => item.ebook).toList();
 
@@ -157,7 +156,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                         child: DebouncedSearchBar(
-                          hintText: 'Search eBooks by title or description...',
+                          hintText: 'Search eBooks by title...',
                           onChanged: (val) => setState(() => _searchQuery = val),
                         ),
                       ),
