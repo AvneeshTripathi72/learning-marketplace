@@ -412,67 +412,6 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                   );
                   return;
                 }
-
-                setDialogState(() {
-                  isUploading = true;
-                  uploadProgress = 0.0;
-                });
-
-                String finalUrl = pdfUrlCtrl.text.trim();
-                if (selectedPdfFile != null) {
-                  finalUrl = await storageService.uploadPDF(selectedPdfFile!, onProgress: (progress) {
-                    setDialogState(() {
-                    );
-                    if (result != null && result.files.isNotEmpty) {
-                      setDialogState(() {
-                        selectedPdfFile = result.files.first;
-                        pdfUrlCtrl.text = ''; // Clear URL if file selected
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.picture_as_pdf),
-                  label: Text(selectedPdfFile != null ? 'Selected: ${selectedPdfFile!.name}' : 'Select PDF File'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                ),
-                if (selectedPdfFile != null)
-                  TextButton(
-                    onPressed: isUploading ? null : () => setDialogState(() => selectedPdfFile = null),
-                    child: const Text('Remove File', style: TextStyle(color: Colors.red)),
-                  ),
-                if (isUploading && selectedPdfFile != null) ...[
-                  const SizedBox(height: 16),
-                  LinearProgressIndicator(value: uploadProgress),
-                  const SizedBox(height: 8),
-                  Text('${(uploadProgress * 100).toStringAsFixed(0)}% Uploaded', textAlign: TextAlign.center),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.cloud_upload),
-              label: const Text('Submit eBook'),
-              onPressed: isUploading ? null : () async {
-                if (titleCtrl.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter eBook title')),
-                  );
-                  return;
-                }
-                if (pdfUrlCtrl.text.trim().isEmpty && selectedPdfFile == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter eBook URL or select a PDF file')),
-                  );
-                  return;
-                }
-
                 setDialogState(() {
                   isUploading = true;
                   uploadProgress = 0.0;
