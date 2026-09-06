@@ -34,6 +34,11 @@ class _BlurredDrawerScaffoldState extends State<BlurredDrawerScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final blurOverlayColor = isDark
+        ? Colors.black.withValues(alpha: 0.55)
+        : Colors.black.withValues(alpha: 0.35);
+
     return Scaffold(
       backgroundColor: widget.backgroundColor,
       extendBody: widget.extendBody,
@@ -50,20 +55,21 @@ class _BlurredDrawerScaffoldState extends State<BlurredDrawerScaffold> {
           });
         }
       },
-      drawerScrimColor: Colors.black.withValues(alpha: 0.1), // Lighter scrim since blur is active
-      body: _isDrawerOpen
-          ? Stack(
-              children: [
-                widget.body,
-                Positioned.fill(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                    child: Container(color: Colors.transparent),
-                  ),
+      drawerScrimColor: Colors.transparent,
+      body: Stack(
+        children: [
+          widget.body,
+          if (_isDrawerOpen)
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+                child: Container(
+                  color: blurOverlayColor,
                 ),
-              ],
-            )
-          : widget.body,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
