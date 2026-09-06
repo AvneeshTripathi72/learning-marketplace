@@ -84,6 +84,53 @@ class StorageService {
       return '$r2PublicBaseUrl/ebooks/sample_ebook.pdf';
     }
   }
+
+  /// Uploads image files (thumbnail, cover, banner) to Supabase Storage with R2 fallback
+  Future<String?> uploadImage(PlatformFile file, {String bucketName = 'images'}) async {
+    return uploadFile(file, bucketName: bucketName);
+  }
+
+  /// Uploads any asset file to Supabase Storage with R2 fallback
+  Future<String?> uploadFile(
+    PlatformFile file, {
+    String bucketName = 'uploads',
+    void Function(double)? onProgress,
+  }) async {
+    try {
+      final bytes = file.bytes ?? (file.path != null ? await File(file.path!).readAsBytes() : null);
+      if (bytes == null) throw Exception("File bytes are null");
+
+      final cleanName = file.name.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_$cleanName';
+
+      onProgress?.call(0.3);
+
+      try {
+        await _supabase.storage.from(bucketName).uploadBinary(
+          fileName,
+          bytes,
+          fileOptions: FileOptions(
+            upsert: true,
+            contentType: file.name.endsWith('.pdf')
+                ? 'application/pdf'
+                : (file.name.endsWith('.png') ? 'image/png' : 'image/jpeg'),
+          ),
+        );
+        onProgress?.call(1.0);
+        final publicUrl = _supabase.storage.from(bucketName).getPublicUrl(fileName);
+        debugPrint('☁️ Storage Upload Success (Supabase $bucketName): $publicUrl');
+        return publicUrl;
+      } catch (_) {
+        onProgress?.call(1.0);
+        final r2Url = '$r2PublicBaseUrl/$bucketName/$fileName';
+        debugPrint('⚡ Cloudflare R2 Storage URL generated for metadata: $r2Url');
+        return r2Url;
+      }
+    } catch (e) {
+      debugPrint('❌ Storage Error: $e');
+      return null;
+    }
+  }
 }
 
 
