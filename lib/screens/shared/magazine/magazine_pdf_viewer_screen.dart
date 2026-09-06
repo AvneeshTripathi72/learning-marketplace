@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/magazine_model.dart';
+import '../../../utils/web_iframe_helper.dart';
 
 class MagazinePdfViewerScreen extends StatefulWidget {
   final MagazineModel magazine;
@@ -13,19 +16,54 @@ class MagazinePdfViewerScreen extends StatefulWidget {
 
 class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
   late PdfViewerController _pdfViewerController;
+  late TransformationController _transformationController;
   int _currentPage = 1;
   int _totalPages = 0;
   bool _isLoading = true;
+  bool _pdfLoadError = false;
+  String _pdfViewType = '';
+  double _currentScale = 1.0;
 
   @override
   void initState() {
     super.initState();
     _pdfViewerController = PdfViewerController();
+    _transformationController = TransformationController();
+
+    if (kIsWeb) {
+      _pdfViewType = 'mag-pdf-iframe-${widget.magazine.id}-${DateTime.now().millisecondsSinceEpoch}';
+      String targetUrl = widget.magazine.pdfUrl.isNotEmpty
+          ? widget.magazine.pdfUrl
+          : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
+      final isHtml = targetUrl.toLowerCase().endsWith('.html') ||
+          targetUrl.toLowerCase().contains('/mobile/') ||
+          targetUrl.toLowerCase().contains('aspirebookscompany');
+      final embedUrl = isHtml
+          ? targetUrl
+          : 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}';
+      registerIframe(_pdfViewType, embedUrl);
+      _isLoading = false;
+    }
+  }
+
+  Future<void> _openExternalFlipbook() async {
+    final url = widget.magazine.pdfUrl.isNotEmpty
+        ? widget.magazine.pdfUrl
+        : 'https://aspirebookscompany.info/2025/English/2/mobile/index.html';
+    final uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('Error launching external flipbook: $e');
+    }
   }
 
   @override
   void dispose() {
     _pdfViewerController.dispose();
+    _transformationController.dispose();
     super.dispose();
   }
 
@@ -50,6 +88,11 @@ class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.open_in_new),
+            tooltip: 'Open Full Interactive Flipbook',
+            onPressed: _openExternalFlipbook,
+          ),
+          IconButton(
             icon: const Icon(Icons.bookmark_border),
             tooltip: 'Bookmark Page',
             onPressed: () {
@@ -62,44 +105,152 @@ class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
             icon: const Icon(Icons.zoom_in),
             tooltip: 'Zoom In',
             onPressed: () {
-              _pdfViewerController.zoomLevel = (_pdfViewerController.zoomLevel + 0.25).clamp(1.0, 3.0);
+              setState(() {
+                _currentScale = (_currentScale + 0.3).clamp(0.5, 4.0);
+                _transformationController.value = Matrix4.identity()..scale(_currentScale);
+              });
+              try {
+                _pdfViewerController.zoomLevel = _currentScale.clamp(1.0, 3.0);
+              } catch (_) {}
             },
           ),
           IconButton(
             icon: const Icon(Icons.zoom_out),
             tooltip: 'Zoom Out',
             onPressed: () {
-              _pdfViewerController.zoomLevel = (_pdfViewerController.zoomLevel - 0.25).clamp(1.0, 3.0);
+              setState(() {
+                _currentScale = (_currentScale - 0.3).clamp(0.5, 4.0);
+                _transformationController.value = Matrix4.identity()..scale(_currentScale);
+              });
+              try {
+                _pdfViewerController.zoomLevel = _currentScale.clamp(1.0, 3.0);
+              } catch (_) {}
             },
           ),
         ],
       ),
       body: Stack(
         children: [
-          SfPdfViewer.network(
-            widget.magazine.pdfUrl.isNotEmpty
-                ? widget.magazine.pdfUrl
-                : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
-            controller: _pdfViewerController,
-            onDocumentLoaded: (PdfDocumentLoadedDetails details) {
-              setState(() {
-                _totalPages = details.document.pages.count;
-                _isLoading = false;
-              });
-            },
-            onPageChanged: (PdfPageChangedDetails details) {
-              setState(() {
-                _currentPage = details.newPageNumber;
-              });
-            },
-            onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
-              setState(() => _isLoading = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to load PDF: ${details.description}')),
-              );
-            },
-          ),
-          if (_isLoading)
+          if (kIsWeb && _pdfViewType.isNotEmpty)
+            InteractiveViewer(
+              transformationController: _transformationController,
+              minScale: 0.5,
+              maxScale: 5.0,
+              panEnabled: true,
+              scaleEnabled: true,
+              child: HtmlElementView(viewType: _pdfViewType),
+            )
+          else
+            SfPdfViewer.network(
+              widget.magazine.pdfUrl.isNotEmpty
+                  ? widget.magazine.pdfUrl
+                  : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+              controller: _pdfViewerController,
+              onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+                setState(() {
+                  _totalPages = details.document.pages.count;
+                  _isLoading = false;
+                });
+              },
+              onPageChanged: (PdfPageChangedDetails details) {
+                setState(() {
+                  _currentPage = details.newPageNumber;
+                });
+              },
+              onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+                setState(() {
+                  _isLoading = false;
+                  _pdfLoadError = true;
+                });
+              },
+            ),
+          if (_pdfLoadError)
+            Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          widget.magazine.coverImageUrl,
+                          width: 160,
+                          height: 220,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 160,
+                            height: 220,
+                            color: Colors.blueGrey,
+                            child: const Icon(Icons.picture_in_picture, size: 60, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        widget.magazine.title,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${widget.magazine.publicationName} • ${widget.magazine.category}',
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.auto_stories, color: Colors.blue),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Digital Magazine E-Reader Mode',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.magazine.description.isNotEmpty
+                                  ? widget.magazine.description
+                                  : 'Full issue contains featured educational articles, board preparation tips, and practice test sets.',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isLoading = true;
+                            _pdfLoadError = false;
+                          });
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry Loading PDF Stream'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (_isLoading && !_pdfLoadError)
             const Center(
               child: Card(
                 elevation: 4,
@@ -116,24 +267,25 @@ class _MagazinePdfViewerScreenState extends State<MagazinePdfViewerScreen> {
                 ),
               ),
             ),
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.75),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Page $_currentPage of ${_totalPages > 0 ? _totalPages : "..."}',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+          if (!_pdfLoadError)
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Page $_currentPage of ${_totalPages > 0 ? _totalPages : "..."}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

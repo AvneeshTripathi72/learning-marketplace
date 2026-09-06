@@ -13,6 +13,7 @@ import '../../widgets/category_chip_list.dart';
 import '../../widgets/video_card.dart';
 
 import '../../widgets/notification_modal.dart';
+import '../shared/video_player/video_player_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -71,9 +72,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     color: theme.colorScheme.primary,
                   ),
             const SizedBox(width: 8),
-            Text(
-              isPublication ? 'Publication Portal' : 'Public Content Hub',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            Expanded(
+              child: Text(
+                isPublication ? 'Publication Portal' : 'Public Content Hub',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -255,9 +259,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       Icon(Icons.bolt, color: Colors.amber, size: 22),
                       SizedBox(width: 8),
-                      Text(
-                        'Vendor Direct Upload & Content Hub',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text(
+                          'Vendor Direct Upload & Content Hub',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
@@ -509,7 +515,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   itemBuilder: (context, index) => VideoCard(
                     video: videos[index],
                     width: 260,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VideoPlayerScreen(video: videos[index]),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),

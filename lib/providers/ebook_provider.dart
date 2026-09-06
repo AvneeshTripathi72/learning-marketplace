@@ -61,7 +61,7 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
               coverUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300',
               fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
             ),
-            status: EBookStatus.pending,
+            status: EBookStatus.approved,
             submittedBy: 'Vendor (Cambridge)',
             submittedDate: DateTime.now().subtract(const Duration(hours: 3)),
           ),

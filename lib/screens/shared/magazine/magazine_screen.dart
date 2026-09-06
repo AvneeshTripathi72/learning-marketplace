@@ -188,10 +188,16 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
     }).toList();
 
     final isVendorOrAdmin = user?.role == UserRole.publication || user?.role == UserRole.admin;
+    final isAdmin = user?.role == UserRole.admin;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Future.delayed(const Duration(milliseconds: 600));
+        ref.invalidate(magazineProvider);
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header Banner
@@ -205,38 +211,70 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
               ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.auto_stories, color: Colors.white, size: 36),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Vendor & Public Magazines',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Read interactive PDF magazines directly in app',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isSmall = constraints.maxWidth < 420;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_stories, color: Colors.white, size: 32),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Vendor & Public Magazines',
+                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Read interactive PDF magazines directly in app',
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 11),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isVendorOrAdmin && !isSmall) ...[
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: theme.colorScheme.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
+                            icon: const Icon(Icons.upload, size: 16),
+                            label: const Text('Upload', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (isVendorOrAdmin && isSmall) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: theme.colorScheme.primary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
+                          icon: const Icon(Icons.upload, size: 16),
+                          label: const Text('Upload Magazine Issue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        ),
                       ),
                     ],
-                  ),
-                ),
-                if (isVendorOrAdmin)
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: theme.colorScheme.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    ),
-                    onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
-                    icon: const Icon(Icons.upload, size: 16),
-                    label: const Text('Upload'),
-                  ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),
@@ -297,7 +335,7 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.72,
+                childAspectRatio: 0.65,
               ),
               itemCount: filteredMagazines.length,
               itemBuilder: (context, index) {
@@ -345,6 +383,49 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
                                   ),
                                 ),
                               ),
+                              if (isAdmin)
+                                Positioned(
+                                  top: 6,
+                                  left: 6,
+                                  child: CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: Colors.red,
+                                    child: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      icon: const Icon(Icons.delete, size: 14, color: Colors.white),
+                                      tooltip: 'Admin Delete Magazine',
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text('Admin Remove Magazine'),
+                                            content: Text('Are you sure you want to delete "${mag.title}"?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(ctx),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                                onPressed: () {
+                                                  ref.read(magazineProvider.notifier).deleteMagazine(mag.id);
+                                                  Navigator.pop(ctx);
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('🗑️ Magazine "${mag.title}" removed by Admin.'),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                },
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -398,6 +479,7 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
             ),
         ],
       ),
+    ),
     );
   }
 }

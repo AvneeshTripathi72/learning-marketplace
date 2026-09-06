@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/donation_model.dart';
+import '../../../providers/payment_provider.dart';
 import '../../../services/donation_service.dart';
 import '../../../services/razorpay_payment_service.dart';
 
-class DonationScreen extends StatefulWidget {
+class DonationScreen extends ConsumerStatefulWidget {
   final String channelId;
 
   const DonationScreen({super.key, required this.channelId});
 
   @override
-  State<DonationScreen> createState() => _DonationScreenState();
+  ConsumerState<DonationScreen> createState() => _DonationScreenState();
 }
 
-class _DonationScreenState extends State<DonationScreen> {
+class _DonationScreenState extends ConsumerState<DonationScreen> {
   final _amountController = TextEditingController(text: '100');
   final DonationService _service = DonationService();
   DonationModel? _donationData;
@@ -58,9 +60,12 @@ class _DonationScreenState extends State<DonationScreen> {
     );
 
     if (result != null && result.success && mounted) {
+      if (result.record != null) {
+        ref.read(paymentProvider.notifier).addPaymentRecord(result.record!);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Donation of ₹$amount to ${_donationData!.channelName} successful! Thank you! ❤️'),
+          content: Text('Donation of ₹$amount to ${_donationData!.channelName} successful! Receipt logged to Admin. ❤️'),
           backgroundColor: Colors.green,
         ),
       );

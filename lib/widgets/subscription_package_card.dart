@@ -47,15 +47,18 @@ class SubscriptionPackageCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    package.name,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color),
+                  Expanded(
+                    child: Text(
+                      package.name,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   if (isCurrentPackage)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.2),
+                        color: color.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(

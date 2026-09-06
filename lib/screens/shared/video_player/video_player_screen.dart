@@ -125,7 +125,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         videoId = parts[1].split('?').first;
       }
     }
-    return 'https://www.youtube.com/embed/$videoId?autoplay=1&rel=0&modestbranding=1';
+    return 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=1&enablejsapi=1&rel=0&modestbranding=1&playsinline=1';
   }
 
   @override
@@ -188,54 +188,49 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. IN-APP PW-STYLE EMBEDDED VIDEO PLAYER CONTAINER
-              GestureDetector(
-                onTap: _launchVideoUrl,
-                child: Container(
-                  width: double.infinity,
-                  height: 230,
-                  color: Colors.black,
-                  child: kIsWeb && _youtubeViewType.isNotEmpty
-                      ? HtmlElementView(viewType: _youtubeViewType)
-                      : Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Video Thumbnail Background
-                            Image.network(
-                              fallbackThumbnail,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(color: Colors.black),
-                            ),
+              Container(
+                width: double.infinity,
+                height: 230,
+                color: Colors.black,
+                child: kIsWeb && _youtubeViewType.isNotEmpty
+                    ? HtmlElementView(viewType: _youtubeViewType)
+                    : Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Video Thumbnail Background
+                          Image.network(
+                            fallbackThumbnail,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(color: Colors.black),
+                          ),
 
-                            // Dark Semi-transparent Video Overlay
-                            Container(
-                              color: Colors.black.withValues(alpha: 0.45),
-                            ),
+                          // Dark Semi-transparent Video Overlay
+                          Container(
+                            color: Colors.black.withValues(alpha: 0.45),
+                          ),
 
-                            // Center Play / Pause Icon Button
-                            GestureDetector(
-                              onTap: _launchVideoUrl,
-                              child: Container(
-                                padding: const EdgeInsets.all(18),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFF0000).withValues(alpha: 0.92),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFFFF0000).withValues(alpha: 0.5),
-                                      blurRadius: 20,
-                                      spreadRadius: 4,
-                                    ),
-                                  ],
+                          // Center Play / Pause Icon Button
+                          Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF0000).withValues(alpha: 0.92),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFF0000).withValues(alpha: 0.5),
+                                  blurRadius: 20,
+                                  spreadRadius: 4,
                                 ),
-                                child: const Icon(
-                                  Icons.play_arrow_rounded,
-                                  size: 48,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              ],
                             ),
+                            child: const Icon(
+                              Icons.play_arrow_rounded,
+                              size: 48,
+                              color: Colors.white,
+                            ),
+                          ),
 
                             // Top Player Bar Badges (Live Badge & Speed Selector)
                             Positioned(
@@ -334,7 +329,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             ),
                           ],
                         ),
-                ),
               ),
 
               // 2. VIDEO TITLE & METADATA SECTION

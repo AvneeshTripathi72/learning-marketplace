@@ -81,9 +81,10 @@ class _TestPaperScreenState extends State<TestPaperScreen> {
             const Text('Test Exam Blueprint Pattern', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: _selectedPattern,
               decoration: const InputDecoration(border: OutlineInputBorder()),
-              items: _patterns.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+              items: _patterns.map((p) => DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis))).toList(),
               onChanged: (v) => v != null ? setState(() => _selectedPattern = v) : null,
             ),
             const SizedBox(height: 16),

@@ -57,11 +57,12 @@ class _PublicTestPaperScreenState extends State<PublicTestPaperScreen> {
             const Text('Exam Blueprint Pattern', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedPattern,
+              isExpanded: true,
+              initialValue: _selectedPattern,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
-                DropdownMenuItem(value: 'Mid-Term Model Paper', child: Text('Mid-Term Model Paper (80 Marks)')),
-                DropdownMenuItem(value: 'Annual Model Exam', child: Text('Annual Model Exam (80 Marks)')),
+                DropdownMenuItem(value: 'Mid-Term Model Paper', child: Text('Mid-Term Model Paper (80 Marks)', overflow: TextOverflow.ellipsis)),
+                DropdownMenuItem(value: 'Annual Model Exam', child: Text('Annual Model Exam (80 Marks)', overflow: TextOverflow.ellipsis)),
               ],
               onChanged: (v) => v != null ? setState(() => _selectedPattern = v) : null,
             ),

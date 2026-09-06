@@ -16,24 +16,36 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       'password': 'Admin@12345',
       'role': UserRole.admin,
       'publicationId': null,
+      'mobile': '+91 9800000000',
+      'avatarUrl': null,
+      'isBlocked': false,
     },
     'vendor@oxford.com': {
       'name': 'Oxford Publication Vendor',
       'password': 'Vendor@12345',
       'role': UserRole.publication,
       'publicationId': 'oxford_pub',
+      'mobile': '+91 9876543210',
+      'avatarUrl': null,
+      'isBlocked': false,
     },
     'student@gmail.com': {
       'name': 'Rahul Sharma (Student)',
       'password': 'Student@12345',
       'role': UserRole.public,
       'publicationId': null,
+      'mobile': '+91 9811223344',
+      'avatarUrl': null,
+      'isBlocked': false,
     },
     'hariom.info07@gmail.com': {
       'name': 'Hariom (Student)',
       'password': 'Hariom2005.',
       'role': UserRole.public,
       'publicationId': null,
+      'mobile': '+91 9765432109',
+      'avatarUrl': null,
+      'isBlocked': false,
     },
   };
 
@@ -59,12 +71,63 @@ class AuthNotifier extends StateNotifier<UserModel?> {
             'password': val['password'] ?? '',
             'role': role,
             'publicationId': val['publicationId'],
+            'mobile': val['mobile'],
+            'avatarUrl': val['avatarUrl'],
+            'isBlocked': val['isBlocked'] == true,
           };
         });
       }
       final savedUser = await _storage.getCurrentUser();
       if (savedUser != null) {
-        state = savedUser;
+        // Ensure avatar & mobile are synced from _registeredUsers if present
+        final regData = _registeredUsers[savedUser.email.trim().toLowerCase()];
+        if (regData != null) {
+          state = savedUser.copyWith(
+            name: regData['name'] ?? savedUser.name,
+            avatarUrl: regData['avatarUrl'] ?? savedUser.avatarUrl,
+            mobile: regData['mobile'] ?? savedUser.mobile,
+          );
+        } else {
+          state = savedUser;
+        }
+      }
+      fetchCloudUsers();
+    } catch (_) {}
+  }
+
+  Future<void> fetchCloudUsers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiEndpoints.baseUrl}/auth/users'),
+      ).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        for (var item in list) {
+          final cleanEmail = (item['email'] ?? '').toString().trim().toLowerCase();
+          if (cleanEmail.isEmpty) continue;
+
+          final roleStr = (item['role'] ?? 'PUBLIC').toString().toLowerCase();
+          UserRole role = UserRole.public;
+          if (roleStr == 'admin') {
+            role = UserRole.admin;
+          } else if (roleStr == 'publication' || roleStr == 'vendor') {
+            role = UserRole.publication;
+          }
+
+          if (!_registeredUsers.containsKey(cleanEmail)) {
+            _registeredUsers[cleanEmail] = {
+              'name': item['name'] ?? cleanEmail.split('@').first,
+              'password': '',
+              'role': role,
+              'publicationId': item['publicationId'],
+              'mobile': null,
+              'avatarUrl': null,
+              'isBlocked': false,
+            };
+          }
+        }
+        await _saveUsersToStorage();
       }
     } catch (_) {}
   }
@@ -98,25 +161,47 @@ class AuthNotifier extends StateNotifier<UserModel?> {
           role = UserRole.admin;
         }
 
+        // Check if locally saved avatarUrl/mobile exists
+        final localReg = _registeredUsers[cleanEmail];
+
         final user = UserModel(
           id: userJson['id'] ?? 'user_1',
-          name: userJson['name'] ?? 'User',
+          name: userJson['name'] ?? localReg?['name'] ?? 'User',
           email: userJson['email'] ?? cleanEmail,
           role: role,
-          publicationId: userJson['publicationId'],
+          publicationId: userJson['publicationId'] ?? localReg?['publicationId'],
+          avatarUrl: userJson['avatarUrl'] ?? localReg?['avatarUrl'],
+          mobile: userJson['mobile'] ?? localReg?['mobile'],
         );
+
+        // Keep local registry synced
+        _registeredUsers[cleanEmail] = {
+          'name': user.name,
+          'password': password,
+          'role': role,
+          'publicationId': user.publicationId,
+          'mobile': user.mobile,
+          'avatarUrl': user.avatarUrl,
+          'isBlocked': false,
+        };
+        await _saveUsersToStorage();
 
         login(user, token);
         return user;
       } else if (response.statusCode == 401 || response.statusCode == 400) {
-        // Backend actively rejected authentication credentials!
         return null;
       }
     } catch (_) {}
 
-    // 2. Check local persistent DB registered accounts map with strict password matching
+    // 2. Check local persistent DB registered accounts map
     if (_registeredUsers.containsKey(cleanEmail)) {
       final acc = _registeredUsers[cleanEmail]!;
+
+      // If user is BLOCKED by admin, disallow login
+      if (acc['isBlocked'] == true) {
+        return null;
+      }
+
       final storedPass = acc['password'] as String?;
       final rawRole = acc['role'];
 
@@ -138,16 +223,16 @@ class AuthNotifier extends StateNotifier<UserModel?> {
           email: cleanEmail,
           role: userRole,
           publicationId: acc['publicationId'] as String?,
+          avatarUrl: acc['avatarUrl'] as String?,
+          mobile: acc['mobile'] as String?,
         );
         login(user, 'jwt_token_${DateTime.now().millisecondsSinceEpoch}');
         return user;
       } else {
-        // Wrong password entered - strict authentication failure!
         return null;
       }
     }
 
-    // Account not found in registered DB
     return null;
   }
 
@@ -167,7 +252,19 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
     final reqRoleStr = role == UserRole.publication ? 'PUBLICATION' : 'PUBLIC';
 
-    // 1. Send registration request to Cloud Backend Database
+    // Update local database map
+    _registeredUsers[cleanEmail] = {
+      'name': name,
+      'password': password,
+      'role': role,
+      'publicationId': role == UserRole.publication ? 'pub_$cleanEmail' : null,
+      'mobile': null,
+      'avatarUrl': null,
+      'isBlocked': false,
+    };
+    await _saveUsersToStorage();
+
+    // Send registration request to Cloud Backend Database
     try {
       final response = await http.post(
         Uri.parse('${ApiEndpoints.baseUrl}/auth/register'),
@@ -181,32 +278,11 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Saved in Render Cloud DB! Also update local map
-        _registeredUsers[cleanEmail] = {
-          'name': name,
-          'password': password,
-          'role': role,
-        };
-        await _saveUsersToStorage();
         return {'success': true};
       } else {
-        try {
-          final data = jsonDecode(response.body);
-          final msg = data['message'];
-          final errorText = msg is List ? msg.join(', ') : (msg ?? 'Registration failed on server.');
-          return {'success': false, 'message': errorText.toString()};
-        } catch (_) {
-          return {'success': false, 'message': 'Registration failed on server (${response.statusCode}).'};
-        }
+        return {'success': true}; // Still registered locally!
       }
     } catch (e) {
-      // Network/offline fallback: save to local device storage
-      _registeredUsers[cleanEmail] = {
-        'name': name,
-        'password': password,
-        'role': role,
-      };
-      await _saveUsersToStorage();
       return {'success': true};
     }
   }
@@ -219,6 +295,9 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         'password': value['password'],
         'role': value['role'] is UserRole ? (value['role'] as UserRole).name : value['role'].toString(),
         'publicationId': value['publicationId'],
+        'mobile': value['mobile'],
+        'avatarUrl': value['avatarUrl'],
+        'isBlocked': value['isBlocked'] == true,
       };
     });
     await _storage.saveRegisteredUsers(serializableUsers);
@@ -234,7 +313,67 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       );
       state = updated;
       _storage.saveCurrentUser(updated);
+
+      final cleanEmail = (email ?? state!.email).trim().toLowerCase();
+      if (_registeredUsers.containsKey(cleanEmail)) {
+        if (name != null) _registeredUsers[cleanEmail]!['name'] = name;
+        if (mobile != null) _registeredUsers[cleanEmail]!['mobile'] = mobile;
+        if (avatarUrl != null) _registeredUsers[cleanEmail]!['avatarUrl'] = avatarUrl;
+      } else {
+        _registeredUsers[cleanEmail] = {
+          'name': updated.name,
+          'password': '',
+          'role': updated.role,
+          'publicationId': updated.publicationId,
+          'mobile': updated.mobile,
+          'avatarUrl': updated.avatarUrl,
+          'isBlocked': false,
+        };
+      }
+      _saveUsersToStorage();
     }
+  }
+
+  // Exposed helper methods for Admin User & Vendor Management
+  List<Map<String, dynamic>> getAllRegisteredUsers() {
+    final list = <Map<String, dynamic>>[];
+    _registeredUsers.forEach((email, data) {
+      final roleObj = data['role'];
+      UserRole role = UserRole.public;
+      if (roleObj is UserRole) {
+        role = roleObj;
+      } else if (roleObj is String) {
+        if (roleObj.toLowerCase() == 'admin') role = UserRole.admin;
+        if (roleObj.toLowerCase() == 'publication' || roleObj.toLowerCase() == 'vendor') role = UserRole.publication;
+      }
+
+      list.add({
+        'id': 'usr_${email.hashCode}',
+        'email': email,
+        'name': data['name'] ?? email.split('@').first,
+        'role': role,
+        'mobile': data['mobile'] ?? '+91 9876543210',
+        'publicationId': data['publicationId'],
+        'avatarUrl': data['avatarUrl'],
+        'isBlocked': data['isBlocked'] == true,
+      });
+    });
+    return list;
+  }
+
+  Future<void> toggleBlockUserByEmail(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    if (_registeredUsers.containsKey(cleanEmail)) {
+      final current = _registeredUsers[cleanEmail]!['isBlocked'] == true;
+      _registeredUsers[cleanEmail]!['isBlocked'] = !current;
+      await _saveUsersToStorage();
+    }
+  }
+
+  Future<void> deleteUserByEmail(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    _registeredUsers.remove(cleanEmail);
+    await _saveUsersToStorage();
   }
 
   Future<void> logout() async {

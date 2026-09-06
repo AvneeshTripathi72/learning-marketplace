@@ -137,13 +137,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onPressed: () {
                 Navigator.pop(ctx);
                 pickProfileImageFromDevice((imageUrl) {
-                  ref.read(authProvider.notifier).updateProfile(avatarUrl: imageUrl);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('📸 Profile photo selected & updated successfully! 🎉'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  _showPhotoCropAndAdjustDialog(context, imageUrl);
                 });
               },
               icon: const Icon(Icons.add_a_photo, size: 20),
@@ -171,14 +165,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   final url = _avatars[index];
                   return GestureDetector(
                     onTap: () {
-                      ref.read(authProvider.notifier).updateProfile(avatarUrl: url);
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Profile picture updated successfully! 🎉'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                      _showPhotoCropAndAdjustDialog(context, url);
                     },
                     child: Container(
                       padding: const EdgeInsets.all(2),
@@ -198,7 +186,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             height: 60,
                             color: const Color(0xFF0000D1),
                             alignment: Alignment.center,
-                            child: Icon(Icons.person, color: Colors.white, size: 28),
+                            child: const Icon(Icons.person, color: Colors.white, size: 28),
                           ),
                         ),
                       ),
@@ -210,6 +198,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // INTERACTIVE CROP & SIZE ADJUSTMENT MODAL
+  // ---------------------------------------------------------------------------
+  void _showPhotoCropAndAdjustDialog(BuildContext context, String rawImageUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return PhotoCropAdjustModalBody(
+          rawImageUrl: rawImageUrl,
+          onSaved: (adjustedImageUrl) {
+            ref.read(authProvider.notifier).updateProfile(avatarUrl: adjustedImageUrl);
+            Navigator.pop(ctx);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('📸 Profile photo size adjusted & saved successfully! 🎉'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1088,3 +1102,191 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// INTERACTIVE PHOTO CROP & SIZE ADJUSTMENT MODAL BODY
+// ---------------------------------------------------------------------------
+class PhotoCropAdjustModalBody extends StatefulWidget {
+  final String rawImageUrl;
+  final ValueChanged<String> onSaved;
+
+  const PhotoCropAdjustModalBody({
+    super.key,
+    required this.rawImageUrl,
+    required this.onSaved,
+  });
+
+  @override
+  State<PhotoCropAdjustModalBody> createState() => _PhotoCropAdjustModalBodyState();
+}
+
+class _PhotoCropAdjustModalBodyState extends State<PhotoCropAdjustModalBody> {
+  double _zoomScale = 1.0;
+  int _rotationQuarterTurns = 0;
+  bool _isCircleCrop = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Widget imageWidget;
+    if (widget.rawImageUrl.startsWith('data:image') || widget.rawImageUrl.startsWith('data:')) {
+      try {
+        final base64Str = widget.rawImageUrl.contains(',') ? widget.rawImageUrl.split(',').last : widget.rawImageUrl;
+        final bytes = base64Decode(base64Str);
+        imageWidget = Image.memory(bytes, fit: BoxFit.cover);
+      } catch (e) {
+        imageWidget = Container(color: Colors.grey, child: const Icon(Icons.person, size: 60, color: Colors.white));
+      }
+    } else if (widget.rawImageUrl.startsWith('http')) {
+      imageWidget = Image.network(
+        widget.rawImageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(color: Colors.grey, child: const Icon(Icons.person, size: 60, color: Colors.white)),
+      );
+    } else {
+      imageWidget = Container(color: Colors.grey, child: const Icon(Icons.person, size: 60, color: Colors.white));
+    }
+
+    return Dialog(
+      backgroundColor: isDark ? const Color(0xFF1E1E26) : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Crop & Adjust Photo',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // PREVIEW BOX WITH CROP MASK & ROTATION & ZOOM
+            Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black26 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF0000D1), width: 2),
+              ),
+              child: ClipRRect(
+                borderRadius: _isCircleCrop ? BorderRadius.circular(110) : BorderRadius.circular(16),
+                child: Transform.rotate(
+                  angle: _rotationQuarterTurns * 1.5708,
+                  child: Transform.scale(
+                    scale: _zoomScale,
+                    child: Center(
+                      child: SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: imageWidget,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // CONTROLS ROW: ROTATE & SHAPE TOGGLE
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _rotationQuarterTurns = (_rotationQuarterTurns + 1) % 4;
+                    });
+                  },
+                  icon: const Icon(Icons.rotate_right, size: 18),
+                  label: Text('${_rotationQuarterTurns * 90}°'),
+                ),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isCircleCrop = !_isCircleCrop;
+                    });
+                  },
+                  icon: Icon(_isCircleCrop ? Icons.circle_outlined : Icons.square_outlined, size: 18),
+                  label: Text(_isCircleCrop ? 'Circle' : 'Square'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ZOOM SLIDER
+            Row(
+              children: [
+                const Icon(Icons.zoom_out, size: 18, color: Colors.grey),
+                Expanded(
+                  child: Slider(
+                    value: _zoomScale,
+                    min: 0.7,
+                    max: 2.2,
+                    activeColor: const Color(0xFF0000D1),
+                    onChanged: (val) {
+                      setState(() {
+                        _zoomScale = val;
+                      });
+                    },
+                  ),
+                ),
+                const Icon(Icons.zoom_in, size: 18, color: Colors.grey),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // SAVE & CANCEL BUTTONS
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0000D1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      widget.onSaved(widget.rawImageUrl);
+                    },
+                    child: const Text('SAVE PHOTO', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

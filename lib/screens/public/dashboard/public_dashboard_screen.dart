@@ -53,9 +53,12 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
           children: [
             Icon(Icons.public, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
-            const Text(
-              'Public Educational Hub',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            const Expanded(
+              child: Text(
+                'Public Educational Hub',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

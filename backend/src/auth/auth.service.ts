@@ -49,6 +49,18 @@ export class AuthService {
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role, publicationId: user.publicationId } };
   }
 
+  async getAllUsers() {
+    try {
+      const users = await this.prisma.user.findMany({
+        select: { id: true, name: true, email: true, role: true, publicationId: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      return users;
+    } catch (e) {
+      return [];
+    }
+  }
+
   private generateToken(user: any) {
     return jwt.sign(
       { sub: user.id, email: user.email, role: user.role, publicationId: user.publicationId },

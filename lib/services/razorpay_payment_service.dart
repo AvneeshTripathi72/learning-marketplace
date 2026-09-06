@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../providers/payment_provider.dart';
 
 class RazorpayResult {
   final bool success;
@@ -7,6 +8,7 @@ class RazorpayResult {
   final String orderId;
   final String signature;
   final String? errorMessage;
+  final PaymentRecord? record;
 
   RazorpayResult({
     required this.success,
@@ -14,6 +16,7 @@ class RazorpayResult {
     required this.orderId,
     required this.signature,
     this.errorMessage,
+    this.record,
   });
 }
 
@@ -177,11 +180,29 @@ class RazorpayPaymentService {
                     ),
                     onPressed: () {
                       Navigator.pop(ctx);
+                      final now = DateTime.now();
+                      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                      final formattedDate = '${now.day.toString().padLeft(2, '0')} ${months[now.month - 1]} ${now.year}, ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                      final record = PaymentRecord(
+                        id: paymentId,
+                        orderId: orderId,
+                        supporter: userEmail.contains('@') ? userEmail.split('@').first.toUpperCase() : 'Student Payer',
+                        creator: title,
+                        amount: amount,
+                        gateway: 'Razorpay Gateway',
+                        date: formattedDate,
+                        status: 'SETTLED',
+                        title: description,
+                        userEmail: userEmail,
+                        userContact: userContact,
+                        signature: 'sig_rzp_${now.millisecondsSinceEpoch}',
+                      );
                       final result = RazorpayResult(
                         success: true,
                         paymentId: paymentId,
                         orderId: orderId,
-                        signature: 'sig_rzp_${DateTime.now().millisecondsSinceEpoch}',
+                        signature: record.signature,
+                        record: record,
                       );
                       _showSuccessReceiptDialog(context, result, amount, title);
                       completer.complete(result);

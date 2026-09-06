@@ -77,6 +77,14 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.people_alt, color: Colors.cyan),
+              title: const Text('User & Vendor Management', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/admin/users');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.cloud_upload, color: Colors.redAccent),
               title: const Text('Upload Video Link'),
               onTap: () {

@@ -295,8 +295,11 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                             ],
                           ),
                           const Divider(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
                               // Watch / Preview Video Button
                               ElevatedButton.icon(
@@ -317,7 +320,8 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                                 icon: const Icon(Icons.play_circle_fill, size: 16),
                                 label: const Text('Preview Video', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                               ),
-                              Row(
+                              Wrap(
+                                spacing: 6,
                                 children: [
                                   OutlinedButton.icon(
                                     style: OutlinedButton.styleFrom(
@@ -337,7 +341,6 @@ class _AdminModerationScreenState extends ConsumerState<AdminModerationScreen> {
                                     icon: const Icon(Icons.close, size: 14),
                                     label: const Text('Reject', style: TextStyle(fontSize: 11)),
                                   ),
-                                  const SizedBox(width: 6),
                                   ElevatedButton.icon(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,

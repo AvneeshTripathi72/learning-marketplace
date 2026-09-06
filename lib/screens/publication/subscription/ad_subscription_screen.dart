@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/subscription_model.dart';
+import '../../../providers/payment_provider.dart';
 import '../../../widgets/subscription_package_card.dart';
 import '../../../services/subscription_service.dart';
 import '../../../services/razorpay_payment_service.dart';
 
-class AdSubscriptionScreen extends StatefulWidget {
+class AdSubscriptionScreen extends ConsumerStatefulWidget {
   const AdSubscriptionScreen({super.key});
 
   @override
-  State<AdSubscriptionScreen> createState() => _AdSubscriptionScreenState();
+  ConsumerState<AdSubscriptionScreen> createState() => _AdSubscriptionScreenState();
 }
 
-class _AdSubscriptionScreenState extends State<AdSubscriptionScreen> {
+class _AdSubscriptionScreenState extends ConsumerState<AdSubscriptionScreen> {
   final List<SubscriptionPackageModel> _packages = [
     SubscriptionPackageModel(
       id: 'pkg_silver',
@@ -70,10 +72,14 @@ class _AdSubscriptionScreenState extends State<AdSubscriptionScreen> {
     );
 
     if (result != null && result.success && mounted) {
+      if (result.record != null) {
+        ref.read(paymentProvider.notifier).addPaymentRecord(result.record!);
+      }
       await SubscriptionService().requestUpgrade('oxford_pub', pkg.tier);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${pkg.name} Activated Successfully via Razorpay!'),
+          content: Text('${pkg.name} Activated Successfully via Razorpay! Receipt generated.'),
           backgroundColor: Colors.green,
         ),
       );

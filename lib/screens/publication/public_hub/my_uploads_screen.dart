@@ -5,6 +5,7 @@ import '../../../models/video_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/video_provider.dart';
 import '../../../widgets/video_card.dart';
+import '../../shared/video_player/video_player_screen.dart';
 
 class MyUploadsScreen extends ConsumerWidget {
   const MyUploadsScreen({super.key});
@@ -94,7 +95,17 @@ class MyUploadsScreen extends ConsumerWidget {
               children: [
                 Stack(
                   children: [
-                    VideoCard(video: video, onTap: () {}),
+                    VideoCard(
+                      video: video,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoPlayerScreen(video: video),
+                          ),
+                        );
+                      },
+                    ),
                     Positioned(
                       top: 10,
                       right: 10,
@@ -135,14 +146,19 @@ class MyUploadsScreen extends ConsumerWidget {
                   const Divider(height: 1),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 6,
                       children: [
                         Text(
                           'Submitter: ${video.submittedBy}',
                           style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        Row(
+                        Wrap(
+                          spacing: 6,
                           children: [
                             OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
@@ -159,7 +175,6 @@ class MyUploadsScreen extends ConsumerWidget {
                               icon: const Icon(Icons.close, size: 14),
                               label: const Text('Reject', style: TextStyle(fontSize: 11)),
                             ),
-                            const SizedBox(width: 8),
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
