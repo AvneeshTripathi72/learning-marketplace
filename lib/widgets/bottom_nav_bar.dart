@@ -135,7 +135,7 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
                               children: [
                                 // Icon Container with Active Pill Highlight
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? accentColor.withValues(alpha: isDark ? 0.2 : 0.12)
