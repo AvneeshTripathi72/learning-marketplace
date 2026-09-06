@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:async';
+import '../../core/storage/secure_storage_service.dart';
 import '../../models/user_model.dart';
 import '../../models/ebook_model.dart';
 import '../../models/video_model.dart';
@@ -27,6 +28,21 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _biometricEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final enabled = await SecureStorageService().getBiometricEnabled();
+    if (mounted) {
+      setState(() {
+        _biometricEnabled = enabled;
+      });
+    }
+  }
 
   final List<String> _avatars = [
     'https://ui-avatars.com/api/?name=Hariom+Student&background=0000D1&color=fff&size=200&bold=true',
@@ -254,6 +270,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showBiometricPromptDialog(BuildContext context, bool enable) {
     if (!enable) {
       setState(() => _biometricEnabled = false);
+      SecureStorageService().saveBiometricEnabled(false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('🔓 Biometric Security / Face ID Disabled'),
@@ -269,9 +286,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (ctx) => BiometricScannerModal(
         onSuccess: () {
           setState(() => _biometricEnabled = true);
+          SecureStorageService().saveBiometricEnabled(true);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Biometric Fingerprint Verified & Activated!'),
+              content: Text('⚡ Face ID / Biometric Security Verified & Activated!'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),

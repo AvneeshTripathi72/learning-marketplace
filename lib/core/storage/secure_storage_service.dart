@@ -57,5 +57,21 @@ class SecureStorageService {
       }
     } catch (_) {}
     return null;
+  // Biometric Security Persistence
+  static const String _biometricKey = 'app_biometric_security_enabled_v1';
+
+  Future<void> saveBiometricEnabled(bool enabled) async {
+    try {
+      await _storage.write(key: _biometricKey, value: enabled ? 'true' : 'false');
+    } catch (_) {}
+  }
+
+  Future<bool> getBiometricEnabled() async {
+    try {
+      final val = await _storage.read(key: _biometricKey);
+      return val == 'true';
+    } catch (_) {}
+    return false;
   }
 }
+
