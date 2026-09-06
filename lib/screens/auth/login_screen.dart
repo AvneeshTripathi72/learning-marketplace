@@ -23,6 +23,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   // Direct Login / Sign Up Form State
   bool _isSignUpMode = false;
+  bool _rememberMe = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
@@ -230,9 +231,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // STEP 0: HERO SCREEN (Brilliant Image 1)
   // ---------------------------------------------------------------------------
   Widget _buildStep0Hero(ThemeData theme) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(28.0),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(28.0),
+      child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 440),
           child: Column(
@@ -583,7 +584,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.82,
+                  childAspectRatio: 0.78,
                 ),
                 itemCount: roles.length,
                 itemBuilder: (context, index) {
@@ -980,391 +981,614 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // ---------------------------------------------------------------------------
 
   Widget _buildStep7LoginHub(ThemeData theme) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _isSignUpMode ? 'Join Ebook Platform' : 'Welcome Back',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 26,
-                  height: 1.25,
-                ),
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+
+    InputDecoration buildInputDecoration(String hint, IconData icon, {Widget? suffixIcon}) {
+      return InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+          fontSize: 14,
+        ),
+        prefixIcon: Icon(icon, size: 20, color: theme.iconTheme.color?.withValues(alpha: 0.6)),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F7FA),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E8EF),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: primaryColor, width: 1.5),
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        // Top Soft Ambient Gradient Backdrop Overlay (Matching Screenshots)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 240,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  isDark
+                      ? primaryColor.withValues(alpha: 0.28)
+                      : const Color(0xFFCBE2FF).withValues(alpha: 0.75),
+                  isDark
+                      ? primaryColor.withValues(alpha: 0.06)
+                      : const Color(0xFFE8F2FF).withValues(alpha: 0.25),
+                  Colors.transparent,
+                ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                _isSignUpMode
-                    ? 'Create your account as Student or Publication Vendor'
-                    : 'Sign in to access your ebooks, video hub and learning portal',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.textTheme.bodySmall?.color,
-                ),
-              ),
-              const SizedBox(height: 24),
+            ),
+          ),
+        ),
 
-              // Role Selector for Sign Up
-              if (_isSignUpMode) ...[
-                Text(
-                  'Select Account Type:',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: theme.textTheme.bodySmall?.color,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: _selectedRegisterRole == 'PUBLIC'
-                              ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                              : Colors.transparent,
-                          side: BorderSide(
-                            color: _selectedRegisterRole == 'PUBLIC'
-                                ? theme.colorScheme.primary
-                                : theme.dividerColor,
-                            width: _selectedRegisterRole == 'PUBLIC' ? 2 : 1,
-                          ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => setState(() => _selectedRegisterRole = 'PUBLIC'),
-                        icon: const Icon(Icons.school, size: 20),
-                        label: const Text('Student / Reader', style: TextStyle(fontSize: 13)),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: _selectedRegisterRole == 'PUBLICATION'
-                              ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                              : Colors.transparent,
-                          side: BorderSide(
-                            color: _selectedRegisterRole == 'PUBLICATION'
-                                ? theme.colorScheme.primary
-                                : theme.dividerColor,
-                            width: _selectedRegisterRole == 'PUBLICATION' ? 2 : 1,
-                          ),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => setState(() => _selectedRegisterRole = 'PUBLICATION'),
-                        icon: const Icon(Icons.business, size: 20),
-                        label: const Text('Publication Vendor', style: TextStyle(fontSize: 13)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+        // Main Form Content Scrollable View
+        SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
 
-                // Name Field for Sign Up
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: _selectedRegisterRole == 'PUBLICATION'
-                        ? 'Publication / Vendor Name'
-                        : 'Full Name',
-                    hintText: _selectedRegisterRole == 'PUBLICATION'
-                        ? 'e.g. Oxford Press'
-                        : 'e.g. Rahul Sharma',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Email Field
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email Address',
-                  hintText: 'e.g. user@oxford.com',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Password Field
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-
-              // Confirm Password Field (Shown only in Sign Up Mode)
-              if (_isSignUpMode) ...[
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    hintText: 'Re-enter your password',
-                    prefixIcon: const Icon(Icons.lock_reset_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
-
-              // Inline Error Text directly under Password / Confirm Password Field
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: Colors.redAccent,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-
-              const SizedBox(height: 20),
-
-              // Submit Button (Sign In or Create Account)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () async {
-                    setState(() => _errorMessage = null);
-                    final email = _emailController.text.trim();
-                    final password = _passwordController.text.trim();
-                    final confirmPassword = _confirmPasswordController.text.trim();
-                    final name = _nameController.text.trim();
-
-                    if (_isSignUpMode) {
-                      if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-                        setState(() {
-                          _errorMessage = 'Please fill all required fields.';
-                        });
-                        return;
-                      }
-                      if (password != confirmPassword) {
-                        setState(() {
-                          _errorMessage = 'Passwords do not match. Please re-enter matching passwords.';
-                        });
-                        return;
-                      }
-                      if (password.length < 6) {
-                        setState(() {
-                          _errorMessage = 'Password must be at least 6 characters long.';
-                        });
-                        return;
-                      }
-                    } else {
-                      if (email.isEmpty || password.isEmpty) {
-                        setState(() {
-                          _errorMessage = 'Please fill all required fields.';
-                        });
-                        return;
-                      }
-                    }
-
-                    final auth = ref.read(authProvider.notifier);
-                    UserModel? user;
-
-                    if (_isSignUpMode) {
-                      await auth.registerAccountOnly(
-                        name: name,
-                        email: email,
-                        password: password,
-                        roleStr: _selectedRegisterRole,
-                      );
-                      if (mounted) {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            title: const Row(
-                              children: [
-                                Icon(Icons.check_circle, color: Colors.green, size: 28),
-                                SizedBox(width: 10),
-                                Text('Account Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                              ],
-                            ),
-                            content: Text(
-                              'Your account ($email) has been created successfully!\n\nPlease click "Sign In Now" to log into your account.',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            actions: [
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: theme.colorScheme.primary,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                  setState(() {
-                                    _isSignUpMode = false;
-                                    _errorMessage = null;
-                                    _passwordController.clear();
-                                    _confirmPasswordController.clear();
-                                  });
-                                },
-                                child: const Text('Sign In Now'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                    } else {
-                      user = await auth.loginWithCredentials(email, password);
-                      if (mounted) {
-                        if (user != null) {
-                          setState(() => _errorMessage = null);
-                          if (user.role == UserRole.admin) {
-                            context.go('/admin/dashboard');
-                          } else if (user.role == UserRole.publication) {
-                            context.go('/dashboard');
-                          } else {
-                            context.go('/public/dashboard');
-                          }
-                        } else {
+                  // Top Header & App Logo Icon (Matching Reference Screenshots)
+                  if (_isSignUpMode) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, size: 22),
+                        onPressed: () {
                           setState(() {
-                            _errorMessage = 'Invalid email or password. Please check your credentials.';
+                            _isSignUpMode = false;
+                            _errorMessage = null;
                           });
-                        }
-                      }
-                    }
-                  },
-                  child: Text(
-                    _isSignUpMode ? 'Create Account' : 'Sign In',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Toggle between Sign In and Sign Up
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isSignUpMode = !_isSignUpMode;
-                      _errorMessage = null;
-                      _passwordController.clear();
-                      _confirmPasswordController.clear();
-                    });
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-                      children: [
-                        TextSpan(
-                          text: _isSignUpMode
-                              ? 'Already have an account? '
-                              : "Don't have an account? ",
+                        },
+                        tooltip: 'Back to Sign In',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ] else ...[
+                    Center(
+                      child: Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withValues(alpha: 0.35),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        TextSpan(
-                          text: _isSignUpMode ? 'Sign In' : 'Create Account (Sign Up)',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+                        child: const Icon(Icons.auto_stories, color: Colors.white, size: 30),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Large Clean Bold Heading
+                  Text(
+                    _isSignUpMode ? 'Register' : 'Sign in to your\nAccount',
+                    style: theme.textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: _isSignUpMode ? 32 : 30,
+                      height: 1.15,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _isSignUpMode
+                        ? 'Create an account to continue!'
+                        : 'Enter your email and password to log in',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Role Selector Tabs (Only in Sign Up Mode)
+                  if (_isSignUpMode) ...[
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF0F3F8),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedRegisterRole = 'PUBLIC'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                decoration: BoxDecoration(
+                                  color: _selectedRegisterRole == 'PUBLIC'
+                                      ? (isDark ? const Color(0xFF2A2A2A) : Colors.white)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(11),
+                                  boxShadow: _selectedRegisterRole == 'PUBLIC'
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.06),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          )
+                                        ]
+                                      : [],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.school,
+                                      size: 18,
+                                      color: _selectedRegisterRole == 'PUBLIC'
+                                          ? primaryColor
+                                          : theme.iconTheme.color,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Student / Reader',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: _selectedRegisterRole == 'PUBLIC'
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        color: _selectedRegisterRole == 'PUBLIC'
+                                            ? primaryColor
+                                            : theme.textTheme.bodyMedium?.color,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedRegisterRole = 'PUBLICATION'),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                decoration: BoxDecoration(
+                                  color: _selectedRegisterRole == 'PUBLICATION'
+                                      ? (isDark ? const Color(0xFF2A2A2A) : Colors.white)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(11),
+                                  boxShadow: _selectedRegisterRole == 'PUBLICATION'
+                                      ? [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.06),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          )
+                                        ]
+                                      : [],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.business,
+                                      size: 18,
+                                      color: _selectedRegisterRole == 'PUBLICATION'
+                                          ? primaryColor
+                                          : theme.iconTheme.color,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Publisher Vendor',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: _selectedRegisterRole == 'PUBLICATION'
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        color: _selectedRegisterRole == 'PUBLICATION'
+                                            ? primaryColor
+                                            : theme.textTheme.bodyMedium?.color,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Full Name Input (Sign Up)
+                    TextField(
+                      controller: _nameController,
+                      decoration: buildInputDecoration(
+                        _selectedRegisterRole == 'PUBLICATION'
+                            ? 'Publication / Vendor Name'
+                            : 'Full Name',
+                        Icons.person_outline,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Email Address Input
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: buildInputDecoration(
+                      'Email Address',
+                      Icons.email_outlined,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Password Input
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    decoration: buildInputDecoration(
+                      'Password',
+                      Icons.lock_outline,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                  ),
+
+                  // Confirm Password Field (Sign Up Mode)
+                  if (_isSignUpMode) ...[
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: buildInputDecoration(
+                        'Confirm Password',
+                        Icons.lock_reset_outlined,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            size: 20,
+                          ),
+                          onPressed: () =>
+                              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Remember Me & Forgot Password Row (Matching Reference Screenshots)
+                  if (!_isSignUpMode) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: Checkbox(
+                                value: _rememberMe,
+                                activeColor: primaryColor,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Remember me',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {},
+                          child: Text(
+                            'Forgot Password ?',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ),
+                  ],
 
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(child: Divider(color: theme.dividerColor)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: theme.textTheme.bodySmall?.color,
+                  // Inline Error Alert Message
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, size: 18, color: Colors.redAccent),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 22),
+
+                  // Main Primary Button (Log In / Register)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        shadowColor: primaryColor.withValues(alpha: 0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () async {
+                        setState(() => _errorMessage = null);
+                        final email = _emailController.text.trim();
+                        final password = _passwordController.text.trim();
+                        final confirmPassword = _confirmPasswordController.text.trim();
+                        final name = _nameController.text.trim();
+
+                        if (_isSignUpMode) {
+                          if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+                            setState(() {
+                              _errorMessage = 'Please fill all required fields.';
+                            });
+                            return;
+                          }
+                          if (password != confirmPassword) {
+                            setState(() {
+                              _errorMessage = 'Passwords do not match. Please re-enter matching passwords.';
+                            });
+                            return;
+                          }
+                          if (password.length < 6) {
+                            setState(() {
+                              _errorMessage = 'Password must be at least 6 characters long.';
+                            });
+                            return;
+                          }
+                        } else {
+                          if (email.isEmpty || password.isEmpty) {
+                            setState(() {
+                              _errorMessage = 'Please fill all required fields.';
+                            });
+                            return;
+                          }
+                        }
+
+                        final auth = ref.read(authProvider.notifier);
+                        UserModel? user;
+
+                        if (_isSignUpMode) {
+                          await auth.registerAccountOnly(
+                            name: name,
+                            email: email,
+                            password: password,
+                            roleStr: _selectedRegisterRole,
+                          );
+                          if (mounted) {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.check_circle, color: Colors.green, size: 28),
+                                    SizedBox(width: 10),
+                                    Text('Account Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                  ],
+                                ),
+                                content: Text(
+                                  'Your account ($email) has been created successfully!\n\nPlease click "Sign In Now" to log into your account.',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                actions: [
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: theme.colorScheme.primary,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      setState(() {
+                                        _isSignUpMode = false;
+                                        _errorMessage = null;
+                                        _passwordController.clear();
+                                        _confirmPasswordController.clear();
+                                      });
+                                    },
+                                    child: const Text('Sign In Now'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        } else {
+                          user = await auth.loginWithCredentials(email, password);
+                          if (mounted) {
+                            if (user != null) {
+                              setState(() => _errorMessage = null);
+                              if (user.role == UserRole.admin) {
+                                context.go('/admin/dashboard');
+                              } else if (user.role == UserRole.publication) {
+                                context.go('/dashboard');
+                              } else {
+                                context.go('/public/dashboard');
+                              }
+                            } else {
+                              setState(() {
+                                _errorMessage = 'Invalid email or password. Please check your credentials.';
+                              });
+                            }
+                          }
+                        }
+                      },
+                      child: Text(
+                        _isSignUpMode ? 'Register' : 'Log In',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
-                  Expanded(child: Divider(color: theme.dividerColor)),
-                ],
-              ),
-              const SizedBox(height: 20),
 
-              // Google Social Sign In Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 24),
+
+                  // Divider (Or / OR)
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.6))),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                        child: Text(
+                          'Or',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.6))),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Continue with Google Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                        side: BorderSide(
+                          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E5EE),
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: _loginWithGoogle,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.g_mobiledata, size: 28, color: Colors.redAccent),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Continue with Google',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: theme.textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  onPressed: _loginWithGoogle,
-                  icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.red),
-                  label: const Text(
-                    'Continue with Google',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+
+                  const SizedBox(height: 28),
+
+                  // Footer Toggle Navigation Text Link
+                  Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _isSignUpMode = !_isSignUpMode;
+                          _errorMessage = null;
+                          _passwordController.clear();
+                          _confirmPasswordController.clear();
+                        });
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          ),
+                          children: [
+                            TextSpan(
+                              text: _isSignUpMode
+                                  ? 'Already have an account? '
+                                  : "Don't have an account? ",
+                            ),
+                            TextSpan(
+                              text: _isSignUpMode ? 'Log in' : 'Sign Up',
+                              style: TextStyle(
+                                color: primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
