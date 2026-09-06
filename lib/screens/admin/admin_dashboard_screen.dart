@@ -155,7 +155,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Publication "${nameCtrl.text}" onboarded successfully! 🎉'),
+                  content: Text('Publication "${nameCtrl.text}" onboarded successfully!'),
                   backgroundColor: Colors.green,
                 ),
               );
@@ -1384,7 +1384,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: Center(child: Text('No pending video submissions in queue! 🎉')),
+                  child: Center(child: Text('No pending video submissions in queue!')),
                 ),
               )
             else
@@ -1427,7 +1427,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                 onPressed: () {
                                   ref.read(videoSubmissionsProvider.notifier).approveVideo(item.id);
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Video approved & published to Public Hub! 🎉'), backgroundColor: Colors.green),
+                                    const SnackBar(content: Text('Video approved & published to Public Hub!'), backgroundColor: Colors.green),
                                   );
                                 },
                                 icon: const Icon(Icons.check, size: 16),
@@ -1492,7 +1492,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                 onPressed: () {
                                   ref.read(ebookSubmissionsProvider.notifier).approveEBook(item.ebook.id);
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('eBook verified & published for Students! 🎉'), backgroundColor: Colors.green),
+                                    const SnackBar(content: Text('eBook verified & published for Students!'), backgroundColor: Colors.green),
                                   );
                                 },
                                 icon: const Icon(Icons.verified, size: 16),

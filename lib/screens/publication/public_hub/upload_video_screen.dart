@@ -145,7 +145,7 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Video submitted to Cloud DB for Admin Moderation! 🎉'),
+          content: Text('Video submitted to Cloud DB for Admin Moderation!'),
           backgroundColor: Colors.green,
         ),
       );

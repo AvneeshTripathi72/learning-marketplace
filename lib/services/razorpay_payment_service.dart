@@ -275,7 +275,7 @@ class RazorpayPaymentService {
           children: [
             Icon(Icons.check_circle, color: Colors.green, size: 30),
             SizedBox(width: 10),
-            Text('Payment Successful! 🎉'),
+            Text('Payment Successful!'),
           ],
         ),
         content: Column(

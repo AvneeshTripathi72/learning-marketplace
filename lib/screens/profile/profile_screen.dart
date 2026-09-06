@@ -224,7 +224,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Navigator.pop(ctx);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('📸 Profile photo size adjusted & saved successfully! 🎉'),
+                content: Text('Profile photo size adjusted & saved successfully!'),
                 backgroundColor: Colors.green,
                 duration: Duration(seconds: 3),
               ),
@@ -270,7 +270,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           setState(() => _biometricEnabled = true);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('🔒 Biometric Fingerprint Verified & Activated! 🎉'),
+              content: Text('Biometric Fingerprint Verified & Activated!'),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),
@@ -504,7 +504,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Bio-data profile updated successfully! 🎉'),
+                              content: Text('Bio-data profile updated successfully!'),
                               backgroundColor: Colors.green,
                               duration: Duration(seconds: 2),
                             ),
@@ -1387,7 +1387,7 @@ class _SavedItemsAndDownloadsSheetBodyState extends State<SavedItemsAndDownloads
                 const Icon(Icons.cloud_download_rounded, color: Colors.blue, size: 48),
                 const SizedBox(height: 16),
                 Text(
-                  progress >= 1.0 ? 'Download Complete! 🎉' : 'Downloading eBook to Phone...',
+                  progress >= 1.0 ? 'Download Complete!' : 'Downloading eBook to Phone...',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 12),
@@ -1866,7 +1866,7 @@ class _BiometricScannerModalState extends State<BiometricScannerModal> {
             ),
             const SizedBox(height: 18),
             Text(
-              _isVerified ? 'Fingerprint Verified! 🔒' : 'Face ID / Fingerprint Security',
+              _isVerified ? 'Fingerprint Verified!' : 'Face ID / Fingerprint Security',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 8),

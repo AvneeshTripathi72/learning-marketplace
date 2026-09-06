@@ -1443,7 +1443,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     children: [
                                       Icon(Icons.check_circle, color: Colors.green, size: 28),
                                       SizedBox(width: 10),
-                                      Text('Account Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                      Text('Account Created!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                                     ],
                                   ),
                                   content: Text(

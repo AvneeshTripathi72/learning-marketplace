@@ -138,7 +138,7 @@ void _showUploadMagazineModalStatic(BuildContext context, WidgetRef ref, UserMod
 
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Magazine issue uploaded & published successfully! 🎉'),
+                  content: Text('Magazine issue uploaded & published successfully!'),
                   backgroundColor: Colors.green,
                 ),
               );

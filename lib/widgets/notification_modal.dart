@@ -30,7 +30,7 @@ class _NotificationModalBodyState extends State<NotificationModalBody> {
       'id': 'notif_1',
       'icon': Icons.notifications_active,
       'color': Colors.blue,
-      'title': 'Notification System Active 🎉',
+      'title': 'Notification System Active',
       'body': 'Push alerts & background updates are operational on your device.',
       'time': 'Just now',
       'unread': true,
