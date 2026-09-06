@@ -59,22 +59,24 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
       }
     }
 
+    final accentColor = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
+
     return Align(
       alignment: Alignment.bottomCenter,
       child: SafeArea(
         top: false,
         child: Container(
           width: double.infinity,
-          height: 66,
+          height: 65,
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF18181A).withValues(alpha: 0.94)
-                : Colors.white.withValues(alpha: 0.94),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ? const Color(0xFF161618).withValues(alpha: 0.94)
+                : Colors.white.withValues(alpha: 0.95),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
-                blurRadius: 24,
+                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.08),
+                blurRadius: 28,
                 offset: const Offset(0, -6),
               ),
             ],
@@ -88,11 +90,11 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
             ),
           ),
           child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: List.generate(navItems.length, (index) {
@@ -106,58 +108,86 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
                         child: MouseRegion(
                           onEnter: (_) => setState(() => _hoveredIndex = index),
                           onExit: (_) => setState(() => _hoveredIndex = null),
-                          child: Center(
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeOutCubic,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Glowing Top Active Line Indicator
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOutCubic,
+                                height: 3.5,
+                                width: isSelected ? 28 : 0,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? accentColor : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(4),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: accentColor.withValues(alpha: 0.6),
+                                            blurRadius: 8,
+                                            spreadRadius: 1,
+                                          ),
+                                        ]
+                                      : [],
+                                ),
                               ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? (isDark
-                                        ? const Color(0xFF7C9CFF).withValues(alpha: 0.18)
-                                        : const Color(0xFF4A6CF7).withValues(alpha: 0.12))
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  AnimatedScale(
-                                    scale: isSelected ? 1.1 : 1.0,
-                                    duration: const Duration(milliseconds: 200),
-                                    child: Icon(
-                                      isSelected
-                                          ? (item['selectedIcon'] as IconData)
-                                          : (item['icon'] as IconData),
-                                      size: 22,
-                                      color: isSelected
-                                          ? (isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7))
-                                          : (isDark ? Colors.white60 : Colors.black54),
-                                    ),
+
+                              // Content Pill Container
+                              Center(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  curve: Curves.easeOutCubic,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
                                   ),
-                                  const SizedBox(height: 2),
-                                  FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      item['label'] as String,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                        fontSize: 10.5,
-                                        color: isSelected
-                                            ? (isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7))
-                                            : (isDark ? Colors.white60 : Colors.black54),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? accentColor.withValues(alpha: isDark ? 0.18 : 0.12)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      AnimatedScale(
+                                        scale: isSelected ? 1.15 : 1.0,
+                                        duration: const Duration(milliseconds: 200),
+                                        child: Icon(
+                                          isSelected
+                                              ? (item['selectedIcon'] as IconData)
+                                              : (item['icon'] as IconData),
+                                          size: 21,
+                                          color: isSelected
+                                              ? accentColor
+                                              : (isDark ? Colors.white60 : Colors.black54),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(height: 2),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          item['label'] as String,
+                                          maxLines: 1,
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                            fontSize: 10.5,
+                                            color: isSelected
+                                                ? accentColor
+                                                : (isDark ? Colors.white60 : Colors.black54),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+
+                              // Bottom Balancing Spacer
+                              const SizedBox(height: 3),
+                            ],
                           ),
                         ),
                       ),
