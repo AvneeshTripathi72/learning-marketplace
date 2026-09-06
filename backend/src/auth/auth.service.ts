@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -7,6 +7,7 @@ import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly jwtSecret = process.env.JWT_SECRET || 'super_secret_jwt_key_2026';
 
   constructor(private prisma: PrismaService) {}
@@ -14,7 +15,10 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const cleanEmail = dto.email.trim().toLowerCase();
     const existing = await this.prisma.user.findUnique({ where: { email: cleanEmail } });
-    if (existing) throw new BadRequestException('User email already registered. Please login instead.');
+    if (existing) {
+      this.logger.warn(`Register attempt failed (User already exists): ${cleanEmail}`);
+      throw new BadRequestException('User email already registered. Please login instead.');
+    }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     
@@ -34,16 +38,27 @@ export class AuthService {
       },
     });
 
+    this.logger.log(`👤 New User Registered Successfully: ${user.email} | Role: ${user.role} | ID: ${user.id}`);
+
     const token = this.generateToken(user);
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role, publicationId: user.publicationId } };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    const cleanEmail = dto.email.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (!user) {
+      this.logger.warn(`Login attempt failed (User not found): ${cleanEmail}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+    if (!isPasswordValid) {
+      this.logger.warn(`Login attempt failed (Invalid password): ${cleanEmail}`);
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    this.logger.log(`🔐 User Logged In Successfully: ${user.email} | Role: ${user.role} | ID: ${user.id}`);
 
     const token = this.generateToken(user);
     return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role, publicationId: user.publicationId } };
