@@ -150,7 +150,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
     final idsSet = videoIds.toSet();
     state = state.where((v) => !idsSet.contains(v.id)).toList();
     try {
-      await Supabase.instance.client.from('Video').delete().in_('id', videoIds);
+      await Supabase.instance.client.from('Video').delete().inFilter('id', videoIds);
       debugPrint('⚡ Bulk deleted ${videoIds.length} videos from Supabase DB');
     } catch (e) {
       debugPrint('ℹ️ Supabase Video bulk delete note: $e');
@@ -175,7 +175,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
       await Supabase.instance.client
           .from('Video')
           .update({'status': statusStr})
-          .in_('id', videoIds);
+          .inFilter('id', videoIds);
       debugPrint('⚡ Bulk status updated to $statusStr in Supabase DB');
     } catch (e) {
       debugPrint('ℹ️ Supabase Video bulk status update note: $e');

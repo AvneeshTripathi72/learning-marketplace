@@ -170,7 +170,7 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
     final idsSet = ebookIds.toSet();
     state = state.where((item) => !idsSet.contains(item.ebook.id)).toList();
     try {
-      await Supabase.instance.client.from('EBook').delete().in_('id', ebookIds);
+      await Supabase.instance.client.from('EBook').delete().inFilter('id', ebookIds);
     } catch (_) {}
   }
 
