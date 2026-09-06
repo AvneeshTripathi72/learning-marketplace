@@ -2,12 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 import '../../models/user_model.dart';
+import '../../models/ebook_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../screens/publication/ebook/pdf_viewer_screen.dart';
+import '../../screens/shared/video_player/video_player_screen.dart';
+import '../../services/notification_service.dart';
 import '../../utils/image_picker_helper.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/notification_modal.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -228,7 +234,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // BIOMETRIC PROMPT DIALOG
+  // SAVED ITEMS & OFFLINE DOWNLOADS MODAL SHEET
+  // ---------------------------------------------------------------------------
+  void _showSavedItemsAndDownloadsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const SavedItemsAndDownloadsSheetBody(),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // BIOMETRIC PROMPT DIALOG WITH SCANNER ANIMATION
   // ---------------------------------------------------------------------------
   void _showBiometricPromptDialog(BuildContext context, bool enable) {
     if (!enable) {
@@ -244,60 +262,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0000D1).withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.fingerprint, size: 54, color: Color(0xFF0000D1)),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Face ID / Touch ID',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Scan your fingerprint or Face ID sensor to authenticate and lock app access.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0000D1),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    setState(() => _biometricEnabled = true);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🔒 Biometric Verification Verified & Enabled successfully! 🎉'),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.verified_user),
-                  label: const Text('Verify Biometrics Now', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ),
+      barrierDismissible: false,
+      builder: (ctx) => BiometricScannerModal(
+        onSuccess: () {
+          setState(() => _biometricEnabled = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🔒 Biometric Fingerprint Verified & Activated! 🎉'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        },
       ),
     );
   }
@@ -913,14 +889,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     title: 'Saved Items & Downloads',
                     subtitle: 'Access offline eBooks & bookmarks',
                     trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('📚 Saved offline eBooks & video bookmarks ready!'),
-                          backgroundColor: Colors.blueAccent,
-                        ),
-                      );
-                    },
+                    onTap: () => _showSavedItemsAndDownloadsSheet(context),
                   ),
                   const Divider(height: 1, indent: 64),
 
@@ -932,10 +901,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     iconColor: const Color(0xFF0000D1),
                     title: 'Face ID / Biometric Security',
                     subtitle: 'Manage your device security',
-                    trailing: Switch(
-                      value: _biometricEnabled,
-                      activeThumbColor: const Color(0xFF0000D1),
-                      onChanged: (val) => _showBiometricPromptDialog(context, val),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_biometricEnabled)
+                          IconButton(
+                            icon: const Icon(Icons.fingerprint, color: Colors.green, size: 20),
+                            tooltip: 'Test Biometric Fingerprint Scan',
+                            onPressed: () => _showBiometricPromptDialog(context, true),
+                          ),
+                        Switch(
+                          value: _biometricEnabled,
+                          activeThumbColor: const Color(0xFF0000D1),
+                          onChanged: (val) => _showBiometricPromptDialog(context, val),
+                        ),
+                      ],
                     ),
                   ),
                   const Divider(height: 1, indent: 64),
@@ -964,7 +944,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const Divider(height: 1, indent: 64),
 
-                  // 5. Log out
+                  // 5. Notification Center
+                  _buildProfileTile(
+                    context,
+                    icon: Icons.notifications_active_outlined,
+                    iconBgColor: iconBgColor,
+                    iconColor: const Color(0xFF0000D1),
+                    title: 'Notification Center',
+                    subtitle: 'Manage push alerts & view notifications',
+                    trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+                    onTap: () => showAppNotificationModal(context),
+                  ),
+                  const Divider(height: 1, indent: 64),
+
+                  // 6. Log out
                   _buildProfileTile(
                     context,
                     icon: Icons.logout,
@@ -1289,4 +1282,616 @@ class _PhotoCropAdjustModalBodyState extends State<PhotoCropAdjustModalBody> {
     );
   }
 }
+
+// =============================================================================
+// SAVED ITEMS & OFFLINE DOWNLOADS INTERACTIVE SHEET
+// =============================================================================
+class SavedItemsAndDownloadsSheetBody extends StatefulWidget {
+  const SavedItemsAndDownloadsSheetBody({super.key});
+
+  @override
+  State<SavedItemsAndDownloadsSheetBody> createState() => _SavedItemsAndDownloadsSheetBodyState();
+}
+
+class _SavedItemsAndDownloadsSheetBodyState extends State<SavedItemsAndDownloadsSheetBody> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  final List<Map<String, dynamic>> _offlineDownloads = [
+    {
+      'id': 'eb_101',
+      'title': 'Class 10 Mathematics - Real Numbers & Board Papers',
+      'category': 'eBook PDF',
+      'size': '4.8 MB',
+      'date': '05 Sep 2026',
+      'url': 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+    },
+    {
+      'id': 'eb_102',
+      'title': 'Class 10 Physics & Chemistry Masterclass',
+      'category': 'Textbook PDF',
+      'size': '12.1 MB',
+      'date': '04 Sep 2026',
+      'url': 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+    },
+    {
+      'id': 'mag_42',
+      'title': 'Oxford Educational Today Magazine - Issue #42',
+      'category': 'Magazine PDF',
+      'size': '8.3 MB',
+      'date': '02 Sep 2026',
+      'url': 'https://aspirebookscompany.info/2025/English/2/mobile/index.html',
+    },
+    {
+      'id': 'qp_2026',
+      'title': 'CBSE 2026 Sample Question Paper - Mathematics Set A',
+      'category': 'Question Paper',
+      'size': '2.1 MB',
+      'date': '01 Sep 2026',
+      'url': 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+    },
+  ];
+
+  final List<Map<String, dynamic>> _savedBookmarks = [
+    {
+      'id': 'vid_301',
+      'title': 'Class 10 Physics Light Reflection Ray Diagrams',
+      'subject': 'Physics',
+      'duration': '24m 15s',
+      'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    },
+    {
+      'id': 'vid_302',
+      'title': 'Organic Chemistry Reactions Easy Tricks & Tips',
+      'subject': 'Chemistry',
+      'duration': '18m 40s',
+      'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _simulateDownloadNewPDF() {
+    double progress = 0.0;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dlgCtx) => StatefulBuilder(
+        builder: (context, setDlgState) {
+          if (progress < 1.0) {
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                setDlgState(() {
+                  progress = (progress + 0.25).clamp(0.0, 1.0);
+                });
+              }
+            });
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_download_rounded, color: Colors.blue, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  progress >= 1.0 ? 'Download Complete! 🎉' : 'Downloading eBook to Phone...',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(value: progress, backgroundColor: Colors.grey.shade200, color: Colors.blue),
+                const SizedBox(height: 8),
+                Text('${(progress * 100).toInt()}% Completed', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 16),
+                if (progress >= 1.0)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                    onPressed: () {
+                      Navigator.pop(dlgCtx);
+                      setState(() {
+                        _offlineDownloads.insert(0, {
+                          'id': 'eb_new_${DateTime.now().millisecondsSinceEpoch}',
+                          'title': 'New Offline Downloaded Chapter #${_offlineDownloads.length + 1}',
+                          'category': 'Downloaded PDF',
+                          'size': '5.4 MB',
+                          'date': 'Today',
+                          'url': 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+                        });
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('⚡ eBook saved to device offline storage!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    child: const Text('OK - View Downloaded Item'),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          // Header Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0000D1).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.bookmark_added_rounded, color: Color(0xFF0000D1), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Saved Items & Downloads',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        Text(
+                          'Offline Storage • ${_offlineDownloads.length} Books • ${_savedBookmarks.length} Bookmarks',
+                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+
+          // Tab Selector Bar
+          TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFF0000D1),
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: const Color(0xFF0000D1),
+            indicatorWeight: 3,
+            tabs: [
+              Tab(text: 'Offline Downloads (${_offlineDownloads.length})'),
+              Tab(text: 'Saved Bookmarks (${_savedBookmarks.length})'),
+            ],
+          ),
+
+          // Action Toolbar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0000D1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: _simulateDownloadNewPDF,
+                    icon: const Icon(Icons.download, size: 16),
+                    label: const Text('Download New PDF eBook', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Tab Views
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // TAB 1: OFFLINE DOWNLOADS
+                _offlineDownloads.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.download_done, size: 54, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text('No offline downloaded eBooks found', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: _offlineDownloads.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, idx) {
+                          final item = _offlineDownloads[idx];
+
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.redAccent.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.picture_as_pdf, color: Colors.redAccent, size: 24),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item['title'],
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green.withValues(alpha: 0.15),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: const Text('OFFLINE READY', style: TextStyle(fontSize: 9, color: Colors.green, fontWeight: FontWeight.bold)),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text('${item['size']} • ${item['date']}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Divider(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton.icon(
+                                      style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                                      onPressed: () {
+                                        setState(() {
+                                          _offlineDownloads.removeAt(idx);
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('🗑️ Offline download removed from phone storage.')),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.delete_outline, size: 16),
+                                      label: const Text('Delete', style: TextStyle(fontSize: 11)),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF0000D1),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      onPressed: () {
+                                        final ebook = EBookModel(
+                                          id: item['id'],
+                                          title: item['title'],
+                                          publicationId: 'Offline Storage',
+                                          seriesId: 'CBSE 2026',
+                                          classId: 'Class 10',
+                                          subjectId: 'Mathematics',
+                                          coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300',
+                                          fileUrl: item['url'],
+                                          isDownloaded: true,
+                                        );
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => PdfViewerScreen(ebook: ebook),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.menu_book, size: 14),
+                                      label: const Text('Read Offline', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+
+                // TAB 2: SAVED BOOKMARKS
+                _savedBookmarks.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.bookmark_border, size: 54, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text('No saved video bookmarks found', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: _savedBookmarks.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemBuilder: (context, idx) {
+                          final item = _savedBookmarks[idx];
+
+                          return Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.purple.withValues(alpha: 0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.purple.withValues(alpha: 0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.play_arrow_rounded, color: Colors.purple, size: 24),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['title'],
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Subject: ${item['subject']} • Duration: ${item['duration']}',
+                                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  children: [
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.purple,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => VideoPlayerScreen(
+                                              videoUrl: item['url'],
+                                              title: item['title'],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Play', style: TextStyle(fontSize: 11)),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline, size: 16, color: Colors.grey),
+                                      onPressed: () {
+                                        setState(() {
+                                          _savedBookmarks.removeAt(idx);
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Bookmark removed.')),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// BIOMETRIC SCANNER MODAL DIALOG
+// =============================================================================
+class BiometricScannerModal extends StatefulWidget {
+  final VoidCallback onSuccess;
+
+  const BiometricScannerModal({super.key, required this.onSuccess});
+
+  @override
+  State<BiometricScannerModal> createState() => _BiometricScannerModalState();
+}
+
+class _BiometricScannerModalState extends State<BiometricScannerModal> {
+  bool _isScanning = false;
+  bool _isVerified = false;
+  double _scanProgress = 0.0;
+  Timer? _timer;
+
+  void _startFingerprintScan() {
+    setState(() {
+      _isScanning = true;
+      _scanProgress = 0.0;
+      _isVerified = false;
+    });
+
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 150), (tm) {
+      if (!mounted) return;
+      setState(() {
+        _scanProgress += 0.2;
+        if (_scanProgress >= 1.0) {
+          _timer?.cancel();
+          _isScanning = false;
+          _isVerified = true;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      content: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: _isVerified
+                    ? Colors.green.withValues(alpha: 0.15)
+                    : const Color(0xFF0000D1).withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isVerified ? Colors.green : const Color(0xFF0000D1),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                _isVerified ? Icons.check_circle : Icons.fingerprint,
+                size: 64,
+                color: _isVerified ? Colors.green : const Color(0xFF0000D1),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              _isVerified ? 'Fingerprint Verified! 🔒' : 'Face ID / Fingerprint Security',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _isScanning
+                  ? 'Scanning biometric sensor... (${(_scanProgress * 100).toInt()}%)'
+                  : _isVerified
+                      ? 'Biometric authentication verified and active for device!'
+                      : 'Touch your device fingerprint sensor or press Scan below to verify.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            if (_isScanning)
+              LinearProgressIndicator(value: _scanProgress, color: const Color(0xFF0000D1)),
+            const SizedBox(height: 20),
+            if (!_isVerified)
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0000D1),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _isScanning ? null : _startFingerprintScan,
+                  icon: const Icon(Icons.fingerprint),
+                  label: Text(_isScanning ? 'Scanning...' : 'Touch Sensor / Scan Now', style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    widget.onSuccess();
+                  },
+                  icon: const Icon(Icons.check),
+                  label: const Text('CONFIRM & ACTIVATE SECURITY', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
