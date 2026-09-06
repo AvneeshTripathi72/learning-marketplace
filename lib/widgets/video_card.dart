@@ -182,7 +182,7 @@ class _VideoCardState extends State<VideoCard> {
 
               // Video Metadata & Information Section
               Padding(
-                padding: const EdgeInsets.all(14.0),
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -192,32 +192,32 @@ class _VideoCardState extends State<VideoCard> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        height: 1.3,
+                        height: 1.2,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
 
                     // Channel Name & Views Metadata
                     Row(
                       children: [
                         CircleAvatar(
-                          radius: 12,
+                          radius: 10,
                           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
                           child: Icon(
                             Icons.school,
-                            size: 14,
+                            size: 12,
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             '${widget.video.channelName} • ${widget.video.viewsCount} views',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: theme.textTheme.bodySmall?.color,
                               fontWeight: FontWeight.w500,
                             ),
@@ -227,9 +227,9 @@ class _VideoCardState extends State<VideoCard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.5)),
                     const SizedBox(height: 6),
+                    Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.5)),
+                    const SizedBox(height: 4),
 
                     // Action Buttons Row (Like, Save, Share)
                     Row(
