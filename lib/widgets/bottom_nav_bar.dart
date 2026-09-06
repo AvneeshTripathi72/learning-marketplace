@@ -19,6 +19,7 @@ class CustomBottomNavBar extends ConsumerStatefulWidget {
 
 class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
   int? _hoveredIndex;
+  bool _isNavigating = false;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +41,11 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
     void handleNavigation(int index) {
       if (index < 0 || index >= navItems.length) return;
       if (index == widget.currentIndex) return;
+
+      setState(() {
+        _isNavigating = true;
+      });
+
       switch (index) {
         case 0:
           context.go(isPublication ? '/dashboard' : '/public/dashboard');
@@ -57,9 +63,18 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
           context.go('/profile');
           break;
       }
+
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          setState(() {
+            _isNavigating = false;
+          });
+        }
+      });
     }
 
     final accentColor = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
+    final navBgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -67,135 +82,102 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
         top: false,
         child: Container(
           width: double.infinity,
-          height: 65,
+          height: 62,
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF161618).withValues(alpha: 0.94)
-                : Colors.white.withValues(alpha: 0.95),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.08),
-                blurRadius: 28,
-                offset: const Offset(0, -6),
-              ),
-            ],
+            color: navBgColor,
             border: Border(
               top: BorderSide(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : Colors.black.withValues(alpha: 0.06),
+                color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
                 width: 1,
               ),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, -3),
+              ),
+            ],
           ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(navItems.length, (index) {
-                    final item = navItems[index];
-                    final isSelected = index == activeIndex;
+          child: Column(
+            children: [
+              // Top Loading Bar on Navigation
+              if (_isNavigating)
+                SizedBox(
+                  height: 3,
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                  ),
+                )
+              else
+                const SizedBox(height: 3),
 
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => handleNavigation(index),
-                        behavior: HitTestBehavior.opaque,
-                        child: MouseRegion(
-                          onEnter: (_) => setState(() => _hoveredIndex = index),
-                          onExit: (_) => setState(() => _hoveredIndex = null),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Glowing Top Active Line Indicator
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 250),
-                                curve: Curves.easeOutCubic,
-                                height: 3.5,
-                                width: isSelected ? 28 : 0,
-                                decoration: BoxDecoration(
-                                  color: isSelected ? accentColor : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(4),
-                                  boxShadow: isSelected
-                                      ? [
-                                          BoxShadow(
-                                            color: accentColor.withValues(alpha: 0.6),
-                                            blurRadius: 8,
-                                            spreadRadius: 1,
-                                          ),
-                                        ]
-                                      : [],
-                                ),
-                              ),
+              // Main Navigation Row
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(navItems.length, (index) {
+                      final item = navItems[index];
+                      final isSelected = index == activeIndex;
 
-                              // Content Pill Container
-                              Center(
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 250),
-                                  curve: Curves.easeOutCubic,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => handleNavigation(index),
+                          behavior: HitTestBehavior.opaque,
+                          child: MouseRegion(
+                            onEnter: (_) => setState(() => _hoveredIndex = index),
+                            onExit: (_) => setState(() => _hoveredIndex = null),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Icon Container with Active Pill Highlight
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: isSelected
-                                        ? accentColor.withValues(alpha: isDark ? 0.18 : 0.12)
+                                        ? accentColor.withValues(alpha: isDark ? 0.2 : 0.12)
                                         : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(14),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      AnimatedScale(
-                                        scale: isSelected ? 1.15 : 1.0,
-                                        duration: const Duration(milliseconds: 200),
-                                        child: Icon(
-                                          isSelected
-                                              ? (item['selectedIcon'] as IconData)
-                                              : (item['icon'] as IconData),
-                                          size: 21,
-                                          color: isSelected
-                                              ? accentColor
-                                              : (isDark ? Colors.white60 : Colors.black54),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          item['label'] as String,
-                                          maxLines: 1,
-                                          style: TextStyle(
-                                            fontFamily: 'Inter',
-                                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                            fontSize: 10.5,
-                                            color: isSelected
-                                                ? accentColor
-                                                : (isDark ? Colors.white60 : Colors.black54),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Icon(
+                                    isSelected
+                                        ? (item['selectedIcon'] as IconData)
+                                        : (item['icon'] as IconData),
+                                    size: 22,
+                                    color: isSelected
+                                        ? accentColor
+                                        : (isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B)),
                                   ),
                                 ),
-                              ),
-
-                              // Bottom Balancing Spacer
-                              const SizedBox(height: 3),
-                            ],
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    item['label'] as String,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                      fontSize: 11,
+                                      color: isSelected
+                                          ? accentColor
+                                          : (isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B)),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
