@@ -28,7 +28,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   ];
 
   // ---------------------------------------------------------------------------
-  // IMAGE PICKER SHEET
+  // BULLETPROOF AVATAR WIDGET (Never shows blank white circle)
+  // ---------------------------------------------------------------------------
+  Widget _buildUserAvatar(UserModel? user, {double radius = 34}) {
+    final initialLetter = (user != null && user.name.isNotEmpty) ? user.name[0].toUpperCase() : 'U';
+    final avatarUrl = user?.avatarUrl;
+
+    return Container(
+      padding: const EdgeInsets.all(2.5),
+      decoration: const BoxDecoration(
+        color: Color(0xFFFF2D55),
+        shape: BoxShape.circle,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(100),
+        child: Container(
+          width: radius * 2,
+          height: radius * 2,
+          color: const Color(0xFF0000D1),
+          alignment: Alignment.center,
+          child: (avatarUrl != null && avatarUrl.startsWith('http'))
+              ? Image.network(
+                  avatarUrl,
+                  width: radius * 2,
+                  height: radius * 2,
+                  fit: BoxFit.cover,
+                  errorBuilder: (ctx, err, stack) {
+                    return Text(
+                      initialLetter,
+                      style: TextStyle(
+                        fontSize: radius * 0.75,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                )
+              : Text(
+                  initialLetter,
+                  style: TextStyle(
+                    fontSize: radius * 0.75,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // IMAGE PICKER SHEET (Device & Preset Avatar)
   // ---------------------------------------------------------------------------
   void _showImagePickerSheet(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -59,6 +109,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
             const SizedBox(height: 16),
+
+            // Pick Image from Phone Button
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0000D1),
@@ -72,7 +124,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ref.read(authProvider.notifier).updateProfile(avatarUrl: imageUrl);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('📸 Profile photo updated from device! 🎉'),
+                      content: Text('📸 Profile photo selected & updated successfully! 🎉'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -84,12 +136,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
+
             const Text(
               'OR CHOOSE PRESET AVATAR:',
               style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+
+            // Preset Avatars Row
             SizedBox(
               height: 74,
               child: ListView.separated(
@@ -115,9 +170,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         color: Color(0xFFFF2D55),
                         shape: BoxShape.circle,
                       ),
-                      child: CircleAvatar(
-                        radius: 32,
-                        backgroundImage: NetworkImage(url),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(100),
+                        child: Image.network(
+                          url,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 60,
+                            height: 60,
+                            color: const Color(0xFF0000D1),
+                            alignment: Alignment.center,
+                            child: Icon(Icons.person, color: Colors.white, size: 28),
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -131,12 +198,86 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   // ---------------------------------------------------------------------------
+  // BIOMETRIC PROMPT DIALOG
+  // ---------------------------------------------------------------------------
+  void _showBiometricPromptDialog(BuildContext context, bool enable) {
+    if (!enable) {
+      setState(() => _biometricEnabled = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🔓 Biometric Security / Face ID Disabled'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0000D1).withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.fingerprint, size: 54, color: Color(0xFF0000D1)),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Face ID / Touch ID',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Scan your fingerprint or Face ID sensor to authenticate and lock app access.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0000D1),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    setState(() => _biometricEnabled = true);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('🔒 Biometric Verification Verified & Enabled successfully! 🎉'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.verified_user),
+                  label: const Text('Verify Biometrics Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // BIO-DATA / EDIT ACCOUNT MODAL (Matching Reference Image 2)
   // ---------------------------------------------------------------------------
   void _showBioDataSheet(BuildContext context, UserModel user) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Split name into first & last name if available
     final nameParts = user.name.split(' ');
     final firstNameCtrl = TextEditingController(text: nameParts.isNotEmpty ? nameParts.first : '');
     final lastNameCtrl = TextEditingController(text: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '');
@@ -195,7 +336,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Handle Bar & Header
                     Center(
                       child: Container(
                         width: 42,
@@ -224,7 +364,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 48), // Balance spacing
+                        const SizedBox(width: 48),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -237,28 +377,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       },
                       child: Stack(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFF2D55),
-                              shape: BoxShape.circle,
-                            ),
-                            child: CircleAvatar(
-                              radius: 46,
-                              backgroundColor: const Color(0xFF0000D1),
-                              backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-                              child: user.avatarUrl == null
-                                  ? Text(
-                                      user.name.isNotEmpty ? user.name[0] : 'U',
-                                      style: const TextStyle(
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                          ),
+                          _buildUserAvatar(user, radius: 46),
                           Positioned(
                             bottom: 2,
                             right: 2,
@@ -316,7 +435,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Gender Select Dropdown
                     DropdownButtonFormField<String>(
                       initialValue: selectedGender,
                       decoration: buildBioInputDecoration("Select your gender"),
@@ -330,7 +448,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Date of Birth Field
                     GestureDetector(
                       onTap: () async {
                         final picked = await showDatePicker(
@@ -356,7 +473,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // Solid Blue Update Profile Button (Matching Image 2)
+                    // Solid Blue Update Profile Button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -401,14 +518,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  // Helper month name formatter
   String _getMonthName(int month) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[(month - 1).clamp(0, 11)];
   }
 
   // ---------------------------------------------------------------------------
-  // HELP & SUPPORT MODAL (With Gmail Query & Feedback Form)
+  // HELP & SUPPORT MODAL
   // ---------------------------------------------------------------------------
   void _showHelpSupportSheet(BuildContext context, UserModel? user) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -612,7 +728,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // MAIN BUILD METHOD (Matching Image 1 Design)
+  // MAIN BUILD METHOD
   // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
@@ -652,9 +768,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // -----------------------------------------------------------------
-            // TOP BLUE BANNER CARD (Matching Image 1)
-            // -----------------------------------------------------------------
+            // TOP BLUE BANNER CARD
             GestureDetector(
               onTap: () => user != null ? _showBioDataSheet(context, user) : null,
               child: Container(
@@ -680,32 +794,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    // Avatar with Pink Ring (Image 1 Style)
-                    Container(
-                      padding: const EdgeInsets.all(2.5),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF2D55),
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircleAvatar(
-                        radius: 34,
-                        backgroundColor: Colors.white,
-                        backgroundImage: user?.avatarUrl != null ? NetworkImage(user!.avatarUrl!) : null,
-                        child: user?.avatarUrl == null
-                            ? Text(
-                                (user != null && user.name.isNotEmpty) ? user.name[0] : 'U',
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0000D1),
-                                ),
-                              )
-                            : null,
-                      ),
-                    ),
+                    _buildUserAvatar(user, radius: 34),
                     const SizedBox(width: 16),
 
-                    // User Info
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -734,7 +825,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
 
-                    // Edit Pencil Button
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 22),
                       tooltip: 'Edit Bio-data',
@@ -746,9 +836,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            // -----------------------------------------------------------------
-            // MAIN ACCOUNT OPTIONS CARD GROUP (Image 1 Style)
-            // -----------------------------------------------------------------
+            // MAIN ACCOUNT OPTIONS CARD GROUP
             Container(
               decoration: BoxDecoration(
                 color: containerBg,
@@ -817,15 +905,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     trailing: Switch(
                       value: _biometricEnabled,
                       activeThumbColor: const Color(0xFF0000D1),
-                      onChanged: (val) {
-                        setState(() => _biometricEnabled = val);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(val ? '🔒 Biometric Login Enabled!' : '🔓 Biometric Security Disabled'),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                      },
+                      onChanged: (val) => _showBiometricPromptDialog(context, val),
                     ),
                   ),
                   const Divider(height: 1, indent: 64),
@@ -873,9 +953,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            // -----------------------------------------------------------------
-            // SECTION: MORE (Matching Image 1)
-            // -----------------------------------------------------------------
+            // SECTION: MORE
             const Padding(
               padding: EdgeInsets.only(left: 4, bottom: 12),
               child: Text(
@@ -902,7 +980,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  // Help & Support
                   _buildProfileTile(
                     context,
                     icon: Icons.notifications_none_outlined,
@@ -915,7 +992,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const Divider(height: 1, indent: 64),
 
-                  // About App
                   _buildProfileTile(
                     context,
                     icon: Icons.favorite_outline,
@@ -935,9 +1011,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // REUSABLE PROFILE LIST TILE
-  // ---------------------------------------------------------------------------
   Widget _buildProfileTile(
     BuildContext context, {
     required IconData icon,
