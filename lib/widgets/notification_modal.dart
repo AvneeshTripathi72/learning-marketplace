@@ -24,8 +24,6 @@ class NotificationModalBody extends StatefulWidget {
 class _NotificationModalBodyState extends State<NotificationModalBody> {
   bool _pushEnabled = true;
   bool _soundEnabled = true;
-  bool _ebookAlertsEnabled = true;
-  bool _videoAlertsEnabled = true;
 
   final List<Map<String, dynamic>> _notifications = [
     {
@@ -153,7 +151,7 @@ class _NotificationModalBodyState extends State<NotificationModalBody> {
                     ),
                     Switch(
                       value: _pushEnabled,
-                      activeColor: const Color(0xFF0000D1),
+                      activeThumbColor: const Color(0xFF0000D1),
                       onChanged: (val) {
                         setState(() => _pushEnabled = val);
                         NotificationService().requestPermission(context);
@@ -173,7 +171,7 @@ class _NotificationModalBodyState extends State<NotificationModalBody> {
                     ),
                     Switch(
                       value: _soundEnabled,
-                      activeColor: Colors.purple,
+                      activeThumbColor: Colors.purple,
                       onChanged: (val) => setState(() => _soundEnabled = val),
                     ),
                   ],
@@ -320,6 +318,4 @@ class _NotificationModalBodyState extends State<NotificationModalBody> {
       ),
     );
   }
-}
-  );
 }

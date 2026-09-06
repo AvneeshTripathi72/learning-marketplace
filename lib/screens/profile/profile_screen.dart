@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'dart:async';
 import '../../models/user_model.dart';
 import '../../models/ebook_model.dart';
+import '../../models/video_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../screens/publication/ebook/pdf_viewer_screen.dart';
 import '../../screens/shared/video_player/video_player_screen.dart';
-import '../../services/notification_service.dart';
 import '../../utils/image_picker_helper.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
@@ -1718,13 +1718,24 @@ class _SavedItemsAndDownloadsSheetBodyState extends State<SavedItemsAndDownloads
                                         visualDensity: VisualDensity.compact,
                                       ),
                                       onPressed: () {
+                                        final video = VideoModel(
+                                          id: item['id'],
+                                          title: item['title'],
+                                          url: item['url'],
+                                          platform: VideoPlatform.youtube,
+                                          channelName: 'Academic Video Channel',
+                                          category: item['subject'] ?? 'General',
+                                          thumbnailUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300',
+                                          duration: item['duration'],
+                                          viewsCount: 2400,
+                                          status: VideoStatus.approved,
+                                          submittedBy: 'Student',
+                                          submittedDate: DateTime.now(),
+                                        );
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => VideoPlayerScreen(
-                                              videoUrl: item['url'],
-                                              title: item['title'],
-                                            ),
+                                            builder: (_) => VideoPlayerScreen(video: video),
                                           ),
                                         );
                                       },
