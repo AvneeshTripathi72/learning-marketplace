@@ -497,9 +497,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         onPressed: () {
                           final fullName = "${firstNameCtrl.text.trim()} ${lastNameCtrl.text.trim()}".trim();
+                          final rawPhone = phoneCtrl.text.trim();
+                          final processedPhone = (rawPhone.isEmpty || rawPhone == '+91' || rawPhone == '+91 ') ? null : rawPhone;
+
                           ref.read(authProvider.notifier).updateProfile(
                                 name: fullName.isNotEmpty ? fullName : user.name,
-                                mobile: phoneCtrl.text.trim(),
+                                mobile: processedPhone,
                                 email: emailCtrl.text.trim(),
                               );
                           Navigator.pop(ctx);
