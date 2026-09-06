@@ -929,8 +929,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   // 4. Dark Mode Theme Switch
                   Consumer(
                     builder: (context, ref, _) {
-                      final themeMode = ref.watch(themeModeProvider);
-                      final isDarkMode = themeMode == ThemeMode.dark;
+                      final isDarkMode = Theme.of(context).brightness == Brightness.dark;
                       return _buildProfileTile(
                         context,
                         icon: isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
@@ -942,7 +941,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           value: isDarkMode,
                           activeThumbColor: const Color(0xFF0000D1),
                           onChanged: (_) {
-                            ref.read(themeModeProvider.notifier).toggleTheme();
+                            ref.read(themeModeProvider.notifier).toggleTheme(isDarkMode);
                           },
                         ),
                       );
