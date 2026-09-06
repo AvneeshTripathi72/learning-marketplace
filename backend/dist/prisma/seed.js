@@ -30,24 +30,49 @@ async function main() {
             isActive: true,
         },
     });
+    const bcrypt = require('bcryptjs');
+    const vendorPassword = await bcrypt.hash('Vendor@12345', 10);
+    const adminPassword = await bcrypt.hash('Admin@12345', 10);
+    const studentPassword = await bcrypt.hash('Student@12345', 10);
+    const hariomPassword = await bcrypt.hash('Hariom2005.', 10);
     const user1 = await prisma.user.upsert({
-        where: { email: 'user@oxford.com' },
-        update: {},
+        where: { email: 'vendor@oxford.com' },
+        update: { password: vendorPassword },
         create: {
-            name: 'Oxford Admin User',
-            email: 'user@oxford.com',
-            password: 'password123',
+            name: 'Oxford Publication Vendor',
+            email: 'vendor@oxford.com',
+            password: vendorPassword,
             role: client_1.UserRole.PUBLICATION,
             publicationId: pub1.id,
         },
     });
+    const userAdmin = await prisma.user.upsert({
+        where: { email: 'admin@system.com' },
+        update: { password: adminPassword },
+        create: {
+            name: 'System Administrator',
+            email: 'admin@system.com',
+            password: adminPassword,
+            role: client_1.UserRole.ADMIN,
+        },
+    });
     const user2 = await prisma.user.upsert({
-        where: { email: 'public@user.com' },
-        update: {},
+        where: { email: 'student@gmail.com' },
+        update: { password: studentPassword },
         create: {
             name: 'Rahul Sharma (Student)',
-            email: 'public@user.com',
-            password: 'password123',
+            email: 'student@gmail.com',
+            password: studentPassword,
+            role: client_1.UserRole.PUBLIC,
+        },
+    });
+    const userHariom = await prisma.user.upsert({
+        where: { email: 'hariom.info07@gmail.com' },
+        update: { password: hariomPassword },
+        create: {
+            name: 'Hariom (Student)',
+            email: 'hariom.info07@gmail.com',
+            password: hariomPassword,
             role: client_1.UserRole.PUBLIC,
         },
     });

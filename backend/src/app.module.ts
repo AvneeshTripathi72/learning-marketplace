@@ -12,6 +12,8 @@ import { PaymentModule } from './payment/payment.module';
 import { DonationModule } from './donation/donation.module';
 import { ReportsModule } from './reports/reports.module';
 
+import { AppController } from './app.controller';
+
 @Module({
   imports: [
     PrismaModule,
@@ -27,7 +29,7 @@ import { ReportsModule } from './reports/reports.module';
     DonationModule,
     ReportsModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}
