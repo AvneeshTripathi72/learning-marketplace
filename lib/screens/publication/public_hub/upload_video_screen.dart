@@ -74,7 +74,8 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
   }
 
   void _submitVideo() async {
-    if (!_formKey.currentState!.validate() && _selectedVideoFile == null) return;
+    final isValidForm = _formKey.currentState?.validate() ?? false;
+    if (!isValidForm && _selectedVideoFile == null) return;
 
     setState(() {
       _isSubmitting = true;
@@ -138,6 +139,8 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
     ref.read(videoSubmissionsProvider.notifier).addVideoSubmission(newVideo);
     await ref.read(videoSubmissionsProvider.notifier).fetchCloudQueue();
 
+    final user = ref.read(authProvider);
+
     if (mounted) {
       setState(() {
         _isSubmitting = false;
@@ -149,7 +152,11 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      context.push('/pub/hub/my-uploads');
+      if (user?.role == UserRole.publication) {
+        context.push('/pub/hub/my-uploads');
+      } else {
+        context.go('/public/youtube');
+      }
     }
   }
 
