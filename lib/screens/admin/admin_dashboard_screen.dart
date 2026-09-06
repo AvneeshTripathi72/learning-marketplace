@@ -427,68 +427,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             
-            // Admin Greeting Banner
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0C2340), Color(0xFF1E3A8A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Colors.amber,
-                    child: Icon(Icons.security, color: Colors.black, size: 24),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome, ${user?.name ?? 'Admin'}!',
-                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'PLATFORM ADMIN • Full Access',
-                          style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.w600),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.circle, color: Colors.green, size: 6),
-                        SizedBox(width: 4),
-                        Text('ONLINE', style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
             // Platform KPI Metrics Grid
             const Text('Platform System Metrics', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
