@@ -623,7 +623,7 @@ class _AdminEBookManagementScreenState extends ConsumerState<AdminEBookManagemen
           ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNavBar(currentPath: '/admin/ebooks'),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
       body: Container(
         color: bgColor,
         child: SingleChildScrollView(
