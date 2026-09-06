@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { DonationService } from './donation.service';
 import { CreateDonationDto } from './dto/create-donation.dto';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+
+
 import { UserRole } from '../common/enums';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { AccessControlGuard } from '../auth/guards/access-control.guard';
 
 @Controller('donations')
 export class DonationController {
@@ -15,8 +17,8 @@ export class DonationController {
   }
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(AccessControlGuard)
+  @RequirePermissions({ module: 'donation', action: 'ALL', roles: [UserRole.ADMIN] })
   create(@Body() dto: CreateDonationDto) {
     return this.service.create(dto);
   }

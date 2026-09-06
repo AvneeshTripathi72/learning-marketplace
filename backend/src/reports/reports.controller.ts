@@ -1,8 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+
+
 import { UserRole } from '../common/enums';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { AccessControlGuard } from '../auth/guards/access-control.guard';
 
 @Controller('reports')
 export class ReportsController {
@@ -14,8 +16,8 @@ export class ReportsController {
   }
 
   @Get('revenue')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(AccessControlGuard)
+  @RequirePermissions({ module: 'reports', action: 'ALL', roles: [UserRole.ADMIN] })
   getRevenueSummary() {
     return this.service.getRevenueSummary();
   }

@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { SubscriptionService } from './subscription.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+
+
 import { UserRole } from '../common/enums';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { AccessControlGuard } from '../auth/guards/access-control.guard';
 
 @Controller('subscriptions')
 export class SubscriptionController {
@@ -20,8 +22,8 @@ export class SubscriptionController {
   }
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.PUBLICATION, UserRole.ADMIN)
+  @UseGuards(AccessControlGuard)
+  @RequirePermissions({ module: 'subscription', action: 'ALL', roles: [UserRole.PUBLICATION, UserRole.ADMIN] })
   createSubscription(@Body() dto: CreateSubscriptionDto) {
     return this.service.createSubscription(dto);
   }

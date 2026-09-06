@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Query, Patch, Param, UseGuards } from '@nestjs/common';
 import { EBookService } from './ebook.service';
 import { CreateEBookDto } from './dto/create-ebook.dto';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { AccessControlGuard } from '../auth/guards/access-control.guard';
 import { UserRole } from '../common/enums';
 
 @Controller('ebooks')
@@ -15,15 +15,15 @@ export class EBookController {
   }
 
   @Post()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(AccessControlGuard)
+  @RequirePermissions({ module: 'ebook', action: 'CREATE', roles: [UserRole.ADMIN] })
   create(@Body() dto: CreateEBookDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id/status')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(AccessControlGuard)
+  @RequirePermissions({ module: 'ebook', feature: 'toggle-status', action: 'UPDATE', roles: [UserRole.ADMIN] })
   toggleStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
     return this.service.toggleStatus(id, isActive);
   }
