@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ebook_model.dart';
 
 enum EBookStatus { pending, approved, rejected }
@@ -18,7 +20,112 @@ class EBookSubmissionModel {
 }
 
 class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>> {
-  EBookSubmissionsNotifier() : super([]);
+  EBookSubmissionsNotifier() : super([]) {
+    fetchCloudEBooks();
+  }
+
+  Future<void> fetchCloudEBooks() async {
+    try {
+      final supabaseData = await Supabase.instance.client
+          .from('EBook')
+          .select('*, Subject(*)');
+
+      if (supabaseData is List && supabaseData.isNotEmpty) {
+        final cloudSubmissions = supabaseData.map((item) {
+          final ebook = EBookModel(
+            id: item['id'].toString(),
+            title: item['title'] ?? 'eBook Document',
+            publicationId: 'General Education',
+            seriesId: 'Standard Series',
+            classId: 'Class 10',
+            subjectId: item['Subject'] != null ? (item['Subject']['name'] ?? 'Mathematics') : 'Mathematics',
+            coverUrl: item['coverUrl'] ?? 'https://picsum.photos/300/400',
+            fileUrl: item['fileUrl'] ?? '',
+          );
+
+          return EBookSubmissionModel(
+            ebook: ebook,
+            status: EBookStatus.approved,
+            submittedBy: 'Cloud Storage',
+            submittedDate: DateTime.now(),
+          );
+        }).toList();
+
+        debugPrint('⚡ Loaded ${cloudSubmissions.length} eBooks directly from Supabase DB EBook table');
+        
+        final cloudIds = cloudSubmissions.map((e) => e.ebook.id).toSet();
+        final localOnly = state.where((item) => !cloudIds.contains(item.ebook.id)).toList();
+        state = [...cloudSubmissions, ...localOnly];
+      }
+    } catch (e) {
+      debugPrint('ℹ️ Direct Supabase eBook fetch note: $e');
+    }
+  }
+
+  Future<void> saveEBookToSupabase({
+    required String title,
+    required String fileUrl,
+    required String subjectName,
+  }) async {
+    try {
+      final subRes = await Supabase.instance.client
+          .from('Subject')
+          .select()
+          .ilike('name', subjectName)
+          .limit(1);
+
+      String subjectId;
+      if (subRes is List && subRes.isNotEmpty) {
+        subjectId = subRes[0]['id'];
+      } else {
+        var pubRes = await Supabase.instance.client.from('Publication').select().limit(1);
+        String pubId = pubRes.isNotEmpty
+            ? pubRes[0]['id']
+            : (await Supabase.instance.client.from('Publication').insert({
+                'name': 'General Education',
+                'email': 'general@education.com',
+                'mobile': '+919800000000',
+                'address': 'Education Hub',
+                'logoUrl': 'https://picsum.photos/200',
+                'inquiryNumber': '1800123456'
+              }).select().single())['id'];
+
+        var serRes = await Supabase.instance.client.from('Series').select().limit(1);
+        String serId = serRes.isNotEmpty
+            ? serRes[0]['id']
+            : (await Supabase.instance.client.from('Series').insert({
+                'name': 'Standard Series',
+                'publicationId': pubId
+              }).select().single())['id'];
+
+        var clsRes = await Supabase.instance.client.from('Class').select().limit(1);
+        String clsId = clsRes.isNotEmpty
+            ? clsRes[0]['id']
+            : (await Supabase.instance.client.from('Class').insert({
+                'name': 'Class 10',
+                'seriesId': serId
+              }).select().single())['id'];
+
+        var newSub = await Supabase.instance.client.from('Subject').insert({
+          'name': subjectName,
+          'classId': clsId
+        }).select().single();
+        subjectId = newSub['id'];
+      }
+
+      await Supabase.instance.client.from('EBook').insert({
+        'title': title,
+        'subjectId': subjectId,
+        'coverUrl': 'https://picsum.photos/300/400?random=${DateTime.now().millisecondsSinceEpoch % 1000}',
+        'fileUrl': fileUrl,
+        'isActive': true,
+      });
+      debugPrint('⚡ Direct Supabase EBook insert successful!');
+      await fetchCloudEBooks();
+    } catch (e) {
+      debugPrint('ℹ️ Direct Supabase EBook insert note: $e');
+    }
+  }
 
   void addEBookSubmission(EBookModel ebook, {required String submittedBy, bool autoApprove = false}) {
     final submission = EBookSubmissionModel(
@@ -62,3 +169,4 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
 final ebookSubmissionsProvider = StateNotifierProvider<EBookSubmissionsNotifier, List<EBookSubmissionModel>>((ref) {
   return EBookSubmissionsNotifier();
 });
+

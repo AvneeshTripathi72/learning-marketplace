@@ -222,6 +222,12 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                     autoApprove: true,
                   );
 
+                  await ref.read(ebookSubmissionsProvider.notifier).saveEBookToSupabase(
+                    title: newEBook.title,
+                    fileUrl: finalUrl,
+                    subjectName: subject,
+                  );
+
                   if (context.mounted) {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
