@@ -110,8 +110,8 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(enabledCategoriesProvider);
     final submissions = ref.watch(videoSubmissionsProvider);
-    final approvedSubmissions = submissions.where((v) => v.status == VideoStatus.approved).toList();
-    final combinedVideos = [...approvedSubmissions, ..._allPublicVideos];
+    final activeSubmissions = submissions.where((v) => v.status == VideoStatus.approved || v.status == VideoStatus.pending).toList();
+    final combinedVideos = [...activeSubmissions, ..._allPublicVideos];
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
