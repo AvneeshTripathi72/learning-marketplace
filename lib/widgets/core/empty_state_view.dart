@@ -51,17 +51,21 @@ class EmptyStateView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             if (actionText != null && onAction != null) ...[
-              const SizedBox(height: 32),
-              OutlinedButton(
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
                 onPressed: onAction,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  side: BorderSide(color: theme.colorScheme.primary),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text(
+                icon: const Icon(Icons.picture_as_pdf, size: 20),
+                label: Text(
                   actionText!,
-                  style: AppTypography.button(theme.colorScheme.primary),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 4,
+                  shadowColor: theme.colorScheme.primary.withValues(alpha: 0.4),
                 ),
               ),
             ],

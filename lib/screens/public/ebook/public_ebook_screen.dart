@@ -400,8 +400,10 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                         child: filteredEbooks.isEmpty
                             ? EmptyStateView(
                                 icon: Icons.menu_book_outlined,
-                                title: 'No verified eBooks found in "$_selectedClass - $_selectedSubject"',
-                                message: 'Change filter selections above to explore available textbooks.',
+                                title: 'No eBooks found for $_selectedClass - $_selectedSubject',
+                                message: 'Tap "Upload eBook PDF" below to upload a new document or PDF link for moderation.',
+                                actionText: 'Upload eBook PDF',
+                                onAction: () => _showUploadPdfModal(context),
                               )
                             : GridView.builder(
                                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
