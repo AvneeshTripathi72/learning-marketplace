@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
@@ -272,11 +273,56 @@ class _AdminUserManagementScreenState extends ConsumerState<AdminUserManagementS
                             item.email,
                             style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.black54),
                           ),
-                          if (item.mobile != null)
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: isVendor ? Colors.blue.withValues(alpha: 0.15) : Colors.purple.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: isVendor ? Colors.blue : Colors.purple, width: 0.8),
+                                ),
+                                child: Text(
+                                  'ID: ${item.id}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isVendor ? Colors.blue : Colors.purple,
+                                  ),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: item.id));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Copied ID: ${item.id}')),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.copy, size: 12, color: isDark ? Colors.white70 : Colors.black54),
+                                      const SizedBox(width: 3),
+                                      Text('Copy ID', style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (item.mobile != null) ...[
+                            const SizedBox(height: 2),
                             Text(
                               item.mobile!,
                               style: const TextStyle(fontSize: 11, color: Colors.grey),
                             ),
+                          ],
                         ],
                       ),
                     ),

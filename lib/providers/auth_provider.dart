@@ -115,17 +115,17 @@ class AuthNotifier extends StateNotifier<UserModel?> {
             role = UserRole.publication;
           }
 
-          if (!_registeredUsers.containsKey(cleanEmail)) {
-            _registeredUsers[cleanEmail] = {
-              'name': item['name'] ?? cleanEmail.split('@').first,
-              'password': '',
-              'role': role,
-              'publicationId': item['publicationId'],
-              'mobile': null,
-              'avatarUrl': null,
-              'isBlocked': false,
-            };
-          }
+          final existing = _registeredUsers[cleanEmail] ?? {};
+          _registeredUsers[cleanEmail] = {
+            'id': item['id'] ?? existing['id'] ?? 'usr_${cleanEmail.hashCode.abs()}',
+            'name': item['name'] ?? existing['name'] ?? cleanEmail.split('@').first,
+            'password': existing['password'] ?? '',
+            'role': role,
+            'publicationId': item['publicationId'] ?? existing['publicationId'] ?? 'oxford_pub_001',
+            'mobile': item['mobile'] ?? existing['mobile'] ?? '+91 9876543210',
+            'avatarUrl': item['avatarUrl'] ?? existing['avatarUrl'],
+            'isBlocked': existing['isBlocked'] == true,
+          };
         }
         await _saveUsersToStorage();
       }
@@ -347,13 +347,15 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         if (roleObj.toLowerCase() == 'publication' || roleObj.toLowerCase() == 'vendor') role = UserRole.publication;
       }
 
+      final userId = data['id'] ?? 'usr_${email.hashCode.abs()}';
+
       list.add({
-        'id': 'usr_${email.hashCode}',
+        'id': userId.toString(),
         'email': email,
         'name': data['name'] ?? email.split('@').first,
         'role': role,
         'mobile': data['mobile'] ?? '+91 9876543210',
-        'publicationId': data['publicationId'],
+        'publicationId': data['publicationId'] ?? 'pub_001',
         'avatarUrl': data['avatarUrl'],
         'isBlocked': data['isBlocked'] == true,
       });

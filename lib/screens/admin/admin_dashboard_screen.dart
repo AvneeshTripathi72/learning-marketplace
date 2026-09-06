@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/api_endpoints.dart';
+import '../../models/user_model.dart';
 import '../../models/video_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ebook_provider.dart';
@@ -49,36 +50,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       'logo': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=150',
       'status': 'SUSPENDED',
       'ebooksCount': 15,
-    },
-  ];
-
-  final List<Map<String, dynamic>> _creatorDonationsLog = [
-    {
-      'id': 'DON-891',
-      'supporter': 'Rahul Sharma (Student)',
-      'creator': 'Global Science Academy',
-      'amount': 500.00,
-      'gateway': 'Razorpay Gateway',
-      'date': '05 Sep 2026, 23:40',
-      'status': 'SETTLED',
-    },
-    {
-      'id': 'DON-892',
-      'supporter': 'Priya Singh (Student)',
-      'creator': 'Oxford Educational Hub',
-      'amount': 200.00,
-      'gateway': 'Direct UPI App',
-      'date': '05 Sep 2026, 22:15',
-      'status': 'SETTLED',
-    },
-    {
-      'id': 'DON-893',
-      'supporter': 'Ankit Kumar',
-      'creator': 'Chemistry Masterclass',
-      'amount': 100.00,
-      'gateway': 'Razorpay Gateway',
-      'date': '05 Sep 2026, 21:05',
-      'status': 'SETTLED',
     },
   ];
 
@@ -217,23 +188,23 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
             const Divider(),
             const SizedBox(height: 10),
-            ListTile(
-              leading: const CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.check, color: Colors.white)),
-              title: const Text('Browser Notifications Allowed!'),
-              subtitle: const Text('Real-time alerts enabled for Web Browser.'),
-              trailing: const Text('Now', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            const ListTile(
+              leading: CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.check, color: Colors.white)),
+              title: Text('Browser Notifications Allowed!'),
+              subtitle: Text('Real-time alerts enabled for Web Browser.'),
+              trailing: Text('Now', style: TextStyle(fontSize: 11, color: Colors.grey)),
             ),
-            ListTile(
-              leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.cloud_upload, color: Colors.white)),
-              title: const Text('New Magazine Uploaded'),
-              subtitle: const Text('Oxford Educational Press added Issue #42.'),
-              trailing: const Text('10m ago', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            const ListTile(
+              leading: CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.cloud_upload, color: Colors.white)),
+              title: Text('New Magazine Uploaded'),
+              subtitle: Text('Oxford Educational Press added Issue #42.'),
+              trailing: Text('10m ago', style: TextStyle(fontSize: 11, color: Colors.grey)),
             ),
-            ListTile(
-              leading: const CircleAvatar(backgroundColor: Colors.purple, child: Icon(Icons.monetization_on, color: Colors.white)),
-              title: const Text('Ad Subscription Renewed'),
-              subtitle: const Text('Gold Tier package purchased via Razorpay.'),
-              trailing: const Text('1h ago', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            const ListTile(
+              leading: CircleAvatar(backgroundColor: Colors.purple, child: Icon(Icons.monetization_on, color: Colors.white)),
+              title: Text('Ad Subscription Renewed'),
+              subtitle: Text('Gold Tier package purchased via Razorpay.'),
+              trailing: Text('1h ago', style: TextStyle(fontSize: 11, color: Colors.grey)),
             ),
           ],
         ),
@@ -830,7 +801,24 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(pub['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Row(
+                                children: [
+                                  Text(pub['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: Colors.blue, width: 0.6),
+                                    ),
+                                    child: Text(
+                                      'ID: ${pub['id']}',
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue),
+                                    ),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 2),
                               Text('${pub['email']} • ${pub['ebooksCount']} eBooks',
                                   style: const TextStyle(color: Colors.grey, fontSize: 11),
@@ -872,6 +860,146 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                   ),
                 )),
+            const SizedBox(height: 24),
+
+            // Live Registered Vendors & Students Accounts Directory
+            Builder(
+              builder: (context) {
+                final liveUsers = ref.watch(authProvider.notifier).getAllRegisteredUsers();
+                final liveVendors = liveUsers.where((u) => u['role'] == UserRole.publication).toList();
+                final liveStudents = liveUsers.where((u) => u['role'] == UserRole.public).toList();
+
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.4), width: 1.5),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.people_alt, color: Colors.blue, size: 22),
+                              const SizedBox(width: 8),
+                              Text(
+                                'User & Vendor IDs Directory (${liveUsers.length})',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: () => context.push('/admin/users'),
+                            icon: const Icon(Icons.manage_accounts, size: 14),
+                            label: const Text('Manage IDs', style: TextStyle(fontSize: 11)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Active Database Accounts: ${liveVendors.length} Registered Vendors • ${liveStudents.length} Students',
+                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                      ),
+                      const Divider(height: 20),
+                      if (liveUsers.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text('No user accounts found in database.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: liveUsers.length > 5 ? 5 : liveUsers.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, idx) {
+                            final u = liveUsers[idx];
+                            final isVend = u['role'] == UserRole.publication;
+                            return Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: isVend ? Colors.blue : Colors.green,
+                                    child: Icon(isVend ? Icons.store : Icons.person, size: 14, color: Colors.white),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                u['name'] ?? u['email'],
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: isVend ? Colors.blue.withValues(alpha: 0.15) : Colors.purple.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(4),
+                                                border: Border.all(color: isVend ? Colors.blue : Colors.purple, width: 0.6),
+                                              ),
+                                              child: Text(
+                                                'ID: ${u['id']}',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isVend ? Colors.blue : Colors.purple,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          '${u['email']} • ${isVend ? "Vendor Account" : "Student Account"}',
+                                          style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.copy, size: 14),
+                                    tooltip: 'Copy User ID',
+                                    onPressed: () {
+                                      Clipboard.setData(ClipboardData(text: u['id'].toString()));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Copied ID: ${u['id']}')),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 24),
 
             // Dynamic Ad Engine Rules & Injection Control (PRD Section 5.6)
