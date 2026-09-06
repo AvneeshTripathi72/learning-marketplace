@@ -1553,72 +1553,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // -----------------------------------------------------------
                   // DEV TESTING BYPASS SECTION
                   // -----------------------------------------------------------
-                  if (_devTapCount >= 5) ...[
-                    const Divider(),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        '🛠️ QUICK ACCESS BYPASS (TESTING)',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold, 
-                          color: theme.textTheme.bodySmall?.color,
-                          fontSize: 12,
-                        ),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      '🛠️ QUICK ACCESS BYPASS (TESTING)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        color: theme.textTheme.bodySmall?.color,
+                        fontSize: 12,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
-                            foregroundColor: Colors.redAccent,
-                            elevation: 0,
-                          ),
-                          onPressed: () async {
-                            _emailController.text = 'admin@system.com';
-                            _passwordController.text = 'Admin@12345';
-                            final user = await ref.read(authProvider.notifier).loginWithCredentials('admin@system.com', 'Admin@12345');
-                            if (user != null && mounted) context.go('/admin/dashboard');
-                          },
-                          icon: const Icon(Icons.admin_panel_settings, size: 16),
-                          label: const Text('Admin'),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+                          foregroundColor: Colors.redAccent,
+                          elevation: 0,
                         ),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
-                            foregroundColor: Colors.blueAccent,
-                            elevation: 0,
-                          ),
-                          onPressed: () async {
-                            _emailController.text = 'student@gmail.com';
-                            _passwordController.text = 'Student@12345';
-                            final user = await ref.read(authProvider.notifier).loginWithCredentials('student@gmail.com', 'Student@12345');
-                            if (user != null && mounted) context.go('/public/dashboard');
-                          },
-                          icon: const Icon(Icons.school, size: 16),
-                          label: const Text('Public'),
+                        onPressed: () async {
+                          _emailController.text = 'admin@system.com';
+                          _passwordController.text = 'Admin@12345';
+                          final user = await ref.read(authProvider.notifier).loginWithCredentials('admin@system.com', 'Admin@12345');
+                          if (user != null && mounted) context.go('/admin/dashboard');
+                        },
+                        icon: const Icon(Icons.admin_panel_settings, size: 16),
+                        label: const Text('Admin'),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
+                          foregroundColor: Colors.blueAccent,
+                          elevation: 0,
                         ),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orangeAccent.withValues(alpha: 0.1),
-                            foregroundColor: Colors.orangeAccent,
-                            elevation: 0,
-                          ),
-                          onPressed: () async {
-                            _emailController.text = 'vendor@oxford.com';
-                            _passwordController.text = 'Vendor@12345';
-                            final user = await ref.read(authProvider.notifier).loginWithCredentials('vendor@oxford.com', 'Vendor@12345');
-                            if (user != null && mounted) context.go('/dashboard');
-                          },
-                          icon: const Icon(Icons.business, size: 16),
-                          label: const Text('Vendor'),
+                        onPressed: () async {
+                          _emailController.text = 'student@gmail.com';
+                          _passwordController.text = 'Student@12345';
+                          final user = await ref.read(authProvider.notifier).loginWithCredentials('student@gmail.com', 'Student@12345');
+                          if (user != null && mounted) context.go('/public/dashboard');
+                        },
+                        icon: const Icon(Icons.school, size: 16),
+                        label: const Text('Public'),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orangeAccent.withValues(alpha: 0.1),
+                          foregroundColor: Colors.orangeAccent,
+                          elevation: 0,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                        onPressed: () async {
+                          _emailController.text = 'vendor@oxford.com';
+                          _passwordController.text = 'Vendor@12345';
+                          final user = await ref.read(authProvider.notifier).loginWithCredentials('vendor@oxford.com', 'Vendor@12345');
+                          if (user != null && mounted) context.go('/dashboard');
+                        },
+                        icon: const Icon(Icons.business, size: 16),
+                        label: const Text('Vendor'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
