@@ -583,7 +583,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.95,
+                  childAspectRatio: 0.82,
                 ),
                 itemCount: roles.length,
                 itemBuilder: (context, index) {
