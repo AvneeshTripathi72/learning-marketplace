@@ -59,10 +59,12 @@ class _CustomBottomNavBarState extends ConsumerState<CustomBottomNavBar> {
       }
     }
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-        child: Center(
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(40),
             child: BackdropFilter(
