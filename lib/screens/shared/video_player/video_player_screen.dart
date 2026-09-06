@@ -34,7 +34,6 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  bool _isPlaying = true;
   bool _isSubscribed = false;
   bool _isLiked = false;
   bool _isDisliked = false;
