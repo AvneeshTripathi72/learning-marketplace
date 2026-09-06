@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../models/video_model.dart';
 import '../../../utils/web_iframe_helper.dart';
 
@@ -41,8 +41,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   late int _likeCount;
   String _youtubeViewType = '';
-  double _playbackPosition = 0.35; // 35% watched
-  String _selectedSpeed = '1.0x';
+  YoutubePlayerController? _youtubeController;
 
   final TextEditingController _commentController = TextEditingController();
 
@@ -78,48 +77,27 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     super.initState();
     _likeCount = widget.video.viewsCount > 100 ? (widget.video.viewsCount ~/ 8) : 124;
 
+    final videoId = _extractVideoId(widget.video.url);
+
     if (kIsWeb) {
       _youtubeViewType = 'pw-yt-player-${widget.video.id}-${DateTime.now().millisecondsSinceEpoch}';
-      final embedUrl = _extractEmbedUrl(widget.video.url);
+      final embedUrl = 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=0&enablejsapi=1&rel=0&modestbranding=1&playsinline=1';
       registerIframe(_youtubeViewType, embedUrl);
+    } else {
+      _youtubeController = YoutubePlayerController.fromVideoId(
+        videoId: videoId,
+        autoPlay: true,
+        params: const YoutubePlayerParams(
+          showControls: true,
+          showFullscreenButton: true,
+          mute: false,
+        ),
+      );
     }
   }
 
-  Future<void> _launchVideoUrl() async {
-    String targetUrl = widget.video.url.trim();
-    if (targetUrl.isEmpty || !targetUrl.startsWith('http')) {
-      targetUrl = 'https://www.youtube.com/watch?v=kffacxfA7G4';
-    }
-    final uri = Uri.parse(targetUrl);
-    try {
-      bool launched = false;
-      try {
-        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (e) {
-        debugPrint('Failed to launch externalApplication: $e');
-      }
-      if (!launched) {
-        try {
-          launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-        } catch (e) {
-          debugPrint('Failed to launch inAppBrowserView: $e');
-        }
-      }
-      if (!launched) {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-      }
-    } catch (e) {
-      debugPrint('Error launching video URL: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Opening video: $targetUrl')),
-        );
-      }
-    }
-  }
-
-  String _extractEmbedUrl(String rawUrl) {
-    String videoId = 'kffacxfA7G4'; // Trigonometry Class 10 Lecture ID
+  String _extractVideoId(String rawUrl) {
+    String videoId = 'kffacxfA7G4';
     if (rawUrl.contains('v=')) {
       final parts = rawUrl.split('v=');
       if (parts.length > 1) {
@@ -136,11 +114,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         videoId = parts[1].split('?').first;
       }
     }
-    return 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=1&enablejsapi=1&rel=0&modestbranding=1&playsinline=1';
+    return videoId;
   }
 
   @override
   void dispose() {
+    _youtubeController?.close();
     _commentController.dispose();
     super.dispose();
   }
@@ -178,9 +157,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final fallbackThumbnail = widget.video.thumbnailUrl.isNotEmpty && widget.video.thumbnailUrl.startsWith('http')
-        ? widget.video.thumbnailUrl
-        : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop';
+
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F7),
@@ -198,152 +175,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. IN-APP PW-STYLE EMBEDDED VIDEO PLAYER CONTAINER
+              // 1. IN-APP NATIVE / WEB VIDEO PLAYER CONTAINER
               Container(
                 width: double.infinity,
                 height: 230,
                 color: Colors.black,
                 child: kIsWeb && _youtubeViewType.isNotEmpty
                     ? HtmlElementView(viewType: _youtubeViewType)
-                    : GestureDetector(
-                        onTap: _launchVideoUrl,
-                        behavior: HitTestBehavior.opaque,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                          // Video Thumbnail Background
-                          Image.network(
-                            fallbackThumbnail,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(color: Colors.black),
-                          ),
-
-                          // Dark Semi-transparent Video Overlay
-                          Container(
-                            color: Colors.black.withValues(alpha: 0.45),
-                          ),
-
-                          // Center Play / Pause Icon Button
-                          Container(
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF0000).withValues(alpha: 0.92),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFF0000).withValues(alpha: 0.5),
-                                  blurRadius: 20,
-                                  spreadRadius: 4,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.play_arrow_rounded,
-                              size: 48,
-                              color: Colors.white,
-                            ),
-                          ),
-
-                            // Top Player Bar Badges (Live Badge & Speed Selector)
-                            Positioned(
-                              top: 12,
-                              left: 12,
-                              right: 12,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.redAccent,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.circle, color: Colors.white, size: 8),
-                                        SizedBox(width: 6),
-                                        Text(
-                                          'IN-APP PLAYER',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.8,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    initialValue: _selectedSpeed,
-                                    onSelected: (speed) => setState(() => _selectedSpeed = speed),
-                                    itemBuilder: (context) => ['0.75x', '1.0x', '1.25x', '1.5x', '2.0x']
-                                        .map((s) => PopupMenuItem(value: s, child: Text('Speed $s')))
-                                        .toList(),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.7),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.speed, color: Colors.white, size: 14),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            _selectedSpeed,
-                                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // Bottom Seeker Controls & Duration Timeline
-                            Positioned(
-                              bottom: 8,
-                              left: 12,
-                              right: 12,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SliderTheme(
-                                    data: SliderThemeData(
-                                      trackHeight: 3,
-                                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                                      activeTrackColor: theme.colorScheme.primary,
-                                      inactiveTrackColor: Colors.white30,
-                                      thumbColor: Colors.white,
-                                    ),
-                                    child: Slider(
-                                      value: _playbackPosition,
-                                      onChanged: (val) => setState(() => _playbackPosition = val),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '14:20 / ${widget.video.duration}',
-                                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-                                        ),
-                                        const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 20),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    : (_youtubeController != null
+                        ? YoutubePlayer(
+                            controller: _youtubeController!,
+                            aspectRatio: 16 / 9,
+                          )
+                        : const Center(
+                            child: CircularProgressIndicator(color: Colors.red),
+                          )),
               ),
 
               // 2. VIDEO TITLE & METADATA SECTION
@@ -368,25 +214,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                         color: theme.textTheme.bodySmall?.color,
                       ),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Direct Watch Video Stream Button
-                    ElevatedButton.icon(
-                      onPressed: _launchVideoUrl,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF0000), // YouTube Red
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 48),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 3,
-                      ),
-                      icon: const Icon(Icons.play_circle_fill_rounded, size: 24),
-                      label: const Text(
-                        '▶ PLAY VIDEO LECTURE NOW',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 0.5),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // 3. CHANNEL & SUBSCRIBE ROW
                     Container(
