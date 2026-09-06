@@ -144,6 +144,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
   Future<UserModel?> loginWithCredentials(String email, String password) async {
     final cleanEmail = email.trim().toLowerCase();
+    debugPrint('🔑 Attempting auth login for: $cleanEmail');
 
     // 1. Try production HTTP backend endpoint POST /auth/login
     try {
@@ -191,11 +192,16 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         await _saveUsersToStorage();
 
         login(user, token);
+        debugPrint('✅ Cloud login successful for: ${user.email} (${user.role.name})');
         return user;
       } else if (response.statusCode == 401 || response.statusCode == 400) {
+        debugPrint('⚠️ Cloud login invalid credentials status: ${response.statusCode}');
         return null;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ℹ️ Backend auth reachability notice: $e. Falling back to persistent local storage user registry.');
+    }
+
 
     // 2. Check local persistent DB registered accounts map
     if (_registeredUsers.containsKey(cleanEmail)) {

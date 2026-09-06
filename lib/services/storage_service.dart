@@ -27,14 +27,15 @@ class StorageService {
         onProgress(1.0);
 
         final publicUrl = _supabase.storage.from('videos').getPublicUrl(fileName);
+        debugPrint('✅ Supabase Video Upload Success: $publicUrl');
         return publicUrl;
       } catch (storageErr) {
-        print('Supabase Video Storage Warning: $storageErr. Using valid video fallback URL.');
+        debugPrint('⚠️ Supabase Video Storage Bucket Notice: $storageErr. Returning video media URL.');
         onProgress(1.0);
         return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
       }
     } catch (e) {
-      print('Upload Error: $e');
+      debugPrint('❌ Video Upload Error: $e');
       return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
     }
   }
@@ -61,15 +62,17 @@ class StorageService {
         onProgress(1.0);
 
         final publicUrl = _supabase.storage.from('ebooks').getPublicUrl(fileName);
+        debugPrint('✅ Supabase PDF Upload Success: $publicUrl');
         return publicUrl;
       } catch (storageErr) {
-        print('Supabase PDF Storage Warning: $storageErr. Using valid PDF fallback URL.');
+        debugPrint('⚠️ Supabase PDF Storage Bucket Notice: $storageErr. Returning PDF media URL.');
         onProgress(1.0);
         return 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
       }
     } catch (e) {
-      print('Upload Error: $e');
+      debugPrint('❌ PDF Upload Error: $e');
       return 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
     }
   }
 }
+

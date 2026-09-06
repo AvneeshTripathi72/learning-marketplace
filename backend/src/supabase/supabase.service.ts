@@ -11,7 +11,9 @@ export class SupabaseService {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      this.logger.error('Supabase URL or Key is missing in environment variables');
+      this.logger.error('❌ Supabase URL or Key is missing in environment variables');
+    } else {
+      this.logger.log(`⚡ Supabase Client initialized successfully with URL: ${supabaseUrl}`);
     }
 
     this.client = createClient(supabaseUrl || '', supabaseKey || '');
@@ -21,3 +23,4 @@ export class SupabaseService {
     return this.client.from.bind(this.client);
   }
 }
+

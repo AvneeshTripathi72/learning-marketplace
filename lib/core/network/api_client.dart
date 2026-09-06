@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../constants/api_endpoints.dart';
 import '../storage/secure_storage_service.dart';
@@ -20,10 +21,15 @@ class ApiClient {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+        debugPrint('🌐 HTTP [${options.method}] -> ${options.uri}');
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        debugPrint('✅ HTTP [${response.statusCode}] <- ${response.requestOptions.path}');
+        return handler.next(response);
+      },
       onError: (DioException error, handler) {
-        // Handle unauthorized or server error responses
+        debugPrint('❌ HTTP Error [${error.response?.statusCode ?? 'Network'}] on ${error.requestOptions.path}: ${error.message}');
         return handler.next(error);
       },
     ));
@@ -35,3 +41,4 @@ class ApiClient {
   Future<Response> post(String path, {dynamic data}) =>
       _dio.post(path, data: data);
 }
+
