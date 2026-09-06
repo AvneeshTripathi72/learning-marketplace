@@ -9,6 +9,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "postinstall": "npx prisma generate",
     "build": "npx prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
