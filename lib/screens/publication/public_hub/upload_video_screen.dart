@@ -160,7 +160,7 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
         title: const Text('Submit Video URL'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         child: Form(
           key: _formKey,
           child: Column(
@@ -268,6 +268,7 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
                   label: Text(_isSubmitting ? 'Submitting...' : 'Submit Video for Moderation'),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
