@@ -74,10 +74,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _loginAsRole(UserRole role) async {
     final auth = ref.read(authProvider.notifier);
     if (role == UserRole.publication) {
-      await auth.loginAsPublicationAdmin();
+      await auth.loginWithCredentials('vendor@oxford.com', 'Vendor@12345');
       if (mounted) context.go('/dashboard');
     } else {
-      await auth.loginAsPublicStudent();
+      await auth.loginWithCredentials('student@gmail.com', 'Student@12345');
       if (mounted) context.go('/public/dashboard');
     }
   }
@@ -1251,6 +1251,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   setState(() {
                                     _isSignUpMode = false;
                                     _errorMessage = null;
+                                    _passwordController.clear();
                                     _confirmPasswordController.clear();
                                   });
                                 },
@@ -1296,6 +1297,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     setState(() {
                       _isSignUpMode = !_isSignUpMode;
                       _errorMessage = null;
+                      _passwordController.clear();
+                      _confirmPasswordController.clear();
                     });
                   },
                   child: RichText(

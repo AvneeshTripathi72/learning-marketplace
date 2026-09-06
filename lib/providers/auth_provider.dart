@@ -31,7 +31,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     },
     'hariom.info07@gmail.com': {
       'name': 'Hariom (Student)',
-      'password': 'Hariom@12345',
+      'password': 'Hariom2005.',
       'role': UserRole.public,
       'publicationId': null,
     },
@@ -46,12 +46,18 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       final storedUsers = await _storage.getRegisteredUsers();
       if (storedUsers != null && storedUsers.isNotEmpty) {
         storedUsers.forEach((key, val) {
+          final roleStr = (val['role'] ?? 'public').toString().toLowerCase();
+          UserRole role = UserRole.public;
+          if (roleStr == 'admin') {
+            role = UserRole.admin;
+          } else if (roleStr == 'publication' || roleStr == 'vendor') {
+            role = UserRole.publication;
+          }
+
           _registeredUsers[key] = {
             'name': val['name'] ?? key.split('@').first,
-            'password': val['password'] ?? 'Password@12345',
-            'role': val['role'] == 'admin'
-                ? UserRole.admin
-                : (val['role'] == 'publication' ? UserRole.publication : UserRole.public),
+            'password': val['password'] ?? '',
+            'role': role,
             'publicationId': val['publicationId'],
           };
         });
@@ -78,12 +84,12 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.login}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': cleanEmail, 'password': password}),
-      ).timeout(const Duration(seconds: 3));
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final userJson = data['user'];
-        final token = data['token'] ?? 'backend_token_${DateTime.now().millisecondsSinceEpoch}';
+        final token = data['token'] ?? 'jwt_token_${DateTime.now().millisecondsSinceEpoch}';
 
         UserRole role = UserRole.public;
         if (userJson['role'] == 'PUBLICATION' || userJson['role'] == 'VENDOR') {
@@ -102,23 +108,38 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
         login(user, token);
         return user;
+      } else if (response.statusCode == 401 || response.statusCode == 400) {
+        // Backend actively rejected authentication credentials!
+        return null;
       }
     } catch (_) {}
 
-    // 2. Check persistent DB registered accounts map with strict password matching
+    // 2. Check local persistent DB registered accounts map with strict password matching
     if (_registeredUsers.containsKey(cleanEmail)) {
       final acc = _registeredUsers[cleanEmail]!;
       final storedPass = acc['password'] as String?;
+      final rawRole = acc['role'];
 
-      if (storedPass != null && storedPass == password) {
+      UserRole userRole = UserRole.public;
+      if (rawRole is UserRole) {
+        userRole = rawRole;
+      } else if (rawRole is String) {
+        if (rawRole.toLowerCase() == 'admin') {
+          userRole = UserRole.admin;
+        } else if (rawRole.toLowerCase() == 'publication' || rawRole.toLowerCase() == 'vendor') {
+          userRole = UserRole.publication;
+        }
+      }
+
+      if (storedPass != null && storedPass.isNotEmpty && storedPass == password) {
         final user = UserModel(
           id: 'user_${cleanEmail.hashCode}',
-          name: acc['name'] as String,
+          name: (acc['name'] as String?) ?? cleanEmail.split('@').first,
           email: cleanEmail,
-          role: acc['role'] as UserRole,
+          role: userRole,
           publicationId: acc['publicationId'] as String?,
         );
-        login(user, 'local_token_${DateTime.now().millisecondsSinceEpoch}');
+        login(user, 'jwt_token_${DateTime.now().millisecondsSinceEpoch}');
         return user;
       } else {
         // Wrong password entered - strict authentication failure!
@@ -126,6 +147,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       }
     }
 
+    // Account not found in registered DB
     return null;
   }
 
@@ -143,15 +165,26 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       role = UserRole.admin;
     }
 
-    // Save registered user credentials persistently
+    // Save registered user credentials in memory map
     _registeredUsers[cleanEmail] = {
       'name': name,
       'password': password,
-      'role': role.name,
+      'role': role,
       'publicationId': role == UserRole.publication ? 'pub_${cleanEmail.split('@').first}' : null,
     };
 
-    await _storage.saveRegisteredUsers(_registeredUsers);
+    // Serialize map to JSON format for disk storage
+    final serializableUsers = <String, Map<String, dynamic>>{};
+    _registeredUsers.forEach((key, value) {
+      serializableUsers[key] = {
+        'name': value['name'],
+        'password': value['password'],
+        'role': value['role'] is UserRole ? (value['role'] as UserRole).name : value['role'].toString(),
+        'publicationId': value['publicationId'],
+      };
+    });
+
+    await _storage.saveRegisteredUsers(serializableUsers);
 
     try {
       final response = await http.post(
@@ -172,31 +205,6 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     return true;
   }
 
-  Future<void> loginAsPublicationAdmin() async {
-    final user = UserModel(
-      id: 'pub_admin_1',
-      email: 'vendor@oxford.com',
-      name: 'Oxford Publication Vendor',
-      role: UserRole.publication,
-      publicationId: 'pub_oxford_1',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      mobile: '+91 9876543210',
-    );
-    login(user, 'dummy_pub_admin_token');
-  }
-
-  Future<void> loginAsPublicStudent() async {
-    final user = UserModel(
-      id: 'student_1',
-      email: 'student@gmail.com',
-      name: 'Rahul Sharma (Student)',
-      role: UserRole.public,
-      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-      mobile: '+91 9123456789',
-    );
-    login(user, 'dummy_student_token');
-  }
-
   void updateProfile({String? name, String? email, String? mobile, String? avatarUrl}) {
     if (state != null) {
       final updated = state!.copyWith(
@@ -210,8 +218,8 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     }
   }
 
-  void logout() {
-    _storage.deleteToken();
+  Future<void> logout() async {
+    await _storage.deleteToken();
     state = null;
   }
 }
