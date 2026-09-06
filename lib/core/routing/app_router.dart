@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/admin/admin_dashboard_screen.dart';
+import '../../screens/admin/admin_ebook_management_screen.dart';
 import '../../screens/admin/admin_moderation_screen.dart';
 import '../../screens/admin/admin_user_management_screen.dart';
+import '../../screens/admin/admin_video_management_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/dashboard/dashboard_screen.dart';
 import '../../screens/profile/profile_screen.dart';
@@ -109,6 +111,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => buildAnimatedPage(
           key: state.pageKey,
           child: const AdminDashboardScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/videos',
+        pageBuilder: (context, state) => buildAnimatedPage(
+          key: state.pageKey,
+          child: const AdminVideoManagementScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/ebooks',
+        pageBuilder: (context, state) => buildAnimatedPage(
+          key: state.pageKey,
+          child: const AdminEBookManagementScreen(),
         ),
       ),
       GoRoute(

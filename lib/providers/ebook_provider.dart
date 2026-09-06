@@ -35,12 +35,13 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
           final ebook = EBookModel(
             id: item['id'].toString(),
             title: item['title'] ?? 'eBook Document',
-            publicationId: 'General Education',
-            seriesId: 'Standard Series',
+            publicationId: 'Oxford Educational Press',
+            seriesId: 'CBSE 2026',
             classId: 'Class 10',
             subjectId: item['Subject'] != null ? (item['Subject']['name'] ?? 'Mathematics') : 'Mathematics',
             coverUrl: item['coverUrl'] ?? 'https://picsum.photos/300/400',
             fileUrl: item['fileUrl'] ?? '',
+            status: item['isActive'] == false ? EBookAdminStatus.archived : EBookAdminStatus.published,
           );
 
           return EBookSubmissionModel(
@@ -137,11 +138,76 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
     state = [submission, ...state];
   }
 
+  Future<void> updateEBook(EBookModel updatedEBook) async {
+    state = state.map((item) {
+      if (item.ebook.id == updatedEBook.id) {
+        return EBookSubmissionModel(
+          ebook: updatedEBook,
+          status: item.status,
+          submittedBy: item.submittedBy,
+          submittedDate: item.submittedDate,
+        );
+      }
+      return item;
+    }).toList();
+
+    try {
+      await Supabase.instance.client
+          .from('EBook')
+          .update({'title': updatedEBook.title, 'fileUrl': updatedEBook.fileUrl, 'coverUrl': updatedEBook.coverUrl})
+          .eq('id', updatedEBook.id);
+    } catch (_) {}
+  }
+
+  Future<void> deleteEBook(String ebookId) async {
+    state = state.where((item) => item.ebook.id != ebookId).toList();
+    try {
+      await Supabase.instance.client.from('EBook').delete().eq('id', ebookId);
+    } catch (_) {}
+  }
+
+  Future<void> bulkDeleteEBooks(List<String> ebookIds) async {
+    final idsSet = ebookIds.toSet();
+    state = state.where((item) => !idsSet.contains(item.ebook.id)).toList();
+    try {
+      await Supabase.instance.client.from('EBook').delete().in_('id', ebookIds);
+    } catch (_) {}
+  }
+
+  Future<void> bulkUpdateEBookStatus(List<String> ebookIds, EBookAdminStatus adminStatus) async {
+    final idsSet = ebookIds.toSet();
+    state = state.map((item) {
+      if (idsSet.contains(item.ebook.id)) {
+        return EBookSubmissionModel(
+          ebook: item.ebook.copyWith(status: adminStatus),
+          status: adminStatus == EBookAdminStatus.published ? EBookStatus.approved : item.status,
+          submittedBy: item.submittedBy,
+          submittedDate: item.submittedDate,
+        );
+      }
+      return item;
+    }).toList();
+  }
+
+  Future<void> toggleEBookFeatured(String ebookId) async {
+    state = state.map((item) {
+      if (item.ebook.id == ebookId) {
+        return EBookSubmissionModel(
+          ebook: item.ebook.copyWith(isFeatured: !item.ebook.isFeatured),
+          status: item.status,
+          submittedBy: item.submittedBy,
+          submittedDate: item.submittedDate,
+        );
+      }
+      return item;
+    }).toList();
+  }
+
   void approveEBook(String ebookId) {
     state = state.map((item) {
       if (item.ebook.id == ebookId) {
         return EBookSubmissionModel(
-          ebook: item.ebook,
+          ebook: item.ebook.copyWith(status: EBookAdminStatus.published),
           status: EBookStatus.approved,
           submittedBy: item.submittedBy,
           submittedDate: item.submittedDate,
@@ -155,7 +221,7 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
     state = state.map((item) {
       if (item.ebook.id == ebookId) {
         return EBookSubmissionModel(
-          ebook: item.ebook,
+          ebook: item.ebook.copyWith(status: EBookAdminStatus.rejected),
           status: EBookStatus.rejected,
           submittedBy: item.submittedBy,
           submittedDate: item.submittedDate,
@@ -169,4 +235,3 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
 final ebookSubmissionsProvider = StateNotifierProvider<EBookSubmissionsNotifier, List<EBookSubmissionModel>>((ref) {
   return EBookSubmissionsNotifier();
 });
-

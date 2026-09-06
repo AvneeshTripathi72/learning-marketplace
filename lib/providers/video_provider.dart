@@ -24,22 +24,35 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
           final submitterName = submittedUser != null ? (submittedUser['name'] ?? submittedUser['email']) : 'Mobile User';
 
           VideoStatus vStatus = VideoStatus.pending;
-          if (item['status'] == 'APPROVED') vStatus = VideoStatus.approved;
-          if (item['status'] == 'REJECTED') vStatus = VideoStatus.rejected;
+          final statusStr = (item['status'] ?? '').toString().toUpperCase();
+          if (statusStr == 'APPROVED' || statusStr == 'PUBLISHED') vStatus = VideoStatus.approved;
+          if (statusStr == 'REJECTED') vStatus = VideoStatus.rejected;
+          if (statusStr == 'DRAFT') vStatus = VideoStatus.draft;
+          if (statusStr == 'ARCHIVED') vStatus = VideoStatus.archived;
 
           return VideoModel(
             id: item['id'].toString(),
             title: item['title'] ?? item['channelName'] ?? 'Uploaded Video Link',
+            slug: item['slug'] ?? 'video-${item['id']}',
+            description: item['description'] ?? '',
             url: item['url'] ?? '',
             platform: VideoPlatform.youtube,
             channelName: item['channelName'] ?? 'User Channel',
             category: item['Category'] != null ? (item['Category']['name'] ?? 'Educational') : 'Educational',
-            thumbnailUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&auto=format&fit=crop',
-            duration: '15:00',
-            viewsCount: 0,
+            subject: item['subject'] ?? 'Mathematics',
+            classId: item['classId'] ?? 'Class 10',
+            publicationName: item['publicationName'] ?? 'Oxford Educational Press',
+            thumbnailUrl: item['thumbnailUrl'] ?? 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&auto=format&fit=crop',
+            bannerUrl: item['bannerUrl'] ?? '',
+            duration: item['duration'] ?? '15:00',
+            viewsCount: item['viewsCount'] ?? 0,
             status: vStatus,
+            isFeatured: item['isFeatured'] == true,
             submittedBy: submitterName,
             submittedDate: item['submittedAt'] != null ? DateTime.parse(item['submittedAt']) : DateTime.now(),
+            seoTitle: item['seoTitle'],
+            seoKeywords: item['seoKeywords'],
+            seoDescription: item['seoDescription'],
           );
         }).toList();
 
@@ -64,8 +77,10 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
           final submitterName = submittedUser != null ? (submittedUser['name'] ?? submittedUser['email']) : 'Mobile User';
 
           VideoStatus vStatus = VideoStatus.pending;
-          if (item['status'] == 'APPROVED') vStatus = VideoStatus.approved;
-          if (item['status'] == 'REJECTED') vStatus = VideoStatus.rejected;
+          final statusStr = (item['status'] ?? '').toString().toUpperCase();
+          if (statusStr == 'APPROVED' || statusStr == 'PUBLISHED') vStatus = VideoStatus.approved;
+          if (statusStr == 'REJECTED') vStatus = VideoStatus.rejected;
+          if (statusStr == 'DRAFT') vStatus = VideoStatus.draft;
 
           return VideoModel(
             id: item['id'],
@@ -91,68 +106,120 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
     } catch (_) {}
   }
 
-
-  void addVideoSubmission(VideoModel video) {
+  Future<void> addVideoSubmission(VideoModel video) async {
     state = [video, ...state];
+    try {
+      await Supabase.instance.client.from('Video').insert({
+        'url': video.url,
+        'platform': video.platform.name,
+        'channelName': video.channelName,
+        'status': video.status == VideoStatus.approved ? 'APPROVED' : (video.status == VideoStatus.draft ? 'DRAFT' : 'PENDING'),
+      });
+      debugPrint('⚡ Video inserted into Supabase DB Video table');
+    } catch (e) {
+      debugPrint('ℹ️ Supabase Video insert note: $e');
+    }
+  }
+
+  Future<void> updateVideo(VideoModel updatedVideo) async {
+    state = state.map((v) => v.id == updatedVideo.id ? updatedVideo : v).toList();
+
+    try {
+      await Supabase.instance.client.from('Video').update({
+        'url': updatedVideo.url,
+        'channelName': updatedVideo.channelName,
+        'status': updatedVideo.status == VideoStatus.approved ? 'APPROVED' : updatedVideo.status.name.toUpperCase(),
+      }).eq('id', updatedVideo.id);
+      debugPrint('⚡ Video updated in Supabase DB');
+    } catch (e) {
+      debugPrint('ℹ️ Supabase Video update note: $e');
+    }
+  }
+
+  Future<void> deleteVideo(String videoId) async {
+    state = state.where((v) => v.id != videoId).toList();
+    try {
+      await Supabase.instance.client.from('Video').delete().eq('id', videoId);
+      debugPrint('⚡ Video deleted from Supabase DB');
+    } catch (e) {
+      debugPrint('ℹ️ Supabase Video delete note: $e');
+    }
+  }
+
+  Future<void> bulkDeleteVideos(List<String> videoIds) async {
+    final idsSet = videoIds.toSet();
+    state = state.where((v) => !idsSet.contains(v.id)).toList();
+    try {
+      await Supabase.instance.client.from('Video').delete().in_('id', videoIds);
+      debugPrint('⚡ Bulk deleted ${videoIds.length} videos from Supabase DB');
+    } catch (e) {
+      debugPrint('ℹ️ Supabase Video bulk delete note: $e');
+    }
+  }
+
+  Future<void> bulkUpdateVideoStatus(List<String> videoIds, VideoStatus newStatus) async {
+    final idsSet = videoIds.toSet();
+    state = state.map((v) {
+      if (idsSet.contains(v.id)) {
+        return v.copyWith(status: newStatus);
+      }
+      return v;
+    }).toList();
+
+    String statusStr = 'APPROVED';
+    if (newStatus == VideoStatus.draft) statusStr = 'DRAFT';
+    if (newStatus == VideoStatus.archived) statusStr = 'ARCHIVED';
+    if (newStatus == VideoStatus.pending) statusStr = 'PENDING';
+
+    try {
+      await Supabase.instance.client
+          .from('Video')
+          .update({'status': statusStr})
+          .in_('id', videoIds);
+      debugPrint('⚡ Bulk status updated to $statusStr in Supabase DB');
+    } catch (e) {
+      debugPrint('ℹ️ Supabase Video bulk status update note: $e');
+    }
+  }
+
+  Future<void> toggleVideoFeatured(String videoId) async {
+    state = state.map((v) {
+      if (v.id == videoId) {
+        return v.copyWith(isFeatured: !v.isFeatured);
+      }
+      return v;
+    }).toList();
   }
 
   Future<void> approveVideo(String videoId) async {
     state = state.map((v) {
       if (v.id == videoId) {
-        return VideoModel(
-          id: v.id,
-          title: v.title,
-          url: v.url,
-          platform: v.platform,
-          channelName: v.channelName,
-          category: v.category,
-          thumbnailUrl: v.thumbnailUrl,
-          duration: v.duration,
-          viewsCount: v.viewsCount,
-          status: VideoStatus.approved,
-          submittedBy: v.submittedBy,
-          submittedDate: v.submittedDate,
-        );
+        return v.copyWith(status: VideoStatus.approved);
       }
       return v;
     }).toList();
 
     try {
-      await http.patch(
-        Uri.parse('${ApiEndpoints.baseUrl}/video-hub/admin/moderate/$videoId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'status': 'APPROVED'}),
-      ).timeout(const Duration(seconds: 8));
+      await Supabase.instance.client
+          .from('Video')
+          .update({'status': 'APPROVED'})
+          .eq('id', videoId);
     } catch (_) {}
   }
 
   Future<void> rejectVideo(String videoId) async {
     state = state.map((v) {
       if (v.id == videoId) {
-        return VideoModel(
-          id: v.id,
-          title: v.title,
-          url: v.url,
-          platform: v.platform,
-          channelName: v.channelName,
-          category: v.category,
-          thumbnailUrl: v.thumbnailUrl,
-          duration: v.duration,
-          viewsCount: v.viewsCount,
-          status: VideoStatus.rejected,
-          submittedBy: v.submittedBy,
-          submittedDate: v.submittedDate,
-        );
+        return v.copyWith(status: VideoStatus.rejected);
       }
       return v;
     }).toList();
 
     try {
-      await http.patch(
-        Uri.parse('${ApiEndpoints.baseUrl}/video-hub/admin/moderate/$videoId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'status': 'REJECTED'}),
-      ).timeout(const Duration(seconds: 8));
+      await Supabase.instance.client
+          .from('Video')
+          .update({'status': 'REJECTED'})
+          .eq('id', videoId);
     } catch (_) {}
   }
 }

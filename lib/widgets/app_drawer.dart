@@ -70,6 +70,22 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.video_library, color: Color(0xFF7C9CFF)),
+              title: const Text('Admin Video Management', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/admin/videos');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf, color: Color(0xFF00C9FF)),
+              title: const Text('Admin eBook Management', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/admin/ebooks');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.verified_user, color: Colors.green),
               title: const Text('Moderation & Approvals', style: TextStyle(fontWeight: FontWeight.bold)),
               onTap: () {
@@ -94,27 +110,11 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.picture_as_pdf, color: Colors.deepOrange),
+              leading: const Icon(Icons.upload_file, color: Colors.deepOrange),
               title: const Text('Upload PDF eBook'),
               onTap: () {
                 Navigator.pop(context);
                 context.push('/pub/ebook');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.menu_book, color: Colors.blueAccent),
-              title: const Text('Manage eBooks & Catalog'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/pub/ebook');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.video_collection, color: Colors.indigo),
-              title: const Text('All Video Submissions'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/pub/hub/my-uploads');
               },
             ),
             const Divider(),
