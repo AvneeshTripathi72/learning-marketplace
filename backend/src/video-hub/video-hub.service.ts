@@ -8,11 +8,14 @@ export class VideoHubService {
   async submitVideo(dto: any, userId: string) {
     const categoryName = dto.category || 'Educational';
 
-    let { data: category } = await this.supabase.client
+    // 1. Get or create Category
+    let { data: categories } = await this.supabase.client
       .from('Category')
       .select('*')
       .ilike('name', categoryName)
-      .single();
+      .limit(1);
+
+    let category = categories && categories.length > 0 ? categories[0] : null;
 
     if (!category) {
       const { data: newCategory, error } = await this.supabase.client
@@ -24,20 +27,34 @@ export class VideoHubService {
       category = newCategory;
     }
 
-    let { data: user } = await this.supabase.client
-      .from('User')
-      .select('*')
-      .or(`id.eq.${userId},email.eq.hariom.info07@gmail.com`)
-      .limit(1)
-      .single();
+    // 2. Get or create User with valid UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    let user: any = null;
 
-    if (!user) {
-      const { data: firstUser } = await this.supabase.client
+    if (isUuid) {
+      const { data: found } = await this.supabase.client
         .from('User')
         .select('*')
-        .limit(1)
-        .single();
-      user = firstUser;
+        .eq('id', userId)
+        .limit(1);
+      if (found && found.length > 0) user = found[0];
+    }
+
+    if (!user) {
+      const { data: foundByEmail } = await this.supabase.client
+        .from('User')
+        .select('*')
+        .eq('email', 'student@gmail.com')
+        .limit(1);
+      if (foundByEmail && foundByEmail.length > 0) user = foundByEmail[0];
+    }
+
+    if (!user) {
+      const { data: anyUser } = await this.supabase.client
+        .from('User')
+        .select('*')
+        .limit(1);
+      if (anyUser && anyUser.length > 0) user = anyUser[0];
     }
     
     if (!user) {
@@ -45,8 +62,8 @@ export class VideoHubService {
         .from('User')
         .insert({
           name: 'Public Student User',
-          email: 'public.student@ebook.app',
-          password: 'Password123!',
+          email: 'student@gmail.com',
+          password: '$2a$10$e8pA8vK/hT61Xp0pL8g5uO3.0YxXW.mH9a0B2C3D4E5F6G7H8I9J',
           role: 'PUBLIC',
         })
         .select()
@@ -76,6 +93,7 @@ export class VideoHubService {
     if (error) throw new InternalServerErrorException(error.message);
     return video;
   }
+
 
   async getMyUploads(userId: string) {
     // Supabase JS doesn't easily support deeply nested OR filters across relations like Prisma does in one query

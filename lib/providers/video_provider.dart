@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/api_endpoints.dart';
 import '../models/video_model.dart';
 
@@ -10,6 +12,46 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
   }
 
   Future<void> fetchCloudQueue() async {
+    // 1. Direct Supabase PostgreSQL query
+    try {
+      final supabaseData = await Supabase.instance.client
+          .from('Video')
+          .select('*, Category(*), User(*)');
+
+      if (supabaseData is List && supabaseData.isNotEmpty) {
+        final List<VideoModel> directVideos = supabaseData.map((item) {
+          final submittedUser = item['User'];
+          final submitterName = submittedUser != null ? (submittedUser['name'] ?? submittedUser['email']) : 'Mobile User';
+
+          VideoStatus vStatus = VideoStatus.pending;
+          if (item['status'] == 'APPROVED') vStatus = VideoStatus.approved;
+          if (item['status'] == 'REJECTED') vStatus = VideoStatus.rejected;
+
+          return VideoModel(
+            id: item['id'].toString(),
+            title: item['title'] ?? item['channelName'] ?? 'Uploaded Video Link',
+            url: item['url'] ?? '',
+            platform: VideoPlatform.youtube,
+            channelName: item['channelName'] ?? 'User Channel',
+            category: item['Category'] != null ? (item['Category']['name'] ?? 'Educational') : 'Educational',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&auto=format&fit=crop',
+            duration: '15:00',
+            viewsCount: 0,
+            status: vStatus,
+            submittedBy: submitterName,
+            submittedDate: item['submittedAt'] != null ? DateTime.parse(item['submittedAt']) : DateTime.now(),
+          );
+        }).toList();
+
+        debugPrint('⚡ Loaded ${directVideos.length} videos directly from Supabase DB Video table');
+        state = directVideos;
+        return;
+      }
+    } catch (e) {
+      debugPrint('ℹ️ Direct Supabase fetch note: $e');
+    }
+
+    // 2. HTTP Backend fallback
     try {
       final response = await http.get(
         Uri.parse('${ApiEndpoints.baseUrl}/video-hub/admin/queue'),
@@ -41,7 +83,6 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
           );
         }).toList();
 
-        // Merge cloud videos with local state while avoiding duplicates
         final cloudIds = cloudVideos.map((e) => e.id).toSet();
         final localOnly = state.where((v) => !cloudIds.contains(v.id)).toList();
 
@@ -49,6 +90,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
       }
     } catch (_) {}
   }
+
 
   void addVideoSubmission(VideoModel video) {
     state = [video, ...state];

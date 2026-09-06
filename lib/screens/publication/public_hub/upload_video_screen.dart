@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/storage_service.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../../../models/user_model.dart';
@@ -122,7 +123,64 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
       submittedDate: DateTime.now(),
     );
 
-    // 1. Post to Render Cloud Database API
+    // 1. Direct Supabase Database Insert
+    try {
+      // Find or create category in Supabase DB
+      final catRes = await Supabase.instance.client
+          .from('Category')
+          .select()
+          .ilike('name', _selectedCategory)
+          .limit(1);
+
+      String categoryId;
+      if (catRes is List && catRes.isNotEmpty) {
+        categoryId = catRes[0]['id'];
+      } else {
+        final newCat = await Supabase.instance.client
+            .from('Category')
+            .insert({'name': _selectedCategory, 'isEnabled': true})
+            .select()
+            .single();
+        categoryId = newCat['id'];
+      }
+
+      // Find or create User in Supabase DB
+      final userRes = await Supabase.instance.client
+          .from('User')
+          .select()
+          .limit(1);
+
+      String userId;
+      if (userRes is List && userRes.isNotEmpty) {
+        userId = userRes[0]['id'];
+      } else {
+        final newUser = await Supabase.instance.client
+            .from('User')
+            .insert({
+              'name': 'Public Student User',
+              'email': 'student@gmail.com',
+              'password': r'$2a$10$e8pA8vK/hT61Xp0pL8g5uO3.0YxXW.mH9a0B2C3D4E5F6G7H8I9J',
+              'role': 'PUBLIC',
+            })
+            .select()
+            .single();
+        userId = newUser['id'];
+      }
+
+      await Supabase.instance.client.from('Video').insert({
+        'url': finalUrl,
+        'platform': platform.name.toUpperCase(),
+        'channelName': channelName,
+        'categoryId': categoryId,
+        'submittedById': userId,
+        'status': 'PENDING',
+      });
+      debugPrint('⚡ Direct Supabase Video insert successful!');
+    } catch (e) {
+      debugPrint('ℹ️ Direct Supabase Video insert notice: $e');
+    }
+
+    // 2. Post to Backend REST API
     try {
       await http.post(
         Uri.parse('${ApiEndpoints.baseUrl}/video-hub/submit'),
@@ -137,9 +195,10 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
       ).timeout(const Duration(seconds: 10));
     } catch (_) {}
 
-    // 2. Add to Riverpod Provider & refresh Cloud Queue
+    // 3. Refresh Provider from Supabase Cloud DB
     ref.read(videoSubmissionsProvider.notifier).addVideoSubmission(newVideo);
     await ref.read(videoSubmissionsProvider.notifier).fetchCloudQueue();
+
 
     final user = ref.read(authProvider);
 
