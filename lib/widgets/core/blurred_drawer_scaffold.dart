@@ -10,6 +10,7 @@ class BlurredDrawerScaffold extends StatefulWidget {
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final bool extendBody;
   final bool extendBodyBehindAppBar;
+  final Color? backgroundColor;
 
   const BlurredDrawerScaffold({
     super.key,
@@ -21,6 +22,7 @@ class BlurredDrawerScaffold extends StatefulWidget {
     this.floatingActionButtonLocation,
     this.extendBody = false,
     this.extendBodyBehindAppBar = false,
+    this.backgroundColor,
   });
 
   @override
@@ -33,6 +35,7 @@ class _BlurredDrawerScaffoldState extends State<BlurredDrawerScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.backgroundColor,
       extendBody: widget.extendBody,
       extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       appBar: widget.appBar,

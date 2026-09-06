@@ -86,17 +86,85 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none),
+
+class DashboardScreen extends ConsumerStatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  String _selectedCategoryId = 'all';
+
+  final List<CategoryModel> _categories = [
+    CategoryModel(id: 'all', name: 'All', isEnabled: true),
+    CategoryModel(id: 'math', name: 'Mathematics', isEnabled: true),
+    CategoryModel(id: 'sci', name: 'Science', isEnabled: true),
+    CategoryModel(id: 'eng', name: 'English', isEnabled: true),
+    CategoryModel(id: 'hin', name: 'Hindi', isEnabled: true),
+    CategoryModel(id: 'qp', name: 'Question Papers', isEnabled: true),
+    CategoryModel(id: 'tp', name: 'Test Papers', isEnabled: true),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final user = ref.watch(authProvider);
+    final logoUrl = ref.watch(dynamicLogoProvider);
+    final recommendedAsync = ref.watch(recommendedVideosProvider);
+    final recentlyViewedAsync = ref.watch(recentlyViewedVideosProvider);
+
+    final theme = Theme.of(context);
+    final isPublication = user?.role == UserRole.publication;
+
+    return BlurredDrawerScaffold(
+      extendBody: true,
+      drawer: const AppDrawer(),
+      appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: 'Open Menu Drawer',
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: Row(
+          children: [
+            isPublication && logoUrl.startsWith('http')
+                ? Image.network(
+                    logoUrl,
+                    height: 28,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.business,
+                      color: theme.colorScheme.primary,
+                    ),
+                  )
+                : Icon(
+                    isPublication ? Icons.business : Icons.public,
+                    color: theme.colorScheme.primary,
+                  ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                isPublication ? 'Publication Portal' : 'Public Content Hub',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
             tooltip: 'Notifications & Web Alerts',
             onPressed: () => showAppNotificationModal(context),
           ),
         ],
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
-      body: SwipeNavigationWrapper(
-        currentIndex: 0,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
-          child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Greeting Header Card
@@ -562,9 +630,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildMetricCard(
     BuildContext context, {
