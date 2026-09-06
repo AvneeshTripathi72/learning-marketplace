@@ -12,6 +12,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
   final Map<String, Map<String, dynamic>> _registeredUsers = {
     'admin@system.com': {
+      'id': 'usr_admin_001',
       'name': 'System Administrator',
       'password': 'Admin@12345',
       'role': UserRole.admin,
@@ -21,6 +22,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       'isBlocked': false,
     },
     'vendor@oxford.com': {
+      'id': 'pub_oxford_001',
       'name': 'Oxford Publication Vendor',
       'password': 'Vendor@12345',
       'role': UserRole.publication,
@@ -30,6 +32,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       'isBlocked': false,
     },
     'student@gmail.com': {
+      'id': 'usr_student_101',
       'name': 'Rahul Sharma (Student)',
       'password': 'Student@12345',
       'role': UserRole.public,
@@ -39,6 +42,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       'isBlocked': false,
     },
     'hariom.info07@gmail.com': {
+      'id': 'usr_hariom_102',
       'name': 'Hariom (Student)',
       'password': 'Hariom2005.',
       'role': UserRole.public,
@@ -347,10 +351,14 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         if (roleObj.toLowerCase() == 'publication' || roleObj.toLowerCase() == 'vendor') role = UserRole.publication;
       }
 
-      final userId = data['id'] ?? 'usr_${email.hashCode.abs()}';
+      final rawId = data['id'];
+      final prefix = role == UserRole.publication ? 'pub_' : 'usr_';
+      final userId = (rawId != null && rawId.toString().isNotEmpty)
+          ? rawId.toString()
+          : '$prefix${email.hashCode.abs()}';
 
       list.add({
-        'id': userId.toString(),
+        'id': userId,
         'email': email,
         'name': data['name'] ?? email.split('@').first,
         'role': role,

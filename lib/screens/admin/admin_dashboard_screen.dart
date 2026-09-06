@@ -26,6 +26,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   String _paymentSearchQuery = '';
   String _selectedPaymentFilter = 'ALL';
 
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(authProvider.notifier).fetchCloudUsers();
+    });
+  }
+
   final List<Map<String, dynamic>> _publications = [
     {
       'id': 'pub_001',
@@ -347,6 +355,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider);
+    final allRegisteredUsers = ref.read(authProvider.notifier).getAllRegisteredUsers();
+    final liveVendorsList = allRegisteredUsers.where((u) => u['role'] == UserRole.publication).toList();
+    final liveStudentsList = allRegisteredUsers.where((u) => u['role'] == UserRole.public).toList();
+
     final submissions = ref.watch(videoSubmissionsProvider);
     final pendingSubmissionsQueue = submissions.where((v) => v.status == VideoStatus.pending).toList();
     final ebookSubmissions = ref.watch(ebookSubmissionsProvider);
@@ -480,14 +492,55 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              childAspectRatio: 1.3,
+              childAspectRatio: 1.35,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _buildKpiCard('Total Publishers', '${_publications.length}', Icons.domain, Colors.blue, isDark),
-                _buildKpiCard('Total eBooks', '148', Icons.menu_book, Colors.purple, isDark),
-                _buildKpiCard('Pending Videos', '${pendingSubmissionsQueue.length}', Icons.video_library, Colors.orange, isDark),
-                _buildKpiCard('Ad Revenue', '₹2,48,500', Icons.monetization_on, Colors.green, isDark),
+                _buildKpiCard(
+                  'Registered Vendors',
+                  '${liveVendorsList.length}',
+                  Icons.store,
+                  Colors.blue,
+                  isDark,
+                  onTap: () => context.push('/admin/users'),
+                ),
+                _buildKpiCard(
+                  'Registered Students',
+                  '${liveStudentsList.length}',
+                  Icons.school,
+                  Colors.purple,
+                  isDark,
+                  onTap: () => context.push('/admin/users'),
+                ),
+                _buildKpiCard(
+                  'Total Publishers',
+                  '${_publications.length}',
+                  Icons.domain,
+                  Colors.cyan,
+                  isDark,
+                ),
+                _buildKpiCard(
+                  'Total eBooks',
+                  '148',
+                  Icons.menu_book,
+                  Colors.indigo,
+                  isDark,
+                ),
+                _buildKpiCard(
+                  'Pending Videos',
+                  '${pendingSubmissionsQueue.length}',
+                  Icons.video_library,
+                  Colors.orange,
+                  isDark,
+                  onTap: () => context.push('/admin/moderation'),
+                ),
+                _buildKpiCard(
+                  'Ad Revenue',
+                  '₹2,48,500',
+                  Icons.monetization_on,
+                  Colors.green,
+                  isDark,
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -1487,41 +1540,45 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildKpiCard(String title, String value, IconData icon, Color color, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, color: color, size: 22),
-              Expanded(
-                child: Text(
-                  value,
-                  textAlign: TextAlign.end,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+  Widget _buildKpiCard(String title, String value, IconData icon, Color color, bool isDark, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 22),
+                Expanded(
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

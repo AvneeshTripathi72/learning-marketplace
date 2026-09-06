@@ -42,6 +42,10 @@ class _AdminUserManagementScreenState extends ConsumerState<AdminUserManagementS
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    Future.microtask(() async {
+      await ref.read(authProvider.notifier).fetchCloudUsers();
+      if (mounted) setState(() {});
+    });
   }
 
   @override
