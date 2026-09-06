@@ -6,10 +6,10 @@
   "private": true,
   "license": "UNLICENSED",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "scripts": {
-    "build": "nest build",
+    "build": "npx @nestjs/cli build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "dev": "nest start --watch",
