@@ -25,18 +25,33 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   String _errorMessage = '';
   String _pdfViewType = '';
   double _currentScale = 1.0;
+  bool _useGoogleDocsFallback = false;
+
+  String _sanitizeUrl(String rawUrl) {
+    var trimmed = rawUrl.trim();
+    if (trimmed.isEmpty) {
+      return 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
+    }
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      trimmed = 'https://$trimmed';
+    }
+    // Auto-convert Google Drive view links to iframe-compatible preview links
+    if (trimmed.contains('drive.google.com') && trimmed.contains('/view')) {
+      trimmed = trimmed.replaceAll('/view', '/preview');
+    }
+    return trimmed;
+  }
 
   @override
   void initState() {
     super.initState();
     _pdfViewerController = PdfViewerController();
     _transformationController = TransformationController();
-    _checkUrlValidity();
+    _initPdfViewer();
+  }
 
-    String targetUrl = widget.ebook.fileUrl.trim();
-    if (targetUrl.isEmpty) {
-      targetUrl = 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
-    }
+  void _initPdfViewer({bool useGoogleDocs = false}) {
+    final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
 
     final isHtml = targetUrl.toLowerCase().endsWith('.html') ||
         targetUrl.toLowerCase().contains('/mobile/') ||
@@ -45,35 +60,34 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
     if (kIsWeb) {
       _pdfViewType = 'ebook-pdf-iframe-${widget.ebook.id}-${DateTime.now().millisecondsSinceEpoch}';
-      final embedUrl = isHtml
-          ? targetUrl
-          : 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}';
+      final embedUrl = useGoogleDocs
+          ? 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}'
+          : targetUrl;
       registerIframe(_pdfViewType, embedUrl);
-      _isLoading = false;
+      setState(() {
+        _isLoading = false;
+        _hasError = false;
+        _useGoogleDocsFallback = useGoogleDocs;
+      });
     } else if (isHtml && !widget.ebook.isDownloaded) {
       _webViewController = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..loadRequest(Uri.parse(targetUrl));
-      _isLoading = false;
-    }
-  }
-
-  void _checkUrlValidity() {
-    final url = widget.ebook.fileUrl.trim();
-    if (!widget.ebook.isDownloaded && url.isNotEmpty && !url.startsWith('http://') && !url.startsWith('https://')) {
       setState(() {
         _isLoading = false;
-        _hasError = true;
-        _errorMessage = 'Invalid PDF link format provided: "$url"';
+        _hasError = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
       });
     }
   }
 
-  Future<void> _openExternalFlipbook() async {
-    final url = widget.ebook.fileUrl.isNotEmpty
-        ? widget.ebook.fileUrl
-        : 'https://aspirebookscompany.info/2025/English/2/mobile/index.html';
-    final uri = Uri.parse(url);
+  Future<void> _openExternalPdfUrl() async {
+    final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
+    final uri = Uri.parse(targetUrl);
     try {
       bool launched = false;
       try {
@@ -88,7 +102,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         await launchUrl(uri, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
-      debugPrint('Error launching external flipbook: $e');
+      debugPrint('Error launching external URL: $e');
     }
   }
 
@@ -102,6 +116,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   @override
   Widget build(BuildContext context) {
     final isLocal = widget.ebook.isDownloaded && widget.ebook.localPath != null;
+    final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
 
     return Scaffold(
       appBar: AppBar(
@@ -113,8 +128,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.open_in_new),
-            tooltip: 'Open Full Interactive Reader',
-            onPressed: _openExternalFlipbook,
+            tooltip: 'Open in Browser Tab',
+            onPressed: _openExternalPdfUrl,
           ),
           IconButton(
             icon: const Icon(Icons.zoom_in),
@@ -187,19 +202,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                             },
                           )
                         : SfPdfViewer.network(
-                        widget.ebook.fileUrl.isNotEmpty
-                            ? widget.ebook.fileUrl
-                            : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
-                        controller: _pdfViewerController,
-                        onDocumentLoaded: (_) => setState(() => _isLoading = false),
-                        onDocumentLoadFailed: (details) {
-                          setState(() {
-                            _isLoading = false;
-                            _hasError = true;
-                            _errorMessage = details.description;
-                          });
-                        },
-                      ),
+                            targetUrl,
+                            controller: _pdfViewerController,
+                            onDocumentLoaded: (_) => setState(() => _isLoading = false),
+                            onDocumentLoadFailed: (details) {
+                              setState(() {
+                                _isLoading = false;
+                                _hasError = true;
+                                _errorMessage = details.description;
+                              });
+                            },
+                          ),
           if (_isLoading && !_hasError)
             const Center(
               child: Card(
@@ -299,20 +312,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                             children: [
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
-                                onPressed: () {
-                                  setState(() {
-                                    _hasError = false;
-                                    _isLoading = true;
-                                  });
-                                },
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Retry PDF Stream'),
+                                onPressed: _openExternalPdfUrl,
+                                icon: const Icon(Icons.open_in_new, size: 16),
+                                label: const Text('Open in Browser Tab'),
                               ),
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
-                                onPressed: _openExternalFlipbook,
-                                icon: const Icon(Icons.open_in_browser, size: 16),
-                                label: const Text('Open in Browser'),
+                                onPressed: () {
+                                  _initPdfViewer(useGoogleDocs: !_useGoogleDocsFallback);
+                                },
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: Text(_useGoogleDocsFallback ? 'Use Direct Stream' : 'Use Google Docs Reader'),
                               ),
                             ],
                           ),
@@ -328,3 +338,4 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     );
   }
 }
+

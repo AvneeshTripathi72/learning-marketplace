@@ -19,8 +19,42 @@ class EBookSubmissionModel {
   });
 }
 
-class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>> {
-  EBookSubmissionsNotifier() : super([]) {
+  static final List<EBookSubmissionModel> _defaultSampleEBooks = [
+    EBookSubmissionModel(
+      ebook: const EBookModel(
+        id: 'eb_sample_1',
+        title: 'Class 10 Mathematics: Polynomials & Quadratic Equations Guide',
+        publicationId: 'Oxford Educational Press',
+        seriesId: 'CBSE 2026',
+        classId: 'Class 10',
+        subjectId: 'Mathematics',
+        coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400',
+        fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+        status: EBookAdminStatus.published,
+      ),
+      status: EBookStatus.approved,
+      submittedBy: 'Oxford Editorial Board',
+      submittedDate: DateTime.now(),
+    ),
+    EBookSubmissionModel(
+      ebook: const EBookModel(
+        id: 'eb_sample_2',
+        title: 'Class 10 Science: Physics Motion & Light Notes',
+        publicationId: 'S. Chand Publishing',
+        seriesId: 'CBSE 2026',
+        classId: 'Class 10',
+        subjectId: 'Science',
+        coverUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400',
+        fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+        status: EBookAdminStatus.published,
+      ),
+      status: EBookStatus.approved,
+      submittedBy: 'S. Chand Editorial Board',
+      submittedDate: DateTime.now(),
+    ),
+  ];
+
+  EBookSubmissionsNotifier() : super(_defaultSampleEBooks) {
     fetchCloudEBooks();
     _listenRealtime();
   }
