@@ -1,20 +1,49 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/video_model.dart';
-import '../core/constants/api_endpoints.dart';
 
 final publicRecommendedVideosProvider = FutureProvider<List<VideoModel>>((ref) async {
   try {
-    final response = await http.get(Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.publicVideos}'));
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      // Wait, since the VideoModel.fromJson might not exist, I'll parse it manually.
-      // Or I can return empty until they have a fromJson
-      return [];
+    final supabaseData = await Supabase.instance.client
+        .from('Video')
+        .select('*, Category(*), User(*)');
+
+    if (supabaseData is List && supabaseData.isNotEmpty) {
+      final List<VideoModel> dbVideos = supabaseData
+          .where((item) {
+            final st = (item['status'] ?? '').toString().toUpperCase();
+            return st == 'APPROVED' || st == 'PUBLISHED' || st.isEmpty;
+          })
+          .map((item) {
+            final submittedUser = item['User'];
+            final submitterName = submittedUser != null ? (submittedUser['name'] ?? submittedUser['email']) : 'Faculty User';
+
+            return VideoModel(
+              id: item['id'].toString(),
+              title: item['title'] ?? item['channelName'] ?? 'Educational Lecture',
+              slug: item['slug'] ?? 'video-${item['id']}',
+              description: item['description'] ?? '',
+              url: item['url'] ?? 'https://www.youtube.com/watch?v=kffacxfA7G4',
+              platform: VideoPlatform.youtube,
+              channelName: item['channelName'] ?? 'Educational Hub',
+              category: item['Category'] != null ? (item['Category']['name'] ?? 'Educational') : 'Educational',
+              subject: item['subject'] ?? 'Mathematics',
+              classId: item['classId'] ?? 'Class 10',
+              publicationName: item['publicationName'] ?? 'Oxford Educational Press',
+              thumbnailUrl: item['thumbnailUrl'] ?? 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&auto=format&fit=crop',
+              bannerUrl: item['bannerUrl'] ?? '',
+              duration: item['duration'] ?? '15:00',
+              viewsCount: item['viewsCount'] ?? 100,
+              status: VideoStatus.approved,
+              isFeatured: item['isFeatured'] == true,
+              submittedBy: submitterName,
+              submittedDate: item['submittedAt'] != null ? DateTime.parse(item['submittedAt']) : DateTime.now(),
+            );
+          }).toList();
+
+      return dbVideos;
     }
-  } catch (e) {
-    // Ignore error
-  }
+  } catch (_) {}
+
   return [];
 });

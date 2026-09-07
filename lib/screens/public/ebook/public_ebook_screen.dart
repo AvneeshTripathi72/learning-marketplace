@@ -286,13 +286,29 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
       final ebook = item.ebook;
       final matchesPub = _selectedPublication == 'All Publications' ||
           ebook.publicationId.toLowerCase().contains(_selectedPublication.toLowerCase());
-      final matchesSeries = ebook.seriesId.isEmpty || ebook.seriesId.toLowerCase() == _selectedSeries.toLowerCase();
-      final matchesClass = ebook.classId.isEmpty || ebook.classId.toLowerCase() == _selectedClass.toLowerCase();
-      final matchesSubject = ebook.subjectId.isEmpty || ebook.subjectId.toLowerCase() == _selectedSubject.toLowerCase();
+      final matchesSeries = ebook.seriesId.isEmpty ||
+          ebook.seriesId.toLowerCase().contains(_selectedSeries.toLowerCase()) ||
+          _selectedSeries.toLowerCase().contains(ebook.seriesId.toLowerCase());
+      final matchesClass = ebook.classId.isEmpty ||
+          ebook.classId.toLowerCase().contains(_selectedClass.toLowerCase()) ||
+          _selectedClass.toLowerCase().contains(ebook.classId.toLowerCase());
+      final matchesSubject = ebook.subjectId.isEmpty ||
+          ebook.subjectId.toLowerCase().contains(_selectedSubject.toLowerCase()) ||
+          _selectedSubject.toLowerCase().contains(ebook.subjectId.toLowerCase());
       final matchesSearch = _searchQuery.isEmpty || 
-          ebook.title.toLowerCase().contains(_searchQuery.toLowerCase());
-      return matchesPub && matchesSeries && matchesClass && matchesSubject && matchesSearch;
+          ebook.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          ebook.subjectId.toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchesPub && (matchesSeries || matchesClass || matchesSubject) && matchesSearch;
     }).map((item) => item.ebook).toList();
+
+    final availablePubs = <String>{'All Publications'};
+    for (final sub in approvedSubmissions) {
+      if (sub.ebook.publicationId.isNotEmpty) {
+        availablePubs.add(sub.ebook.publicationId);
+      }
+    }
+    final publicationsList = availablePubs.toList();
+    final currentPubValue = publicationsList.contains(_selectedPublication) ? _selectedPublication : 'All Publications';
 
     return BlurredDrawerScaffold(
       extendBody: true,
@@ -485,9 +501,9 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                                 onChanged: (val) => setState(() => _searchQuery = val),
                               ),
                               const SizedBox(height: 10),
-                              DropdownButtonFormField<String>(
+                               DropdownButtonFormField<String>(
                                 isExpanded: true,
-                                value: _selectedPublication,
+                                value: currentPubValue,
                                 dropdownColor: surfaceColor,
                                 style: TextStyle(
                                   fontFamily: 'Inter',
@@ -510,7 +526,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                                   ),
                                   prefixIcon: Icon(Icons.business_rounded, color: accentPrimary, size: 18),
                                 ),
-                                items: _publications
+                                items: publicationsList
                                     .map((p) => DropdownMenuItem(
                                           value: p,
                                           child: Text(p, overflow: TextOverflow.ellipsis),

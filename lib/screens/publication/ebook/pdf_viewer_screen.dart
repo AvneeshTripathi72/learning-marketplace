@@ -60,11 +60,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   void _checkUrlValidity() {
     final url = widget.ebook.fileUrl.trim();
-    if (url.isEmpty || (!url.startsWith('http://') && !url.startsWith('https://') && !widget.ebook.isDownloaded)) {
+    if (!widget.ebook.isDownloaded && url.isNotEmpty && !url.startsWith('http://') && !url.startsWith('https://')) {
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = 'Invalid or fake PDF URL link provided: "$url"';
+        _errorMessage = 'Invalid PDF link format provided: "$url"';
       });
     }
   }

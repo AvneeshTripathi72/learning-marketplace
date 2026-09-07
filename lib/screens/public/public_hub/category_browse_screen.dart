@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../models/category_model.dart';
 import '../../../models/video_model.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/video_provider.dart';
@@ -19,99 +20,11 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
-  final List<VideoModel> _allPublicVideos = [
-    VideoModel(
-      id: 'v_edu_1',
-      title: 'Class 10 Mathematics - Trigonometry Full Chapter Masterclass',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'Oxford Educational Press',
-      category: 'Educational',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop',
-      duration: '45:20',
-      viewsCount: 142000,
-      status: VideoStatus.approved,
-      submittedBy: 'Oxford Faculty',
-      submittedDate: DateTime.now(),
-    ),
-    VideoModel(
-      id: 'v_edu_2',
-      title: 'Class 10 Science - Light Reflection & Refraction Board Special',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'Cambridge Press',
-      category: 'Educational',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&auto=format&fit=crop',
-      duration: '38:15',
-      viewsCount: 98000,
-      status: VideoStatus.approved,
-      submittedBy: 'Senior Educator',
-      submittedDate: DateTime.now(),
-    ),
-    VideoModel(
-      id: 'v_info_1',
-      title: 'CBSE 2026 Board Exam Marking Scheme & Blueprint Analysis',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'Central Board Updates',
-      category: 'Informative',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&auto=format&fit=crop',
-      duration: '22:40',
-      viewsCount: 210000,
-      status: VideoStatus.approved,
-      submittedBy: 'Academic Cell',
-      submittedDate: DateTime.now(),
-    ),
-    VideoModel(
-      id: 'v_rel_1',
-      title: 'Vedic Mathematics - Speed Calculation & Ancient Formulae',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'Heritage Science Academy',
-      category: 'Religious',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&auto=format&fit=crop',
-      duration: '30:00',
-      viewsCount: 65000,
-      status: VideoStatus.approved,
-      submittedBy: 'Vedic Scholar',
-      submittedDate: DateTime.now(),
-    ),
-    VideoModel(
-      id: 'v_ent_1',
-      title: 'Annual Inter-School Robotics Competition & Science Fair 2026',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'National Student Forum',
-      category: 'Entertainment',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&auto=format&fit=crop',
-      duration: '18:45',
-      viewsCount: 185000,
-      status: VideoStatus.approved,
-      submittedBy: 'Events Team',
-      submittedDate: DateTime.now(),
-    ),
-    VideoModel(
-      id: 'v_tech_1',
-      title: 'Introduction to Python & Artificial Intelligence for High School',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'TechEdu Academy',
-      category: 'Technology',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop',
-      duration: '52:10',
-      viewsCount: 310000,
-      status: VideoStatus.approved,
-      submittedBy: 'Tech Lead',
-      submittedDate: DateTime.now(),
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(enabledCategoriesProvider);
     final submissions = ref.watch(videoSubmissionsProvider);
-    final activeSubmissions = submissions.where((v) => v.status == VideoStatus.approved || v.status == VideoStatus.pending).toList();
-    final combinedVideos = [...activeSubmissions, ..._allPublicVideos];
+    final combinedVideos = submissions.where((v) => v.status == VideoStatus.approved || v.status == VideoStatus.pending).toList();
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -124,14 +37,21 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       body: categoriesAsync.when(
         data: (categories) {
-          if (categories.isEmpty) {
-            return const Center(child: Text('No active public categories available.'));
-          }
+          final effectiveCategories = categories.isNotEmpty
+              ? categories
+              : [
+                  CategoryModel(id: 'cat_all', name: 'All', isEnabled: true),
+                  CategoryModel(id: 'cat_edu', name: 'Educational', isEnabled: true),
+                  CategoryModel(id: 'cat_info', name: 'Informative', isEnabled: true),
+                  CategoryModel(id: 'cat_rel', name: 'Religious', isEnabled: true),
+                  CategoryModel(id: 'cat_ent', name: 'Entertainment', isEnabled: true),
+                  CategoryModel(id: 'cat_tech', name: 'Technology', isEnabled: true),
+                ];
 
           // Determine selected category object
-          final selectedCategory = categories.firstWhere(
+          final selectedCategory = effectiveCategories.firstWhere(
             (c) => c.id == _selectedCategoryId,
-            orElse: () => categories.first,
+            orElse: () => effectiveCategories.first,
           );
 
           // Filter videos
@@ -177,7 +97,7 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
 
               // Category Filter Bar (Starting with "All")
               CategoryChipList(
-                categories: categories,
+                categories: effectiveCategories,
                 selectedCategoryId: _selectedCategoryId,
                 onSelected: (id) => setState(() => _selectedCategoryId = id),
               ),

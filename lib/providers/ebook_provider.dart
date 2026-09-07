@@ -22,6 +22,21 @@ class EBookSubmissionModel {
 class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>> {
   EBookSubmissionsNotifier() : super([]) {
     fetchCloudEBooks();
+    _listenRealtime();
+  }
+
+  void _listenRealtime() {
+    try {
+      Supabase.instance.client
+          .channel('public:EBook:realtime')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'EBook',
+            callback: (_) => fetchCloudEBooks(),
+          )
+          .subscribe();
+    } catch (_) {}
   }
 
   Future<void> fetchCloudEBooks() async {
@@ -39,8 +54,12 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
             seriesId: 'CBSE 2026',
             classId: 'Class 10',
             subjectId: item['Subject'] != null ? (item['Subject']['name'] ?? 'Mathematics') : 'Mathematics',
-            coverUrl: item['coverUrl'] ?? 'https://picsum.photos/300/400',
-            fileUrl: item['fileUrl'] ?? '',
+            coverUrl: (item['coverUrl'] != null && item['coverUrl'].toString().startsWith('http'))
+                ? item['coverUrl']
+                : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400',
+            fileUrl: (item['fileUrl'] != null && item['fileUrl'].toString().isNotEmpty)
+                ? item['fileUrl']
+                : 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
             status: item['isActive'] == false ? EBookAdminStatus.archived : EBookAdminStatus.published,
           );
 
@@ -53,10 +72,7 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
         }).toList();
 
         debugPrint('⚡ Loaded ${cloudSubmissions.length} eBooks directly from Supabase DB EBook table');
-        
-        final cloudIds = cloudSubmissions.map((e) => e.ebook.id).toSet();
-        final localOnly = state.where((item) => !cloudIds.contains(item.ebook.id)).toList();
-        state = [...cloudSubmissions, ...localOnly];
+        state = cloudSubmissions;
       }
     } catch (e) {
       debugPrint('ℹ️ Direct Supabase eBook fetch note: $e');

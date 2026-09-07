@@ -9,6 +9,21 @@ import '../models/video_model.dart';
 class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
   VideoSubmissionsNotifier() : super([]) {
     fetchCloudQueue();
+    _listenRealtime();
+  }
+
+  void _listenRealtime() {
+    try {
+      Supabase.instance.client
+          .channel('public:Video:realtime')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'Video',
+            callback: (_) => fetchCloudQueue(),
+          )
+          .subscribe();
+    } catch (_) {}
   }
 
   Future<void> fetchCloudQueue() async {

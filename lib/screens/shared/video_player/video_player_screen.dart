@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../models/video_model.dart';
 import '../../../utils/web_iframe_helper.dart';
@@ -45,32 +46,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   final TextEditingController _commentController = TextEditingController();
 
-  final List<CommentItem> _comments = [
-    CommentItem(
-      id: 'c1',
-      userName: 'Aman Verma (Student)',
-      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100',
-      commentText: 'Sir Trigonometry exercise 8.4 question 5 proof step 3 clear ho gaya! Thank you so much 🔥',
-      timeAgo: '10 mins ago',
-      likes: 14,
-    ),
-    CommentItem(
-      id: 'c2',
-      userName: 'Priya Sharma (Class 10)',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-      commentText: 'Best explanation lecture for board exam 2026! Very clear concepts.',
-      timeAgo: '45 mins ago',
-      likes: 28,
-    ),
-    CommentItem(
-      id: 'c3',
-      userName: 'Rohan Mehta',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-      commentText: 'Please upload Chapter 9 Applications of Trigonometry Part 2 as well sir! 🙏',
-      timeAgo: '2 hours ago',
-      likes: 9,
-    ),
-  ];
+  final List<CommentItem> _comments = [];
 
   @override
   void initState() {
@@ -97,24 +73,31 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   String _extractVideoId(String rawUrl) {
-    String videoId = 'kffacxfA7G4';
-    if (rawUrl.contains('v=')) {
-      final parts = rawUrl.split('v=');
-      if (parts.length > 1) {
-        videoId = parts[1].split('&').first;
-      }
-    } else if (rawUrl.contains('youtu.be/')) {
-      final parts = rawUrl.split('youtu.be/');
-      if (parts.length > 1) {
-        videoId = parts[1].split('?').first;
-      }
-    } else if (rawUrl.contains('embed/')) {
-      final parts = rawUrl.split('embed/');
-      if (parts.length > 1) {
-        videoId = parts[1].split('?').first;
-      }
+    if (rawUrl.isEmpty) return 'kffacxfA7G4';
+    final regExp = RegExp(
+      r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})',
+      caseSensitive: false,
+    );
+    final match = regExp.firstMatch(rawUrl);
+    if (match != null && match.groupCount >= 1 && match.group(1) != null) {
+      return match.group(1)!;
     }
-    return videoId;
+    return 'kffacxfA7G4';
+  }
+
+  Future<void> _launchExternalVideo() async {
+    final videoId = _extractVideoId(widget.video.url);
+    final targetUrl = widget.video.url.isNotEmpty && widget.video.url.startsWith('http')
+        ? widget.video.url
+        : 'https://www.youtube.com/watch?v=$videoId';
+    final uri = Uri.parse(targetUrl);
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      debugPrint('Error launching external video: $e');
+    }
   }
 
   @override
@@ -169,6 +152,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           style: const TextStyle(fontSize: 16),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.open_in_new),
+            tooltip: 'Open in YouTube / Browser',
+            onPressed: _launchExternalVideo,
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

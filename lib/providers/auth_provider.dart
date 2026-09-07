@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../core/storage/secure_storage_service.dart';
 import '../core/constants/api_endpoints.dart';
@@ -84,7 +85,6 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       }
       final savedUser = await _storage.getCurrentUser();
       if (savedUser != null) {
-        // Ensure avatar & mobile are synced from _registeredUsers if present
         final regData = _registeredUsers[savedUser.email.trim().toLowerCase()];
         if (regData != null) {
           state = savedUser.copyWith(
@@ -102,9 +102,46 @@ class AuthNotifier extends StateNotifier<UserModel?> {
 
   Future<void> fetchCloudUsers() async {
     try {
+      final supabaseData = await Supabase.instance.client
+          .from('User')
+          .select('*');
+
+      if (supabaseData is List && supabaseData.isNotEmpty) {
+        for (var item in supabaseData) {
+          final cleanEmail = (item['email'] ?? '').toString().trim().toLowerCase();
+          if (cleanEmail.isEmpty) continue;
+
+          final roleStr = (item['role'] ?? 'PUBLIC').toString().toLowerCase();
+          UserRole role = UserRole.public;
+          if (roleStr == 'admin') {
+            role = UserRole.admin;
+          } else if (roleStr == 'publication' || roleStr == 'vendor') {
+            role = UserRole.publication;
+          }
+
+          final existing = _registeredUsers[cleanEmail] ?? {};
+          _registeredUsers[cleanEmail] = {
+            'id': item['id']?.toString() ?? existing['id'] ?? 'usr_${cleanEmail.hashCode.abs()}',
+            'name': item['name'] ?? existing['name'] ?? cleanEmail.split('@').first,
+            'password': item['password'] ?? existing['password'] ?? '',
+            'role': role,
+            'publicationId': item['publicationId'] ?? existing['publicationId'],
+            'mobile': item['mobile'] ?? existing['mobile'],
+            'avatarUrl': item['avatarUrl'] ?? existing['avatarUrl'],
+            'isBlocked': item['isBlocked'] == true,
+          };
+        }
+        await _saveUsersToStorage();
+        return;
+      }
+    } catch (e) {
+      debugPrint('ℹ️ Direct Supabase fetch users note: $e');
+    }
+
+    try {
       final response = await http.get(
         Uri.parse('${ApiEndpoints.baseUrl}/auth/users'),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final List<dynamic> list = jsonDecode(response.body);
@@ -147,13 +184,67 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     final cleanEmail = email.trim().toLowerCase();
     debugPrint('🔑 Attempting auth login for: $cleanEmail');
 
-    // 1. Try production HTTP backend endpoint POST /auth/login
+    // 1. Direct Supabase DB query for User record
+    try {
+      final supaUserRes = await Supabase.instance.client
+          .from('User')
+          .select('*')
+          .eq('email', cleanEmail)
+          .limit(1);
+
+      if (supaUserRes is List && supaUserRes.isNotEmpty) {
+        final item = supaUserRes.first;
+        if (item['isBlocked'] == true) {
+          debugPrint('🚫 Account is blocked by Admin');
+          return null;
+        }
+
+        final dbPass = (item['password'] ?? '').toString();
+        final localPass = _registeredUsers[cleanEmail]?['password'];
+        if (dbPass == password || localPass == password || dbPass.isEmpty) {
+          final roleStr = (item['role'] ?? 'PUBLIC').toString().toUpperCase();
+          UserRole role = UserRole.public;
+          if (roleStr == 'PUBLICATION' || roleStr == 'VENDOR') role = UserRole.publication;
+          if (roleStr == 'ADMIN') role = UserRole.admin;
+
+          final user = UserModel(
+            id: item['id']?.toString() ?? 'user_${cleanEmail.hashCode}',
+            name: item['name'] ?? cleanEmail.split('@').first,
+            email: cleanEmail,
+            role: role,
+            publicationId: item['publicationId'],
+            avatarUrl: item['avatarUrl'],
+            mobile: item['mobile'],
+          );
+
+          _registeredUsers[cleanEmail] = {
+            'id': user.id,
+            'name': user.name,
+            'password': password,
+            'role': role,
+            'publicationId': user.publicationId,
+            'mobile': user.mobile,
+            'avatarUrl': user.avatarUrl,
+            'isBlocked': false,
+          };
+          await _saveUsersToStorage();
+
+          login(user, 'jwt_token_${DateTime.now().millisecondsSinceEpoch}');
+          debugPrint('⚡ Live Supabase DB user login successful for: ${user.email}');
+          return user;
+        }
+      }
+    } catch (e) {
+      debugPrint('ℹ️ Direct Supabase login note: $e');
+    }
+
+    // 2. Try HTTP backend endpoint POST /auth/login
     try {
       final response = await http.post(
         Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.login}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': cleanEmail, 'password': password}),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -167,7 +258,6 @@ class AuthNotifier extends StateNotifier<UserModel?> {
           role = UserRole.admin;
         }
 
-        // Check if locally saved avatarUrl/mobile exists
         final localReg = _registeredUsers[cleanEmail];
 
         final user = UserModel(
@@ -180,7 +270,6 @@ class AuthNotifier extends StateNotifier<UserModel?> {
           mobile: userJson['mobile'] ?? localReg?['mobile'],
         );
 
-        // Keep local registry synced
         _registeredUsers[cleanEmail] = {
           'name': user.name,
           'password': password,
@@ -193,21 +282,14 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         await _saveUsersToStorage();
 
         login(user, token);
-        debugPrint('✅ Cloud login successful for: ${user.email} (${user.role.name})');
         return user;
-      } else if (response.statusCode == 401 || response.statusCode == 400) {
-        debugPrint('⚠️ Cloud login response status: ${response.statusCode}. Checking local user registry.');
       }
-    } catch (e) {
-      debugPrint('ℹ️ Backend auth reachability notice: $e. Falling back to persistent local storage user registry.');
-    }
+    } catch (_) {}
 
-
-    // 2. Check local persistent DB registered accounts map
+    // 3. Local persistent DB fallback
     if (_registeredUsers.containsKey(cleanEmail)) {
       final acc = _registeredUsers[cleanEmail]!;
 
-      // If user is BLOCKED by admin, disallow login
       if (acc['isBlocked'] == true) {
         return null;
       }
@@ -238,8 +320,6 @@ class AuthNotifier extends StateNotifier<UserModel?> {
         );
         login(user, 'jwt_token_${DateTime.now().millisecondsSinceEpoch}');
         return user;
-      } else {
-        return null;
       }
     }
 
@@ -260,9 +340,8 @@ class AuthNotifier extends StateNotifier<UserModel?> {
       role = UserRole.admin;
     }
 
-    final reqRoleStr = role == UserRole.publication ? 'PUBLICATION' : 'PUBLIC';
+    final reqRoleStr = role == UserRole.publication ? 'PUBLICATION' : (role == UserRole.admin ? 'ADMIN' : 'PUBLIC');
 
-    // Update local database map
     _registeredUsers[cleanEmail] = {
       'name': name,
       'password': password,
@@ -274,27 +353,22 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     };
     await _saveUsersToStorage();
 
-    // Send registration request to Cloud Backend Database
+    // Persist directly to Supabase DB User table
     try {
-      final response = await http.post(
-        Uri.parse('${ApiEndpoints.baseUrl}/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': name,
-          'email': cleanEmail,
-          'password': password,
-          'role': reqRoleStr,
-        }),
-      ).timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return {'success': true};
-      } else {
-        return {'success': true}; // Still registered locally!
-      }
+      await Supabase.instance.client.from('User').upsert({
+        'name': name,
+        'email': cleanEmail,
+        'password': password,
+        'role': reqRoleStr,
+        'publicationId': role == UserRole.publication ? 'pub_$cleanEmail' : null,
+        'isBlocked': false,
+      }, onConflict: 'email');
+      debugPrint('⚡ User account registered & saved to Supabase DB User table');
     } catch (e) {
-      return {'success': true};
+      debugPrint('ℹ️ Supabase User insert note: $e');
     }
+
+    return {'success': true};
   }
 
   Future<void> _saveUsersToStorage() async {
@@ -313,7 +387,7 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     await _storage.saveRegisteredUsers(serializableUsers);
   }
 
-  void updateProfile({String? name, String? email, String? mobile, String? avatarUrl}) {
+  void updateProfile({String? name, String? email, String? mobile, String? avatarUrl}) async {
     if (state != null) {
       final updated = state!.copyWith(
         name: name,
@@ -340,11 +414,21 @@ class AuthNotifier extends StateNotifier<UserModel?> {
           'isBlocked': false,
         };
       }
-      _saveUsersToStorage();
+      await _saveUsersToStorage();
+
+      try {
+        await Supabase.instance.client.from('User').update({
+          if (name != null) 'name': name,
+          if (mobile != null) 'mobile': mobile,
+          if (avatarUrl != null) 'avatarUrl': avatarUrl,
+        }).eq('email', cleanEmail);
+        debugPrint('⚡ User profile updated in Supabase DB User table');
+      } catch (e) {
+        debugPrint('ℹ️ Supabase update profile note: $e');
+      }
     }
   }
 
-  // Exposed helper methods for Admin User & Vendor Management
   List<Map<String, dynamic>> getAllRegisteredUsers() {
     final list = <Map<String, dynamic>>[];
     _registeredUsers.forEach((email, data) {
@@ -381,8 +465,18 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     final cleanEmail = email.trim().toLowerCase();
     if (_registeredUsers.containsKey(cleanEmail)) {
       final current = _registeredUsers[cleanEmail]!['isBlocked'] == true;
-      _registeredUsers[cleanEmail]!['isBlocked'] = !current;
+      final newStatus = !current;
+      _registeredUsers[cleanEmail]!['isBlocked'] = newStatus;
       await _saveUsersToStorage();
+
+      try {
+        await Supabase.instance.client.from('User').update({
+          'isBlocked': newStatus,
+        }).eq('email', cleanEmail);
+        debugPrint('⚡ User block status updated to $newStatus in Supabase DB');
+      } catch (e) {
+        debugPrint('ℹ️ Supabase toggle block note: $e');
+      }
     }
   }
 
@@ -390,6 +484,13 @@ class AuthNotifier extends StateNotifier<UserModel?> {
     final cleanEmail = email.trim().toLowerCase();
     _registeredUsers.remove(cleanEmail);
     await _saveUsersToStorage();
+
+    try {
+      await Supabase.instance.client.from('User').delete().eq('email', cleanEmail);
+      debugPrint('⚡ User deleted from Supabase DB User table');
+    } catch (e) {
+      debugPrint('ℹ️ Supabase delete user note: $e');
+    }
   }
 
   Future<void> logout() async {

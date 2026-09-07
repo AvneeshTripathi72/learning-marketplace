@@ -1,20 +1,30 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/category_model.dart';
-import '../core/constants/api_endpoints.dart';
 
 final enabledCategoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
   try {
-    final response = await http.get(Uri.parse('${ApiEndpoints.baseUrl}${ApiEndpoints.categories}'));
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      // Wait until they add CategoryModel.fromJson
-      // return data.map((json) => CategoryModel.fromJson(json)).where((c) => c.isEnabled).toList();
-      return [];
+    final supabaseData = await Supabase.instance.client
+        .from('Category')
+        .select('*');
+
+    if (supabaseData is List && supabaseData.isNotEmpty) {
+      final categories = supabaseData.map((item) => CategoryModel(
+        id: item['id']?.toString() ?? '',
+        name: item['name'] ?? 'Category',
+        isEnabled: item['isActive'] ?? item['isEnabled'] ?? true,
+      )).where((c) => c.isEnabled).toList();
+
+      if (categories.isNotEmpty) {
+        return [
+          CategoryModel(id: 'cat_all', name: 'All', isEnabled: true),
+          ...categories,
+        ];
+      }
     }
-  } catch (e) {
-    // Ignore error
-  }
-  return [];
+  } catch (_) {}
+
+  return [
+    CategoryModel(id: 'cat_all', name: 'All', isEnabled: true),
+  ];
 });
