@@ -1,24 +1,28 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../models/ebook_model.dart';
+import '../../../models/user_model.dart';
+import '../../../providers/ebook_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../utils/web_iframe_helper.dart';
 
-class PdfViewerScreen extends StatefulWidget {
+enum ReaderTheme { dark, light, sepia }
+
+class PdfViewerScreen extends ConsumerStatefulWidget {
   final EBookModel ebook;
 
   const PdfViewerScreen({super.key, required this.ebook});
 
   @override
-  State<PdfViewerScreen> createState() => _PdfViewerScreenState();
+  ConsumerState<PdfViewerScreen> createState() => _PdfViewerScreenState();
 }
 
-enum ReaderTheme { dark, light, sepia }
-
-class _PdfViewerScreenState extends State<PdfViewerScreen> {
+class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   late PdfViewerController _pdfViewerController;
   late TransformationController _transformationController;
   PdfTextSearchResult _searchResult = PdfTextSearchResult();
@@ -37,16 +41,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   int _totalPages = 1;
   ReaderTheme _readerTheme = ReaderTheme.dark;
   bool _isBookmarked = false;
+  bool _isSavedOffline = false;
   bool _showSearchBar = false;
   final TextEditingController _searchController = TextEditingController();
 
   String _activeUrl = '';
   int _retryAttempt = 0;
+  int _engineMode = 0; // 0: Native SfPdfViewer, 1: Mozilla PDF.js, 2: Google Docs
 
   String _sanitizeUrl(String rawUrl) {
-    const fallbackUrl = 'https://pub-0035a50eaf1046efa85b6e5d1631f721.r2.dev/ebooks/Class_10_Mathematics_Polynomials_Guide.pdf';
+    const fallbackUrl = 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
     var trimmed = rawUrl.trim();
-    if (trimmed.isEmpty) {
+    if (trimmed.isEmpty || trimmed.length < 5) {
       return fallbackUrl;
     }
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
@@ -59,7 +65,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     if (uri == null || !uri.hasAuthority || uri.host.isEmpty || !uri.host.contains('.')) {
       return fallbackUrl;
     }
-    // Auto-convert Google Drive view links to iframe-compatible preview links
     if (trimmed.contains('drive.google.com') && trimmed.contains('/view')) {
       trimmed = trimmed.replaceAll('/view', '/preview');
     }
@@ -71,27 +76,40 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     super.initState();
     _pdfViewerController = PdfViewerController();
     _transformationController = TransformationController();
+    _printDiagnosticLogs();
     _initPdfViewer();
   }
 
-  int _engineMode = 0; // 0: Mozilla PDF.js, 1: Google Docs, 2: Direct Stream
+  void _printDiagnosticLogs() {
+    final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
+    debugPrint('📄 ===================================================');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] eBook ID: ${widget.ebook.id}');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] Title: ${widget.ebook.title}');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] Raw File URL: "${widget.ebook.fileUrl}"');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] Sanitized URL: "$targetUrl"');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] Publisher: ${widget.ebook.publicationId}');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] Subject: ${widget.ebook.subjectId}');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] Class: ${widget.ebook.classId}');
+    debugPrint('📄 [PDF DIAGNOSTIC LOGS] Cover URL: ${widget.ebook.coverUrl}');
+    debugPrint('📄 ===================================================');
+  }
 
   void _initPdfViewer({int? engineMode, bool useGoogleDocs = false, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
     _activeUrl = targetUrl;
-    final mode = engineMode ?? (useGoogleDocs ? 1 : 0);
+    final mode = engineMode ?? (useGoogleDocs ? 2 : 0);
     _engineMode = mode;
 
-    final shouldIframe = useIframe ?? kIsWeb;
+    final shouldIframe = useIframe ?? (kIsWeb && mode != 0);
 
     if (shouldIframe) {
       if (kIsWeb) {
         _pdfViewType = 'ebook-pdf-iframe-${widget.ebook.id}-${DateTime.now().millisecondsSinceEpoch}';
         
         String embedUrl;
-        if (mode == 0) {
+        if (mode == 1) {
           embedUrl = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=${Uri.encodeComponent(targetUrl)}';
-        } else if (mode == 1) {
+        } else if (mode == 2) {
           embedUrl = 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}';
         } else {
           embedUrl = targetUrl;
@@ -101,7 +119,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         setState(() {
           _isLoading = false;
           _hasError = false;
-          _useGoogleDocsFallback = (mode == 1);
+          _useGoogleDocsFallback = (mode == 2);
           _useIframe = true;
         });
       } else {
@@ -125,17 +143,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   void _handleDocumentLoadFailed(String description) {
+    debugPrint('⚠️ [PDF Viewer Load Failed] Attempt $_retryAttempt: $description');
     if (_retryAttempt == 0 && kIsWeb) {
       _retryAttempt = 1;
-      _initPdfViewer(engineMode: 0, useIframe: true);
+      _initPdfViewer(engineMode: 1, useIframe: true);
     } else if (_retryAttempt == 1 && kIsWeb) {
       _retryAttempt = 2;
-      _initPdfViewer(engineMode: 1, useIframe: true);
+      _initPdfViewer(engineMode: 2, useIframe: true);
     } else {
       setState(() {
         _isLoading = false;
         _hasError = true;
-        _errorMessage = description;
+        _errorMessage = description.isNotEmpty ? description : 'Failed to parse stream format. Check CORS or URL access.';
       });
     }
   }
@@ -230,6 +249,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     }
   }
 
+  Color get _readerSurfaceColor {
+    switch (_readerTheme) {
+      case ReaderTheme.light:
+        return Colors.white;
+      case ReaderTheme.sepia:
+        return const Color(0xFFEFE6CE);
+      case ReaderTheme.dark:
+        return const Color(0xFF1E1E1E);
+    }
+  }
+
   Color get _readerTextColor {
     switch (_readerTheme) {
       case ReaderTheme.light:
@@ -255,14 +285,16 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
     final progressRatio = _totalPages > 0 ? (_currentPage / _totalPages).clamp(0.0, 1.0) : 0.0;
 
+    final allSubmissions = ref.watch(ebookSubmissionsProvider);
+    final currentUser = ref.watch(authProvider);
+    final relatedBooks = allSubmissions.map((s) => s.ebook).where((b) => b.id != widget.ebook.id).toList();
+
     return Theme(
       data: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: _readerBgColor,
         appBarTheme: AppBarTheme(
-          backgroundColor: _readerBgColor == const Color(0xFF121212)
-              ? const Color(0xFF1E1E1E)
-              : _readerBgColor,
-          elevation: 2,
+          backgroundColor: _readerSurfaceColor,
+          elevation: 1,
           iconTheme: IconThemeData(color: _readerTextColor),
           titleTextStyle: TextStyle(color: _readerTextColor, fontSize: 16, fontWeight: FontWeight.w600),
         ),
@@ -274,12 +306,13 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             widget.ebook.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 16),
           ),
           actions: [
             // Search button
             IconButton(
               icon: Icon(_showSearchBar ? Icons.search_off : Icons.search, color: _readerTextColor),
-              tooltip: 'Search Inside PDF',
+              tooltip: 'Search Text inside PDF',
               onPressed: () {
                 setState(() {
                   _showSearchBar = !_showSearchBar;
@@ -349,8 +382,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               },
             ),
             IconButton(
-              icon: Icon(Icons.open_in_new, color: _readerTextColor),
-              tooltip: 'Open in Browser',
+              icon: const Icon(Icons.open_in_new, color: Color(0xFF7C9CFF)),
+              tooltip: 'Open in External Browser',
               onPressed: _openExternalPdfUrl,
             ),
             PopupMenuButton<String>(
@@ -360,12 +393,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                   _openExternalPdfUrl();
                 } else if (val == 'toggle_engine') {
                   final nextMode = (_engineMode + 1) % 3;
-                  _initPdfViewer(engineMode: nextMode, useIframe: true);
+                  _initPdfViewer(engineMode: nextMode, useIframe: nextMode != 0);
                 } else if (val == 'offline') {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        isLocal ? 'File stored locally offline' : 'Streaming directly from server',
+                        isLocal ? 'File stored locally offline' : 'Streaming directly from Cloud storage',
                       ),
                     ),
                   );
@@ -380,15 +413,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                       const SizedBox(width: 8),
                       Text(
                         _engineMode == 0
-                            ? 'Switch to Google Docs Reader'
-                            : (_engineMode == 1 ? 'Switch to Direct Stream' : 'Switch to Mozilla PDF.js Reader'),
+                            ? 'Switch to Mozilla PDF.js Reader'
+                            : (_engineMode == 1 ? 'Switch to Google Docs Reader' : 'Switch to Direct Stream Engine'),
                       ),
                     ],
                   ),
                 ),
                 const PopupMenuItem(
                   value: 'download',
-                  child: Row(children: [Icon(Icons.download, size: 18), SizedBox(width: 8), Text('Download PDF')]),
+                  child: Row(children: [Icon(Icons.download, size: 18), SizedBox(width: 8), Text('Download PDF Package')]),
                 ),
                 const PopupMenuItem(
                   value: 'print',
@@ -408,260 +441,246 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            // Search Bar header overlay if active
-            if (_showSearchBar)
-              Container(
-                color: _readerBgColor == const Color(0xFF121212) ? const Color(0xFF2A2A2A) : Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 240,
-                        child: TextField(
-                          controller: _searchController,
-                          style: TextStyle(color: _readerTextColor, fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Search text inside PDF...',
-                            hintStyle: TextStyle(color: _readerTextColor.withValues(alpha: 0.5)),
-                            isDense: true,
-                            border: InputBorder.none,
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search Bar header overlay if active
+              if (_showSearchBar)
+                Container(
+                  color: _readerSurfaceColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 240,
+                          child: TextField(
+                            controller: _searchController,
+                            style: TextStyle(color: _readerTextColor, fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: 'Search text inside PDF...',
+                              hintStyle: TextStyle(color: _readerTextColor.withValues(alpha: 0.5)),
+                              isDense: true,
+                              border: InputBorder.none,
+                            ),
+                            onSubmitted: (text) {
+                              if (text.trim().isNotEmpty) {
+                                _searchResult = _pdfViewerController.searchText(text.trim());
+                                setState(() {});
+                              }
+                            },
                           ),
-                          onSubmitted: (text) {
-                            if (text.trim().isNotEmpty) {
-                              _searchResult = _pdfViewerController.searchText(text.trim());
-                              setState(() {});
-                            }
+                        ),
+                        if (_searchResult.totalInstanceCount > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Text(
+                              '${_searchResult.currentInstanceIndex}/${_searchResult.totalInstanceCount}',
+                              style: TextStyle(color: _readerTextColor, fontSize: 12),
+                            ),
+                          ),
+                        IconButton(
+                          icon: Icon(Icons.navigate_before, color: _readerTextColor),
+                          onPressed: () => _searchResult.previousInstance(),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.navigate_next, color: _readerTextColor),
+                          onPressed: () => _searchResult.nextInstance(),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: _readerTextColor),
+                          onPressed: () {
+                            _searchController.clear();
+                            _searchResult.clear();
+                            setState(() => _showSearchBar = false);
                           },
                         ),
-                      ),
-                      if (_searchResult.totalInstanceCount > 0)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: Text(
-                            '${_searchResult.currentInstanceIndex}/${_searchResult.totalInstanceCount}',
-                            style: TextStyle(color: _readerTextColor, fontSize: 12),
-                          ),
-                        ),
-                      IconButton(
-                        icon: Icon(Icons.navigate_before, color: _readerTextColor),
-                        onPressed: () => _searchResult.previousInstance(),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.navigate_next, color: _readerTextColor),
-                        onPressed: () => _searchResult.nextInstance(),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: _readerTextColor),
-                        onPressed: () {
-                          _searchController.clear();
-                          _searchResult.clear();
-                          setState(() => _showSearchBar = false);
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
+
+              // Top Linear Progress Bar
+              LinearProgressIndicator(
+                value: progressRatio,
+                backgroundColor: Colors.white10,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7C9CFF)),
+                minHeight: 3,
               ),
 
-            // Top Linear Progress Bar
-            LinearProgressIndicator(
-              value: progressRatio,
-              backgroundColor: Colors.white10,
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7C9CFF)),
-              minHeight: 3,
-            ),
-
-            // Viewer Content
-            Expanded(
-              child: Stack(
-                children: [
-                  if (!_hasError)
-                    _useIframe && kIsWeb && _pdfViewType.isNotEmpty
-                        ? SizedBox.expand(
-                            child: HtmlElementView(viewType: _pdfViewType),
-                          )
-                        : _webViewController != null
-                            ? WebViewWidget(controller: _webViewController!)
-                            : isLocal
-                                ? SfPdfViewer.file(
-                                    File(widget.ebook.localPath!),
-                                    controller: _pdfViewerController,
-                                    onPageChanged: (details) {
-                                      setState(() {
-                                        _currentPage = details.newPageNumber;
-                                      });
-                                    },
-                                    onDocumentLoaded: (details) {
-                                      setState(() {
-                                        _isLoading = false;
-                                        _totalPages = details.document.pages.count;
-                                      });
-                                    },
-                                    onDocumentLoadFailed: (details) {
-                                      setState(() {
-                                        _isLoading = false;
-                                        _hasError = true;
-                                        _errorMessage = details.description;
-                                      });
-                                    },
-                                  )
-                                : SfPdfViewer.network(
-                                    _activeUrl.isNotEmpty ? _activeUrl : targetUrl,
-                                    controller: _pdfViewerController,
-                                    onPageChanged: (details) {
-                                      setState(() {
-                                        _currentPage = details.newPageNumber;
-                                      });
-                                    },
-                                    onDocumentLoaded: (details) {
-                                      setState(() {
-                                        _isLoading = false;
-                                        _hasError = false;
-                                        _totalPages = details.document.pages.count;
-                                      });
-                                    },
-                                    onDocumentLoadFailed: (details) {
-                                      _handleDocumentLoadFailed(details.description);
-                                    },
-                                  ),
-                  if (_isLoading && !_hasError)
-                    const Center(
-                      child: Card(
-                        elevation: 4,
-                        color: Color(0xFF1E1E1E),
-                        child: Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircularProgressIndicator(color: Color(0xFF7C9CFF)),
-                              SizedBox(height: 12),
-                              Text('Opening eBook Document...', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                            ],
+              // MAIN PDF VIEWER BOX (Height ~480px on desktop/mobile)
+              Container(
+                height: 480,
+                width: double.infinity,
+                margin: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  children: [
+                    if (!_hasError)
+                      _useIframe && kIsWeb && _pdfViewType.isNotEmpty
+                          ? SizedBox.expand(
+                              child: HtmlElementView(viewType: _pdfViewType),
+                            )
+                          : _webViewController != null
+                              ? WebViewWidget(controller: _webViewController!)
+                              : isLocal
+                                  ? SfPdfViewer.file(
+                                      File(widget.ebook.localPath!),
+                                      controller: _pdfViewerController,
+                                      onPageChanged: (details) {
+                                        setState(() {
+                                          _currentPage = details.newPageNumber;
+                                        });
+                                      },
+                                      onDocumentLoaded: (details) {
+                                        setState(() {
+                                          _isLoading = false;
+                                          _totalPages = details.document.pages.count;
+                                        });
+                                      },
+                                      onDocumentLoadFailed: (details) {
+                                        setState(() {
+                                          _isLoading = false;
+                                          _hasError = true;
+                                          _errorMessage = details.description;
+                                        });
+                                      },
+                                    )
+                                  : SfPdfViewer.network(
+                                      _activeUrl.isNotEmpty ? _activeUrl : targetUrl,
+                                      controller: _pdfViewerController,
+                                      onPageChanged: (details) {
+                                        setState(() {
+                                          _currentPage = details.newPageNumber;
+                                        });
+                                      },
+                                      onDocumentLoaded: (details) {
+                                        setState(() {
+                                          _isLoading = false;
+                                          _hasError = false;
+                                          _totalPages = details.document.pages.count;
+                                        });
+                                      },
+                                      onDocumentLoadFailed: (details) {
+                                        _handleDocumentLoadFailed(details.description);
+                                      },
+                                    ),
+                    if (_isLoading && !_hasError)
+                      const Center(
+                        child: Card(
+                          elevation: 4,
+                          color: Color(0xFF1E1E1E),
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(color: Color(0xFF7C9CFF)),
+                                SizedBox(height: 10),
+                                Text('Loading PDF Document...', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  if (_hasError)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: SingleChildScrollView(
-                          child: Card(
-                            elevation: 6,
-                            color: const Color(0xFF1E1E1E),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      widget.ebook.coverUrl,
-                                      width: 120,
-                                      height: 160,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        width: 120,
-                                        height: 160,
-                                        color: Colors.blueGrey,
-                                        child: const Icon(Icons.picture_as_pdf, size: 48, color: Colors.redAccent),
+                    if (_hasError)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: SingleChildScrollView(
+                            child: Card(
+                              elevation: 6,
+                              color: const Color(0xFF1E1E1E),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        widget.ebook.coverUrl,
+                                        width: 100,
+                                        height: 140,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          width: 100,
+                                          height: 140,
+                                          color: Colors.blueGrey,
+                                          child: const Icon(Icons.picture_as_pdf, size: 48, color: Colors.redAccent),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    widget.ebook.title,
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Class ${widget.ebook.classId} • Publisher: ${widget.ebook.publicationId}',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  if (_errorMessage.isNotEmpty) ...[
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 14),
                                     Text(
-                                      _errorMessage,
-                                      style: const TextStyle(color: Colors.redAccent, fontSize: 11),
+                                      widget.ebook.title,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                       textAlign: TextAlign.center,
                                     ),
-                                  ],
-                                  const SizedBox(height: 14),
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF7C9CFF).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: const Color(0xFF7C9CFF).withValues(alpha: 0.3)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${widget.ebook.subjectId} • ${widget.ebook.classId}',
+                                      style: const TextStyle(color: Colors.grey, fontSize: 12),
                                     ),
-                                    child: const Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                    if (_errorMessage.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _errorMessage,
+                                        style: const TextStyle(color: Colors.redAccent, fontSize: 11),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                    const SizedBox(height: 14),
+                                    Wrap(
+                                      alignment: WrapAlignment.center,
+                                      spacing: 10,
+                                      runSpacing: 10,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.menu_book, color: Color(0xFF7C9CFF), size: 18),
-                                            SizedBox(width: 8),
-                                            Text('In-App Reader Engine', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                                          ],
+                                        ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7C9CFF), foregroundColor: Colors.white),
+                                          onPressed: _openExternalPdfUrl,
+                                          icon: const Icon(Icons.open_in_new, size: 16),
+                                          label: const Text('Open in Browser Tab'),
                                         ),
-                                        SizedBox(height: 6),
-                                        Text(
-                                          'Interactive eBook edition containing complete textbook chapters, practice questions, and board exam solutions.',
-                                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                                        OutlinedButton.icon(
+                                          style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7C9CFF)),
+                                          onPressed: () {
+                                            _initPdfViewer(useGoogleDocs: !_useGoogleDocsFallback, useIframe: true);
+                                          },
+                                          icon: const Icon(Icons.refresh, size: 16),
+                                          label: Text(_useGoogleDocsFallback ? 'Use Direct Stream' : 'Use Google Reader'),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Wrap(
-                                    alignment: WrapAlignment.center,
-                                    spacing: 10,
-                                    runSpacing: 10,
-                                    children: [
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7C9CFF), foregroundColor: Colors.white),
-                                        onPressed: _openExternalPdfUrl,
-                                        icon: const Icon(Icons.open_in_new, size: 16),
-                                        label: const Text('Open in Browser Tab'),
-                                      ),
-                                      OutlinedButton.icon(
-                                        style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF7C9CFF)),
-                                        onPressed: () {
-                                          _initPdfViewer(useGoogleDocs: !_useGoogleDocsFallback, useIframe: true);
-                                        },
-                                        icon: const Icon(Icons.refresh, size: 16),
-                                        label: Text(_useGoogleDocsFallback ? 'Use Direct Stream' : 'Use Google Docs Reader'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // Bottom Navigation & Reader Control Toolbar
-            Container(
-              color: _readerBgColor == const Color(0xFF121212)
-                  ? const Color(0xFF1E1E1E)
-                  : _readerBgColor,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SafeArea(
-                top: false,
+              // READER CONTROL TOOLBAR
+              Container(
+                color: _readerSurfaceColor,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -752,10 +771,256 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                   ),
                 ),
               ),
-            ),
-          ],
+
+              // DETAILS & METADATA SECTION BELOW PDF
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Book Header Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _readerSurfaceColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              widget.ebook.coverUrl,
+                              width: 90,
+                              height: 125,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(width: 90, height: 125, color: Colors.blueGrey),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Wrap(
+                                  spacing: 6,
+                                  children: [
+                                    _buildChip(widget.ebook.subjectId, const Color(0xFF4A6CF7)),
+                                    _buildChip(widget.ebook.classId, Colors.orange),
+                                    _buildChip('CBSE 2026', Colors.teal),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.ebook.title,
+                                  style: TextStyle(
+                                    fontFamily: 'Lexend',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 17,
+                                    height: 1.3,
+                                    color: _readerTextColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Publisher: ${widget.ebook.publicationId}',
+                                  style: TextStyle(fontSize: 12, color: _readerTextColor.withValues(alpha: 0.7)),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber, size: 14),
+                                    const SizedBox(width: 4),
+                                    Text('4.8 (12.4K ratings)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _readerTextColor)),
+                                    const SizedBox(width: 12),
+                                    Text('$_totalPages Pages', style: TextStyle(fontSize: 11, color: _readerTextColor.withValues(alpha: 0.7))),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ACTION BUTTONS ROW
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4A6CF7),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
+                            onPressed: _openExternalPdfUrl,
+                            icon: const Icon(Icons.picture_as_pdf, size: 16),
+                            label: const Text('Read Fullscreen'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            onPressed: () {
+                              setState(() => _isSavedOffline = !_isSavedOffline);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Downloading eBook PDF for offline reading...')),
+                              );
+                            },
+                            icon: Icon(_isSavedOffline ? Icons.offline_pin : Icons.file_download_outlined, size: 16),
+                            label: Text(_isSavedOffline ? 'Downloaded' : 'Download'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Book share link copied to clipboard!')),
+                              );
+                            },
+                            icon: const Icon(Icons.share_outlined, size: 16),
+                            label: const Text('Share'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // RELATED EBOOKS CAROUSEL
+                    if (relatedBooks.isNotEmpty) ...[
+                      Text('Related eBooks in ${widget.ebook.subjectId}', style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 16, color: _readerTextColor)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 190,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: relatedBooks.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final book = relatedBooks[index];
+                            return InkWell(
+                              onTap: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => PdfViewerScreen(ebook: book)),
+                                );
+                              },
+                              child: Container(
+                                width: 130,
+                                decoration: BoxDecoration(
+                                  color: _readerSurfaceColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Image.network(
+                                      book.coverUrl,
+                                      height: 120,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(height: 120, color: Colors.grey),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(6.0),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            book.title,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: _readerTextColor),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(book.publicationId, maxLines: 1, style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // ADMIN PANEL CONTROLS
+                    if (currentUser?.role == UserRole.admin) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: _readerSurfaceColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.admin_panel_settings, color: Colors.amber),
+                                SizedBox(width: 8),
+                                Text('Admin eBook Controls', style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 16)),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.edit, size: 14),
+                                  label: const Text('Edit eBook'),
+                                ),
+                                OutlinedButton.icon(
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.file_upload, size: 14),
+                                  label: const Text('Replace PDF'),
+                                ),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.delete_outline, size: 14),
+                                  label: const Text('Delete'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
     );
   }
 }
