@@ -71,10 +71,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _initPdfViewer();
   }
 
-  void _initPdfViewer({bool useGoogleDocs = false, bool? useIframe}) {
+  void _initPdfViewer({bool useGoogleDocs = true, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
 
     final shouldIframe = useIframe ?? (
+        kIsWeb ||
         targetUrl.toLowerCase().endsWith('.html') ||
         targetUrl.toLowerCase().contains('/mobile/') ||
         targetUrl.toLowerCase().contains('aspirebookscompany') ||

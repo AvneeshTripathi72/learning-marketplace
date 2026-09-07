@@ -417,12 +417,19 @@ class _PdfDetailsScreenState extends ConsumerState<PdfDetailsScreen> {
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    PremiumButton(
-                      text: 'Read Now (Open PDF)',
-                      icon: Icons.menu_book_rounded,
-                      width: 220,
-                      height: 48,
-                      backgroundColor: primaryAccent,
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 3,
+                      ),
+                      icon: const Icon(Icons.menu_book_rounded, size: 20),
+                      label: const Text(
+                        'Read Now (Open PDF)',
+                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
