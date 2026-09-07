@@ -226,6 +226,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     }
   }
 
+  void _toggleFullscreen() {
+    if (kIsWeb) {
+      toggleFullscreenMode();
+    } else if (_youtubeController != null) {
+      _youtubeController!.toggleFullScreenMode();
+    } else {
+      _launchExternalVideo();
+    }
+  }
+
   @override
   void dispose() {
     _youtubeController?.close();
@@ -387,7 +397,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.open_in_new, color: accentPrimary),
+                    icon: Icon(Icons.fullscreen_rounded, color: accentPrimary, size: 24),
+                    tooltip: 'Toggle Fullscreen Mode',
+                    onPressed: _toggleFullscreen,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.open_in_new, color: accentPrimary, size: 20),
                     tooltip: 'Launch in External Player',
                     onPressed: _launchExternalVideo,
                   ),
@@ -540,6 +555,42 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                             ),
                           ),
                         )),
+            ),
+
+            // Bottom Right Fullscreen Action Overlay Button
+            Positioned(
+              bottom: 10,
+              right: 10,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _toggleFullscreen,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white30),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fullscreen_rounded, color: Colors.white, size: 18),
+                        SizedBox(width: 4),
+                        Text(
+                          'Fullscreen',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),

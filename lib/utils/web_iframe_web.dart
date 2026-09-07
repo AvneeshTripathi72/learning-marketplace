@@ -43,5 +43,13 @@ void registerIframeView(String viewType, String embedUrl) {
       return iframe;
     },
   );
+void toggleFullscreenWeb() {
+  try {
+    if (html.document.fullscreenElement != null) {
+      html.document.exitFullscreen();
+    } else {
+      html.document.documentElement?.requestFullscreen();
+    }
+  } catch (_) {}
 }
 

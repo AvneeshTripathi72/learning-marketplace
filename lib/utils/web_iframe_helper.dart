@@ -4,3 +4,7 @@ import 'web_iframe_stub.dart'
 void registerIframe(String viewType, String embedUrl) {
   registerIframeView(viewType, embedUrl);
 }
+
+void toggleFullscreenMode() {
+  toggleFullscreenWeb();
+}
