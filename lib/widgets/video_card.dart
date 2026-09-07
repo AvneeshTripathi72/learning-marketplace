@@ -7,12 +7,14 @@ class VideoCard extends StatefulWidget {
   final VideoModel video;
   final VoidCallback? onTap;
   final double? width;
+  final bool showBadge;
 
   const VideoCard({
     super.key,
     required this.video,
     this.onTap,
     this.width,
+    this.showBadge = true,
   });
 
   @override
@@ -20,8 +22,8 @@ class VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<VideoCard> {
-  bool _isLiked = false;
-  bool _isSaved = false;
+  bool _isHovered = false;
+  bool _isBookmarked = false;
 
   void _openPlayer(BuildContext context) {
     if (widget.onTap != null) {
@@ -45,305 +47,262 @@ class _VideoCardState extends State<VideoCard> {
         ? widget.video.thumbnailUrl
         : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop';
 
-    return Container(
-      width: widget.width,
-      margin: EdgeInsets.only(bottom: 14, right: widget.width != null ? 12 : 0),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    final surfaceColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textPrimary = isDark ? const Color(0xFFE8E8E8) : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B);
+    final accentPrimary = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        width: widget.width,
+        transform: Matrix4.identity()..scale(_isHovered ? 1.02 : 1.0),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _isHovered ? (isDark ? 0.4 : 0.12) : (isDark ? 0.25 : 0.05)),
+              blurRadius: _isHovered ? 18 : 10,
+              offset: Offset(0, _isHovered ? 8 : 4),
+            ),
+          ],
+          border: Border.all(
+            color: _isHovered
+                ? accentPrimary.withValues(alpha: 0.6)
+                : (isDark ? const Color(0xFF333333) : const Color(0xFFE5E5EA)),
+            width: _isHovered ? 1.5 : 1.0,
           ),
-        ],
-        border: Border.all(
-          color: isDark ? const Color(0xFF333333) : const Color(0xFFE5E5EA),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Rich Video Thumbnail Header Container with GestureDetector
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _openPlayer(context),
-              child: Stack(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: CachedNetworkImage(
-                      imageUrl: fallbackThumbnail,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.black12,
-                        child: const Center(child: CircularProgressIndicator()),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.black87,
-                        child: const Center(
-                          child: Icon(Icons.play_circle_fill, size: 54, color: Colors.white70),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: () => _openPlayer(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Thumbnail Header Container
+                Stack(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: CachedNetworkImage(
+                        imageUrl: fallbackThumbnail,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+                          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.black87,
+                          child: const Center(
+                            child: Icon(Icons.play_circle_fill, size: 54, color: Colors.white70),
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Dark Semi-transparent Gradient Overlay
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withValues(alpha: 0.3),
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.6),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Center Play Button
-                  Positioned.fill(
-                    child: Center(
+                    // Dark Semi-transparent Gradient Overlay
+                    Positioned.fill(
                       child: Container(
-                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.95),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.4),
-                              blurRadius: 14,
-                              spreadRadius: 3,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 34,
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.7),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Top Left Category Badge Tag
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.75),
-                        borderRadius: BorderRadius.circular(6),
+                    // Top Glassmorphism Category Badge
+                    if (widget.showBadge)
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF4CD964),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${widget.video.subject} • ${widget.video.classId}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+
+                    // Quick Bookmark Button Top Right
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: IconButton(
+                        icon: Icon(
+                          _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                          color: _isBookmarked ? Colors.amber : Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          setState(() => _isBookmarked = !_isBookmarked);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(_isBookmarked ? 'Saved to Bookmarks' : 'Removed from Bookmarks'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Duration Chip Bottom Right
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          widget.video.duration,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Center Hover Play Button Icon
+                    if (_isHovered)
+                      Positioned.fill(
+                        child: Center(
+                          child: CircleAvatar(
+                            radius: 26,
+                            backgroundColor: accentPrimary.withValues(alpha: 0.9),
+                            child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+
+                // Card Details Body
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Video Title
+                      Text(
+                        widget.video.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Lexend',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          height: 1.3,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Channel / Educator Info
+                      Row(
                         children: [
-                          const Icon(Icons.ondemand_video, color: Colors.redAccent, size: 12),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.video.category,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                          const CircleAvatar(
+                            radius: 11,
+                            backgroundImage: NetworkImage('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop'),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.video.channelName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: textSecondary,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.verified, size: 13, color: Colors.blue),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Views & Publisher Footer Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.visibility_outlined, size: 13, color: textSecondary),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${widget.video.viewsCount} views',
+                                style: TextStyle(fontSize: 11, color: textSecondary),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: accentPrimary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              widget.video.publicationName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: accentPrimary,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
-
-                  // Bottom Right Duration Pill Badge
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        widget.video.duration,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Video Metadata & Information Section
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _openPlayer(context),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Video Title
-                    Text(
-                      widget.video.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        height: 1.25,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Channel Name & Views Metadata
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 10,
-                          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.2),
-                          child: Icon(
-                            Icons.school,
-                            size: 12,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '${widget.video.channelName} • ${widget.video.viewsCount} views',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: theme.textTheme.bodySmall?.color,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
-              ),
+              ],
             ),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Divider(height: 1),
-            ),
-
-            // Action Buttons Row (Like, Save, Share)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: InkWell(
-                        onTap: () => setState(() => _isLiked = !_isLiked),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                                size: 18,
-                                color: _isLiked ? theme.colorScheme.primary : theme.iconTheme.color,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _isLiked ? 'Liked' : 'Like',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _isLiked ? theme.colorScheme.primary : theme.textTheme.bodySmall?.color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: InkWell(
-                        onTap: () => setState(() => _isSaved = !_isSaved),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                                size: 18,
-                                color: _isSaved ? Colors.amber : theme.iconTheme.color,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _isSaved ? 'Saved' : 'Save',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _isSaved ? Colors.amber : theme.textTheme.bodySmall?.color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: InkWell(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Video link copied to clipboard!')),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.share_outlined, size: 18),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Share',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.textTheme.bodySmall?.color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

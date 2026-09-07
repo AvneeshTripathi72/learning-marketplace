@@ -61,29 +61,26 @@ class VideoPlayerScreen extends ConsumerStatefulWidget {
 class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   late VideoModel _currentVideo;
 
-  // Player & Controls State
+  // Player Controls State
   final bool _isMuted = false;
   String _selectedSpeed = '1.0x';
   String _selectedQuality = '1080p HD';
 
-  // Engagement State
+  // Engagement & Actions State
   bool _isSubscribed = false;
   bool _isLiked = false;
   bool _isDisliked = false;
   bool _isBookmarked = false;
   bool _isSavedOffline = false;
+  bool _isDescriptionExpanded = false;
   late int _likeCount;
 
-  // UI State
-  bool _isDescriptionExpanded = false;
   String _youtubeViewType = '';
   YoutubePlayerController? _youtubeController;
 
-  // Controllers
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
-  // Demo Resources Data
   final List<ResourceItem> _resources = const [
     ResourceItem(
       title: 'Class 10 Trigonometry Complete Lecture Notes & Formula Sheet',
@@ -265,69 +262,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-  // Bottom Sheets
-  void _showQualitySelector() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) {
-        final qualities = ['Auto (1080p)', '1080p 60fps HD', '720p HD', '480p SD', '360p Data Saver'];
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Select Stream Quality', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 12),
-              ...qualities.map(
-                (q) => ListTile(
-                  title: Text(q, style: const TextStyle(fontSize: 14)),
-                  trailing: _selectedQuality == q ? const Icon(Icons.check_circle, color: Color(0xFF7C9CFF)) : null,
-                  onTap: () {
-                    setState(() => _selectedQuality = q);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showSpeedSelector() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) {
-        final speeds = ['0.5x', '0.75x', '1.0x (Normal)', '1.25x', '1.5x', '2.0x Fast'];
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Playback Speed', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 12),
-              ...speeds.map(
-                (s) => ListTile(
-                  title: Text(s, style: const TextStyle(fontSize: 14)),
-                  trailing: _selectedSpeed == s ? const Icon(Icons.check_circle, color: Color(0xFF7C9CFF)) : null,
-                  onTap: () {
-                    setState(() => _selectedSpeed = s);
-                    Navigator.pop(ctx);
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   void _showQuickNotesDrawer() {
     showModalBottomSheet(
       context: context,
@@ -445,14 +379,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         ),
                         Text(
                           '${_currentVideo.subject} • ${_currentVideo.classId} • ${_currentVideo.publicationName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(fontSize: 11, color: textSecondary),
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.search, color: textPrimary),
-                    onPressed: () {},
                   ),
                   IconButton(
                     icon: Icon(Icons.open_in_new, color: accentPrimary),
@@ -473,9 +405,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left Main Video & Metadata Column
+                  // Left Main Video & Metadata Column (70%)
                   Expanded(
-                    flex: 6,
+                    flex: 7,
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -498,9 +430,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       ),
                     ),
                   ),
-                  // Right Sidebar Playlist & Related Column
+                  // Right Sidebar Playlist & Related Column (30%)
                   Container(
-                    width: 380,
+                    width: 360,
                     decoration: BoxDecoration(
                       color: surfaceColor,
                       border: Border(left: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3))),
@@ -513,10 +445,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           _buildPlaylistSection(allVideos, elevatedColor, textPrimary, textSecondary, accentPrimary),
                           const SizedBox(height: 24),
                           _buildRelatedVideosSection(allVideos, elevatedColor, textPrimary, textSecondary),
-                          if (currentUser?.role == UserRole.admin) ...[
-                            const SizedBox(height: 24),
-                            _buildAdminPanel(surfaceColor, textPrimary, textSecondary),
-                          ],
                         ],
                       ),
                     ),
@@ -551,10 +479,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         _buildRelatedVideosSection(allVideos, elevatedColor, textPrimary, textSecondary),
                         const SizedBox(height: 20),
                         _buildCommentsSection(surfaceColor, elevatedColor, textPrimary, textSecondary, accentPrimary),
-                        if (currentUser?.role == UserRole.admin) ...[
-                          const SizedBox(height: 20),
-                          _buildAdminPanel(surfaceColor, textPrimary, textSecondary),
-                        ],
                       ],
                     ),
                   ),
@@ -567,8 +491,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-
-  // 1. HERO VIDEO PLAYER CONTAINER WITH CONTROLS OVERLAY
+  // 1. HERO VIDEO PLAYER CONTAINER
   Widget _buildVideoPlayerHero(Color surfaceColor, Color accentPrimary) {
     return Container(
       width: double.infinity,
@@ -588,7 +511,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         aspectRatio: 16 / 9,
         child: Stack(
           children: [
-            // Video Frame
             Positioned.fill(
               child: kIsWeb && _youtubeViewType.isNotEmpty
                   ? HtmlElementView(
@@ -619,110 +541,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           ),
                         )),
             ),
-
-            // Top Overlay Bar (Speed, Quality, PIP)
-            Positioned(
-              top: 10,
-              left: 12,
-              right: 12,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.wifi_tethering, color: Colors.greenAccent, size: 12),
-                        const SizedBox(width: 6),
-                        Text('LIVE STREAM • $_selectedQuality', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: _showSpeedSelector,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(_selectedSpeed, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: _showQualitySelector,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.settings, color: Colors.white, size: 13),
-                              SizedBox(width: 4),
-                              Text('HD', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Bottom Player Quick Action Pills (Skip intro, Fullscreen)
-            Positioned(
-              bottom: 10,
-              right: 12,
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Skipped 10s ahead')),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white30),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.forward_10, color: Colors.white, size: 14),
-                          SizedBox(width: 4),
-                          Text('Skip Intro', style: TextStyle(color: Colors.white, fontSize: 11)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: _launchExternalVideo,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.fullscreen, color: Colors.white, size: 18),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -734,7 +552,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Badges Row
         Wrap(
           spacing: 8,
           runSpacing: 6,
@@ -748,7 +565,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         ),
         const SizedBox(height: 10),
 
-        // Title
         Text(
           _currentVideo.title,
           style: TextStyle(
@@ -761,7 +577,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         ),
         const SizedBox(height: 8),
 
-        // Views, Likes, Duration & Date Metadata Wrap Row
         Wrap(
           spacing: 12,
           runSpacing: 6,
@@ -826,7 +641,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          // Like Button
           _buildActionButton(
             icon: _isLiked ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
             label: '$_likeCount',
@@ -846,8 +660,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             },
           ),
           const SizedBox(width: 8),
-
-          // Dislike Button
           _buildActionButton(
             icon: _isDisliked ? Icons.thumb_down_rounded : Icons.thumb_down_outlined,
             label: 'Dislike',
@@ -864,8 +676,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             },
           ),
           const SizedBox(width: 8),
-
-          // Save / Bookmark
           _buildActionButton(
             icon: _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
             label: _isBookmarked ? 'Saved' : 'Bookmark',
@@ -879,8 +689,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             },
           ),
           const SizedBox(width: 8),
-
-          // Quick Notes Drawer
           _buildActionButton(
             icon: Icons.edit_note_rounded,
             label: 'Notes',
@@ -889,8 +697,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             onPressed: _showQuickNotesDrawer,
           ),
           const SizedBox(width: 8),
-
-          // Download PDF
           _buildActionButton(
             icon: _isSavedOffline ? Icons.download_done_rounded : Icons.file_download_outlined,
             label: _isSavedOffline ? 'Downloaded' : 'Download Notes',
@@ -904,8 +710,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             },
           ),
           const SizedBox(width: 8),
-
-          // Share Button
           _buildActionButton(
             icon: Icons.share_outlined,
             label: 'Share',
@@ -914,20 +718,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Course video URL copied to clipboard!')),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-
-          // Save to Playlist
-          _buildActionButton(
-            icon: Icons.playlist_add_rounded,
-            label: 'Playlist',
-            isActive: false,
-            activeColor: accentPrimary,
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Added to study queue playlist')),
               );
             },
           ),
@@ -1084,64 +874,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             style: TextStyle(fontSize: 13, height: 1.45, color: textPrimary),
           ),
           const SizedBox(height: 8),
-          InkWell(
+          GestureDetector(
             onTap: () => setState(() => _isDescriptionExpanded = !_isDescriptionExpanded),
             child: Text(
-              _isDescriptionExpanded ? 'Show Less ▲' : 'Read Full Description & Outcomes ▼',
+              _isDescriptionExpanded ? 'Show Less ▲' : 'Read Full Syllabus Description ▼',
               style: const TextStyle(color: Color(0xFF4A6CF7), fontWeight: FontWeight.bold, fontSize: 12),
             ),
           ),
-          if (_isDescriptionExpanded) ...[
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 10),
-            const Text('🎯 Key Learning Outcomes:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 8),
-            _buildOutcomeItem('Master fundamental trigonometric identities & ratio relationships'),
-            _buildOutcomeItem('Solve complex multi-step board exam numerical problems effortlessly'),
-            _buildOutcomeItem('Understand geometric proofs and ray diagram principles step-by-step'),
-            const SizedBox(height: 14),
-            const Text('📌 Lesson Timestamps:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildTimestampChip('00:00 Intro & Formulas'),
-                _buildTimestampChip('08:15 Key Proofs'),
-                _buildTimestampChip('22:40 Board Exam PYQs'),
-                _buildTimestampChip('38:10 Homework Problems'),
-              ],
-            ),
-          ],
         ],
       ),
-    );
-  }
-
-  Widget _buildOutcomeItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.check_circle, color: Color(0xFF2FB344), size: 16),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 12))),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimestampChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF4A6CF7).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF4A6CF7).withValues(alpha: 0.3)),
-      ),
-      child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4A6CF7))),
     );
   }
 
@@ -1261,8 +1002,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Course Syllabus Playlist', style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('${allVideos.length} Chapters', style: TextStyle(fontSize: 12, color: textSecondary)),
+              const Text('Course Syllabus Playlist', style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 15)),
+              Text('${allVideos.length} Chapters', style: TextStyle(fontSize: 11, color: textSecondary)),
             ],
           ),
           const SizedBox(height: 12),
@@ -1286,17 +1027,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Thumbnail preview
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Stack(
                           children: [
                             Image.network(
                               video.thumbnailUrl,
-                              width: 80,
-                              height: 48,
+                              width: 76,
+                              height: 44,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(width: 80, height: 48, color: Colors.grey),
+                              errorBuilder: (_, __, ___) => Container(width: 76, height: 44, color: Colors.grey),
                             ),
                             Positioned(
                               bottom: 2,
@@ -1336,11 +1076,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                               ],
                             ),
                             const SizedBox(height: 2),
-                            Text('${video.channelName} • Chapter ${index + 1}', style: TextStyle(fontSize: 10, color: textSecondary)),
+                            Text('${video.channelName} • Ch ${index + 1}', style: TextStyle(fontSize: 10, color: textSecondary)),
                           ],
                         ),
                       ),
-                      const Icon(Icons.play_circle_outline, size: 20, color: Colors.grey),
                     ],
                   ),
                 ),
@@ -1352,7 +1091,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     );
   }
 
-  // 8. RELATED VIDEOS HORIZONTAL CAROUSEL
+  // 8. RECOMMENDED VIDEOS HORIZONTAL CAROUSEL
   Widget _buildRelatedVideosSection(List<VideoModel> allVideos, Color elevatedColor, Color textPrimary, Color textSecondary) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1462,7 +1201,6 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Comment Input Box
           Row(
             children: [
               const CircleAvatar(
@@ -1490,108 +1228,96 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Comment List
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _comments.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, __) => const Divider(height: 20),
             itemBuilder: (context, index) {
-              final item = _comments[index];
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: item.isPinned ? accentPrimary.withValues(alpha: 0.08) : elevatedColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: item.isPinned ? accentPrimary.withValues(alpha: 0.4) : Colors.transparent),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (item.isPinned) ...[
-                      const Row(
-                        children: [
-                          Icon(Icons.push_pin, size: 12, color: Color(0xFF4A6CF7)),
-                          SizedBox(width: 4),
-                          Text('Pinned by Instructor', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF4A6CF7))),
-                        ],
+              final comment = _comments[index];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundImage: NetworkImage(comment.avatarUrl),
                       ),
-                      const SizedBox(height: 6),
-                    ],
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(item.avatarUrl),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(item.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                  if (item.isTeacher) ...[
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.verified, color: Colors.blue, size: 14),
-                                  ],
-                                  const Spacer(),
-                                  Text(item.timeAgo, style: TextStyle(fontSize: 11, color: textSecondary)),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(item.commentText, style: TextStyle(fontSize: 13, height: 1.35, color: textPrimary)),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        if (item.isLiked) {
-                                          item.isLiked = false;
-                                          item.likes--;
-                                        } else {
-                                          item.isLiked = true;
-                                          item.likes++;
-                                        }
-                                      });
-                                    },
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          item.isLiked ? Icons.favorite : Icons.favorite_border,
-                                          size: 14,
-                                          color: item.isLiked ? Colors.red : textSecondary,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text('${item.likes}', style: TextStyle(fontSize: 11, color: textSecondary)),
-                                      ],
-                                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(comment.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                const SizedBox(width: 6),
+                                if (comment.isTeacher)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                    decoration: BoxDecoration(color: const Color(0xFF4A6CF7), borderRadius: BorderRadius.circular(4)),
+                                    child: const Text('Faculty', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
                                   ),
-                                  const SizedBox(width: 16),
-                                  Text('Reply', style: TextStyle(fontSize: 11, color: accentPrimary, fontWeight: FontWeight.bold)),
-                                ],
+                                const SizedBox(width: 6),
+                                Text(comment.timeAgo, style: TextStyle(fontSize: 11, color: textSecondary)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(comment.commentText, style: TextStyle(fontSize: 12, height: 1.35, color: textPrimary)),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      if (comment.isLiked) {
+                                        comment.isLiked = false;
+                                        comment.likes--;
+                                      } else {
+                                        comment.isLiked = true;
+                                        comment.likes++;
+                                      }
+                                    });
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        comment.isLiked ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
+                                        size: 13,
+                                        color: comment.isLiked ? accentPrimary : textSecondary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text('${comment.likes}', style: TextStyle(fontSize: 11, color: textSecondary)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                InkWell(
+                                  onTap: () {},
+                                  child: Text('Reply', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: textSecondary)),
+                                ),
+                              ],
+                            ),
+                            if (comment.teacherReply != null) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: accentPrimary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: accentPrimary.withValues(alpha: 0.3)),
+                                ),
+                                child: Text(comment.teacherReply!, style: TextStyle(fontSize: 12, height: 1.35, color: textPrimary)),
                               ),
                             ],
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                    if (item.teacherReply != null) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4A6CF7).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(item.teacherReply!, style: const TextStyle(fontSize: 12, height: 1.35, fontStyle: FontStyle.italic)),
                       ),
                     ],
-                  ],
-                ),
+                  ),
+                ],
               );
             },
           ),
@@ -1599,51 +1325,4 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       ),
     );
   }
-
-  // 10. ADMIN PANEL CONTROLS
-  Widget _buildAdminPanel(Color surfaceColor, Color textPrimary, Color textSecondary) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.admin_panel_settings, color: Colors.amber),
-              SizedBox(width: 8),
-              Text('Instructor & Admin Controls', style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 16)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.edit, size: 14),
-                label: const Text('Edit Details'),
-              ),
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.analytics_outlined, size: 14),
-                label: const Text('Analytics'),
-              ),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
-                onPressed: () {},
-                icon: const Icon(Icons.delete_outline, size: 14),
-                label: const Text('Delete Stream'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }
-

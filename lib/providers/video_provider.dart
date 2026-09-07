@@ -323,3 +323,11 @@ final recommendedVideosProvider = FutureProvider<List<VideoModel>>((ref) async {
 final recentlyViewedVideosProvider = FutureProvider<List<VideoModel>>((ref) async {
   return defaultSampleVideos;
 });
+
+// Search & Filter State Providers
+final videoSearchQueryProvider = StateProvider<String>((ref) => '');
+final videoCategoryFilterProvider = StateProvider<String>((ref) => 'cat_all');
+final videoSubjectFilterProvider = StateProvider<String>((ref) => 'All');
+final videoClassFilterProvider = StateProvider<String>((ref) => 'All');
+final videoSortOptionProvider = StateProvider<String>((ref) => 'Featured');
+
