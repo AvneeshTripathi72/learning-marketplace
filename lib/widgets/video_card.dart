@@ -64,14 +64,15 @@ class _VideoCardState extends State<VideoCard> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: () => _openPlayer(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Rich Video Thumbnail Header Container
-              Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Rich Video Thumbnail Header Container with GestureDetector
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _openPlayer(context),
+              child: Stack(
                 children: [
                   AspectRatio(
                     aspectRatio: 16 / 9,
@@ -92,7 +93,7 @@ class _VideoCardState extends State<VideoCard> {
                     ),
                   ),
 
-                  // Dark Semi-transparent Gradient Overlay for readability
+                  // Dark Semi-transparent Gradient Overlay
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
@@ -109,26 +110,26 @@ class _VideoCardState extends State<VideoCard> {
                     ),
                   ),
 
-                  // Center PW-style Bright Play Button
+                  // Center Play Button
                   Positioned.fill(
                     child: Center(
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.9),
+                          color: theme.colorScheme.primary.withValues(alpha: 0.95),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
                               color: theme.colorScheme.primary.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              spreadRadius: 2,
+                              blurRadius: 14,
+                              spreadRadius: 3,
                             ),
                           ],
                         ),
                         child: const Icon(
                           Icons.play_arrow_rounded,
                           color: Colors.white,
-                          size: 32,
+                          size: 34,
                         ),
                       ),
                     ),
@@ -184,10 +185,14 @@ class _VideoCardState extends State<VideoCard> {
                   ),
                 ],
               ),
+            ),
 
-              // Video Metadata & Information Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+            // Video Metadata & Information Section
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _openPlayer(context),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -197,13 +202,13 @@ class _VideoCardState extends State<VideoCard> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        height: 1.2,
+                        height: 1.25,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
 
                     // Channel Name & Views Metadata
                     Row(
@@ -232,108 +237,113 @@ class _VideoCardState extends State<VideoCard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.5)),
-                    const SizedBox(height: 4),
-
-                    // Action Buttons Row (Like, Save, Share)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: InkWell(
-                              onTap: () => setState(() => _isLiked = !_isLiked),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                                      size: 18,
-                                      color: _isLiked ? theme.colorScheme.primary : theme.iconTheme.color,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _isLiked ? 'Liked' : 'Like',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _isLiked ? theme.colorScheme.primary : theme.textTheme.bodySmall?.color,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: InkWell(
-                              onTap: () => setState(() => _isSaved = !_isSaved),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                                      size: 18,
-                                      color: _isSaved ? Colors.amber : theme.iconTheme.color,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _isSaved ? 'Saved' : 'Save',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _isSaved ? Colors.amber : theme.textTheme.bodySmall?.color,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: InkWell(
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Video link copied to clipboard!')),
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.share_outlined, size: 18),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Share',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: theme.textTheme.bodySmall?.color,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Divider(height: 1),
+            ),
+
+            // Action Buttons Row (Like, Save, Share)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: InkWell(
+                        onTap: () => setState(() => _isLiked = !_isLiked),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                                size: 18,
+                                color: _isLiked ? theme.colorScheme.primary : theme.iconTheme.color,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _isLiked ? 'Liked' : 'Like',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _isLiked ? theme.colorScheme.primary : theme.textTheme.bodySmall?.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: InkWell(
+                        onTap: () => setState(() => _isSaved = !_isSaved),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                size: 18,
+                                color: _isSaved ? Colors.amber : theme.iconTheme.color,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _isSaved ? 'Saved' : 'Save',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _isSaved ? Colors.amber : theme.textTheme.bodySmall?.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: InkWell(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Video link copied to clipboard!')),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.share_outlined, size: 18),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Share',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.textTheme.bodySmall?.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
