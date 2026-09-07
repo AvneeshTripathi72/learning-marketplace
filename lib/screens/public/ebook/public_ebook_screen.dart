@@ -1095,7 +1095,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                                           physics: const NeverScrollableScrollPhysics(),
                                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                             crossAxisCount: 2,
-                                            childAspectRatio: 0.62,
+                                            childAspectRatio: 0.56,
                                             crossAxisSpacing: 12,
                                             mainAxisSpacing: 14,
                                           ),
