@@ -47,7 +47,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       return fallbackUrl;
     }
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-      if (!trimmed.contains('.') || trimmed.length < 5) {
+      if (!trimmed.contains('.')) {
         return fallbackUrl;
       }
       trimmed = 'https://$trimmed';
@@ -71,16 +71,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _initPdfViewer();
   }
 
-  void _initPdfViewer({bool useGoogleDocs = true, bool? useIframe}) {
+  void _initPdfViewer({bool useGoogleDocs = false, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
 
-    final shouldIframe = useIframe ?? (
-        kIsWeb ||
-        targetUrl.toLowerCase().endsWith('.html') ||
-        targetUrl.toLowerCase().contains('/mobile/') ||
+    final isHtmlDoc = targetUrl.toLowerCase().endsWith('.html') ||
         targetUrl.toLowerCase().contains('aspirebookscompany') ||
         targetUrl.toLowerCase().contains('index.html') ||
-        targetUrl.contains('drive.google.com'));
+        targetUrl.contains('drive.google.com');
+
+    final shouldIframe = useIframe ?? isHtmlDoc;
 
     if (shouldIframe) {
       if (kIsWeb) {
@@ -619,91 +618,94 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: SafeArea(
                 top: false,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Previous Page button
-                    IconButton(
-                      icon: Icon(Icons.arrow_back_ios_new, size: 18, color: _readerTextColor),
-                      tooltip: 'Previous Page',
-                      onPressed: () {
-                        try {
-                          _pdfViewerController.previousPage();
-                        } catch (_) {}
-                      },
-                    ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Previous Page button
+                      IconButton(
+                        icon: Icon(Icons.arrow_back_ios_new, size: 18, color: _readerTextColor),
+                        tooltip: 'Previous Page',
+                        onPressed: () {
+                          try {
+                            _pdfViewerController.previousPage();
+                          } catch (_) {}
+                        },
+                      ),
 
-                    // Page counter indicator & Jump to Page button
-                    InkWell(
-                      onTap: _showJumpToPageDialog,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: _readerTextColor.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: _readerTextColor.withValues(alpha: 0.15)),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Page $_currentPage of $_totalPages',
-                              style: TextStyle(color: _readerTextColor, fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(Icons.unfold_more, size: 16, color: _readerTextColor.withValues(alpha: 0.7)),
-                          ],
+                      // Page counter indicator & Jump to Page button
+                      InkWell(
+                        onTap: _showJumpToPageDialog,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _readerTextColor.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _readerTextColor.withValues(alpha: 0.15)),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Page $_currentPage of $_totalPages',
+                                style: TextStyle(color: _readerTextColor, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(Icons.unfold_more, size: 16, color: _readerTextColor.withValues(alpha: 0.7)),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    // Zoom Out / Scale indicator / Zoom In
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.remove, size: 20, color: _readerTextColor),
-                          tooltip: 'Zoom Out',
-                          onPressed: () {
-                            setState(() {
-                              _currentScale = (_currentScale - 0.25).clamp(0.5, 4.0);
-                              _transformationController.value = Matrix4.diagonal3Values(_currentScale, _currentScale, 1.0);
-                            });
-                            try {
-                              _pdfViewerController.zoomLevel = _currentScale.clamp(1.0, 3.0);
-                            } catch (_) {}
-                          },
-                        ),
-                        Text(
-                          '${(_currentScale * 100).toInt()}%',
-                          style: TextStyle(color: _readerTextColor.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.add, size: 20, color: _readerTextColor),
-                          tooltip: 'Zoom In',
-                          onPressed: () {
-                            setState(() {
-                              _currentScale = (_currentScale + 0.25).clamp(0.5, 4.0);
-                              _transformationController.value = Matrix4.diagonal3Values(_currentScale, _currentScale, 1.0);
-                            });
-                            try {
-                              _pdfViewerController.zoomLevel = _currentScale.clamp(1.0, 3.0);
-                            } catch (_) {}
-                          },
-                        ),
-                      ],
-                    ),
+                      // Zoom Out / Scale indicator / Zoom In
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.remove, size: 20, color: _readerTextColor),
+                            tooltip: 'Zoom Out',
+                            onPressed: () {
+                              setState(() {
+                                _currentScale = (_currentScale - 0.25).clamp(0.5, 4.0);
+                                _transformationController.value = Matrix4.diagonal3Values(_currentScale, _currentScale, 1.0);
+                              });
+                              try {
+                                _pdfViewerController.zoomLevel = _currentScale.clamp(1.0, 3.0);
+                              } catch (_) {}
+                            },
+                          ),
+                          Text(
+                            '${(_currentScale * 100).toInt()}%',
+                            style: TextStyle(color: _readerTextColor.withValues(alpha: 0.7), fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.add, size: 20, color: _readerTextColor),
+                            tooltip: 'Zoom In',
+                            onPressed: () {
+                              setState(() {
+                                _currentScale = (_currentScale + 0.25).clamp(0.5, 4.0);
+                                _transformationController.value = Matrix4.diagonal3Values(_currentScale, _currentScale, 1.0);
+                              });
+                              try {
+                                _pdfViewerController.zoomLevel = _currentScale.clamp(1.0, 3.0);
+                              } catch (_) {}
+                            },
+                          ),
+                        ],
+                      ),
 
-                    // Next Page button
-                    IconButton(
-                      icon: Icon(Icons.arrow_forward_ios, size: 18, color: _readerTextColor),
-                      tooltip: 'Next Page',
-                      onPressed: () {
-                        try {
-                          _pdfViewerController.nextPage();
-                        } catch (_) {}
-                      },
-                    ),
-                  ],
+                      // Next Page button
+                      IconButton(
+                        icon: Icon(Icons.arrow_forward_ios, size: 18, color: _readerTextColor),
+                        tooltip: 'Next Page',
+                        onPressed: () {
+                          try {
+                            _pdfViewerController.nextPage();
+                          } catch (_) {}
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
