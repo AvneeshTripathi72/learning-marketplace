@@ -287,6 +287,7 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
   void _showVendorUploadEBookDialog(BuildContext context) {
     final titleCtrl = TextEditingController();
     final pdfUrlCtrl = TextEditingController();
+    final coverUrlCtrl = TextEditingController();
     String series = _selectedSeries;
     String cls = _selectedClass;
     String subject = _selectedSubject;
@@ -454,6 +455,19 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                           .map((s) => DropdownMenuItem(value: s, child: Text(s, style: TextStyle(color: textPrimary))))
                           .toList(),
                       onChanged: (val) => val != null ? setDialogState(() => subject = val) : null,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Cover Image URL (Optional)
+                    TextField(
+                      controller: coverUrlCtrl,
+                      style: AppTypography.body(textPrimary, fontSize: 14),
+                      decoration: buildInputDecoration(
+                        labelText: 'Cover Image URL (Optional)',
+                        prefixIcon: Icons.image_outlined,
+                        hintText: 'e.g., https://images.unsplash.com/photo-1544716278',
+                        helperText: 'Optional. Leave blank to auto-generate cover photo from subject.',
+                      ),
                     ),
                     const SizedBox(height: 14),
 
@@ -681,6 +695,16 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                       return;
                     }
 
+                    String resolveAutoCover(String sub, String custom) {
+                      if (custom.trim().isNotEmpty) return custom.trim();
+                      final s = sub.toLowerCase();
+                      if (s.contains('math')) return 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=500';
+                      if (s.contains('sci') || s.contains('phys') || s.contains('chem')) return 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500';
+                      if (s.contains('eng') || s.contains('lit')) return 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=500';
+                      if (s.contains('hist') || s.contains('soc')) return 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=500';
+                      return 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500';
+                    }
+
                     final user = ref.read(authProvider);
                     final newEbook = EBookModel(
                       id: 'eb_vendor_${DateTime.now().millisecondsSinceEpoch}',
@@ -689,7 +713,7 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                       seriesId: series,
                       classId: cls,
                       subjectId: subject,
-                      coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300',
+                      coverUrl: resolveAutoCover(subject, coverUrlCtrl.text),
                       fileUrl: finalUrl,
                     );
 
