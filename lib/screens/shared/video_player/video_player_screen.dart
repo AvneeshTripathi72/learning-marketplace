@@ -761,24 +761,44 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         ),
         const SizedBox(height: 8),
 
-        // Views, Likes, Duration & Date Metadata Row
-        Row(
+        // Views, Likes, Duration & Date Metadata Wrap Row
+        Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Icon(Icons.visibility_outlined, size: 15, color: textSecondary),
-            const SizedBox(width: 4),
-            Text('${_currentVideo.viewsCount} views', style: TextStyle(fontSize: 12, color: textSecondary)),
-            const SizedBox(width: 12),
-            Icon(Icons.thumb_up_alt_outlined, size: 15, color: textSecondary),
-            const SizedBox(width: 4),
-            Text('$_likeCount likes', style: TextStyle(fontSize: 12, color: textSecondary)),
-            const SizedBox(width: 12),
-            Icon(Icons.timer_outlined, size: 15, color: textSecondary),
-            const SizedBox(width: 4),
-            Text(_currentVideo.duration, style: TextStyle(fontSize: 12, color: textSecondary)),
-            const SizedBox(width: 12),
-            Icon(Icons.calendar_today_outlined, size: 13, color: textSecondary),
-            const SizedBox(width: 4),
-            Text('Updated 2 days ago', style: TextStyle(fontSize: 12, color: textSecondary)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.visibility_outlined, size: 15, color: textSecondary),
+                const SizedBox(width: 4),
+                Text('${_currentVideo.viewsCount} views', style: TextStyle(fontSize: 12, color: textSecondary)),
+              ],
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.thumb_up_alt_outlined, size: 15, color: textSecondary),
+                const SizedBox(width: 4),
+                Text('$_likeCount likes', style: TextStyle(fontSize: 12, color: textSecondary)),
+              ],
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.timer_outlined, size: 15, color: textSecondary),
+                const SizedBox(width: 4),
+                Text(_currentVideo.duration, style: TextStyle(fontSize: 12, color: textSecondary)),
+              ],
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 13, color: textSecondary),
+                const SizedBox(width: 4),
+                Text('Updated 2 days ago', style: TextStyle(fontSize: 12, color: textSecondary)),
+              ],
+            ),
           ],
         ),
       ],
@@ -956,69 +976,85 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   // 4. INSTRUCTOR PROFILE CARD
   Widget _buildInstructorCard(Color surfaceColor, Color textPrimary, Color textSecondary, Color accentPrimary) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const CircleAvatar(
-            radius: 26,
+            radius: 22,
             backgroundImage: NetworkImage('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop'),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      'Dr. Ananya Sharma',
-                      style: TextStyle(
-                        fontFamily: 'Lexend',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: textPrimary,
+                    Flexible(
+                      child: Text(
+                        'Dr. Ananya Sharma',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Lexend',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: textPrimary,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.verified, color: Colors.blue, size: 16),
+                    const Icon(Icons.verified, color: Colors.blue, size: 15),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Senior Faculty • Oxford Academic Press',
-                  style: TextStyle(fontSize: 11, color: textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10, color: textSecondary),
                 ),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 13),
-                    const SizedBox(width: 3),
-                    Text('4.9 (42K reviews)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: textPrimary)),
-                    const SizedBox(width: 10),
-                    Text('1.2M Students', style: TextStyle(fontSize: 11, color: textSecondary)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 12),
+                        const SizedBox(width: 2),
+                        Text('4.9 (42K)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textPrimary)),
+                      ],
+                    ),
+                    Text('• 1.2M Students', style: TextStyle(fontSize: 10, color: textSecondary)),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: _isSubscribed ? Colors.grey[800] : accentPrimary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             onPressed: () {
               setState(() => _isSubscribed = !_isSubscribed);
             },
-            icon: Icon(_isSubscribed ? Icons.check : Icons.notifications_active, size: 15),
-            label: Text(_isSubscribed ? 'Following' : 'Follow', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            icon: Icon(_isSubscribed ? Icons.check : Icons.notifications_active, size: 13),
+            label: Text(_isSubscribed ? 'Following' : 'Follow', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1124,13 +1160,23 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.folder_zip_outlined, color: Color(0xFF4A6CF7)),
-                  SizedBox(width: 8),
-                  Text('Downloadable Materials', style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 16)),
-                ],
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.folder_zip_outlined, color: Color(0xFF4A6CF7)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Downloadable Materials',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -1395,7 +1441,14 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         children: [
           Row(
             children: [
-              const Text('Student Doubts & Discussion', style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 16)),
+              Flexible(
+                child: Text(
+                  'Student Doubts & Discussion',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
