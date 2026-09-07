@@ -53,22 +53,33 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     super.initState();
     _likeCount = widget.video.viewsCount > 100 ? (widget.video.viewsCount ~/ 8) : 124;
 
+    final rawUrl = widget.video.url.toLowerCase();
+    final isDirectVideo = rawUrl.endsWith('.mp4') ||
+        rawUrl.contains('.mp4?') ||
+        rawUrl.contains('.webm') ||
+        rawUrl.contains('r2.dev') ||
+        rawUrl.contains('cloudflare');
+
     final videoId = _extractVideoId(widget.video.url);
 
     if (kIsWeb) {
       _youtubeViewType = 'pw-yt-player-${widget.video.id}-${DateTime.now().millisecondsSinceEpoch}';
-      final embedUrl = 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=0&enablejsapi=1&rel=0&modestbranding=1&playsinline=1';
+      final embedUrl = isDirectVideo
+          ? widget.video.url
+          : 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=0&enablejsapi=1&rel=0&modestbranding=1&playsinline=1';
       registerIframe(_youtubeViewType, embedUrl);
     } else {
-      _youtubeController = YoutubePlayerController.fromVideoId(
-        videoId: videoId,
-        autoPlay: true,
-        params: const YoutubePlayerParams(
-          showControls: true,
-          showFullscreenButton: true,
-          mute: false,
-        ),
-      );
+      if (!isDirectVideo) {
+        _youtubeController = YoutubePlayerController.fromVideoId(
+          videoId: videoId,
+          autoPlay: true,
+          params: const YoutubePlayerParams(
+            showControls: true,
+            showFullscreenButton: true,
+            mute: false,
+          ),
+        );
+      }
     }
   }
 

@@ -9,7 +9,9 @@ import '../../../widgets/category_chip_list.dart';
 import '../../../widgets/video_card.dart';
 
 class CategoryBrowseScreen extends ConsumerStatefulWidget {
-  const CategoryBrowseScreen({super.key});
+  final bool embedInScaffold;
+
+  const CategoryBrowseScreen({super.key, this.embedInScaffold = true});
 
   @override
   ConsumerState<CategoryBrowseScreen> createState() => _CategoryBrowseScreenState();
@@ -29,13 +31,7 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        title: const Text('Public Video Hub'),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
-      body: categoriesAsync.when(
+    final bodyContent = categoriesAsync.when(
         data: (categories) {
           final effectiveCategories = categories.isNotEmpty
               ? categories
@@ -176,7 +172,19 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Error loading public categories')),
+      );
+
+    if (!widget.embedInScaffold) {
+      return bodyContent;
+    }
+
+    return Scaffold(
+      extendBody: true,
+      appBar: AppBar(
+        title: const Text('Public Video Hub'),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
+      body: bodyContent,
     );
   }
 }

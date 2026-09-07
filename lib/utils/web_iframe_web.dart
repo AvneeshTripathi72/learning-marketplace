@@ -6,6 +6,26 @@ void registerIframeView(String viewType, String embedUrl) {
   ui_web.platformViewRegistry.registerViewFactory(
     viewType,
     (int viewId) {
+      final lower = embedUrl.toLowerCase();
+      final isDirectVideo = lower.endsWith('.mp4') ||
+          lower.contains('.mp4?') ||
+          lower.contains('.webm') ||
+          lower.contains('r2.dev') ||
+          lower.contains('cloudflare');
+
+      if (isDirectVideo) {
+        final videoElement = html.VideoElement()
+          ..src = embedUrl
+          ..controls = true
+          ..autoplay = true
+          ..style.border = 'none'
+          ..style.width = '100%'
+          ..style.height = '100%'
+          ..style.objectFit = 'contain'
+          ..style.pointerEvents = 'auto';
+        return videoElement;
+      }
+
       final iframe = html.IFrameElement()
         ..src = embedUrl
         ..style.border = 'none'

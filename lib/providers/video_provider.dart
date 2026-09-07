@@ -33,7 +33,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
           .from('Video')
           .select('*, Category(*), User(*)');
 
-      if (supabaseData is List && supabaseData.isNotEmpty) {
+      if (supabaseData.isNotEmpty) {
         final List<VideoModel> directVideos = supabaseData.map((item) {
           final submittedUser = item['User'];
           final submitterName = submittedUser != null ? (submittedUser['name'] ?? submittedUser['email']) : 'Mobile User';
@@ -126,7 +126,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
     try {
       await Supabase.instance.client.from('Video').insert({
         'url': video.url,
-        'platform': video.platform.name,
+        'platform': video.platform.name.toUpperCase(),
         'channelName': video.channelName,
         'status': video.status == VideoStatus.approved ? 'APPROVED' : (video.status == VideoStatus.draft ? 'DRAFT' : 'PENDING'),
       });

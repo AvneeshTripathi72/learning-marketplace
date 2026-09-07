@@ -167,7 +167,7 @@ class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
                       ),
                     ],
                   )
-                : const CategoryBrowseScreen(),
+                : const CategoryBrowseScreen(embedInScaffold: false),
           ),
         ],
       ),
