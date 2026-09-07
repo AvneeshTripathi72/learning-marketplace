@@ -12,6 +12,7 @@ import '../../../widgets/hierarchy_picker.dart';
 import '../../shared/magazine/magazine_screen.dart';
 import 'pdf_viewer_screen.dart';
 import '../../../widgets/core/blurred_drawer_scaffold.dart';
+import '../../../widgets/ebook_details_modal.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 
@@ -197,14 +198,7 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
                                   return Card(
                                     clipBehavior: Clip.antiAlias,
                                     child: InkWell(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => PdfViewerScreen(ebook: ebook),
-                                          ),
-                                        );
-                                      },
+                                      onTap: () => showEBookDetailsModal(context, ebook),
                                       child: Stack(
                                         children: [
                                           Column(

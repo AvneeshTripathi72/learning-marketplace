@@ -14,6 +14,7 @@ import '../../../widgets/core/empty_state_view.dart';
 import '../../publication/ebook/pdf_viewer_screen.dart';
 import '../../shared/magazine/magazine_screen.dart';
 import '../../../widgets/core/blurred_drawer_scaffold.dart';
+import '../../../widgets/ebook_details_modal.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 
@@ -852,14 +853,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                                         borderRadius: BorderRadius.circular(12),
                                         child: InkWell(
                                           borderRadius: BorderRadius.circular(12),
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => PdfViewerScreen(ebook: ebook),
-                                              ),
-                                            );
-                                          },
+                                          onTap: () => showEBookDetailsModal(context, ebook),
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
