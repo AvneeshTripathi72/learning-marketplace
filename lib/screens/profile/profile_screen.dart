@@ -18,6 +18,7 @@ import '../../widgets/app_drawer.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/notification_modal.dart';
 import '../../widgets/core/blurred_drawer_scaffold.dart';
+import '../../widgets/biometric_lock_overlay.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -769,39 +770,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final containerBg = isDark ? const Color(0xFF1E1E26) : Colors.white;
     final iconBgColor = isDark ? const Color(0xFF2A2A38) : const Color(0xFFF0EEFF);
 
-    return BlurredDrawerScaffold(
-      backgroundColor: isDark ? const Color(0xFF121216) : const Color(0xFFF5F7FB),
-      extendBody: true,
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: theme.textTheme.bodyLarge?.color),
-            tooltip: 'Open Menu Drawer',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Text(
-          'Profile',
-          style: TextStyle(
-            color: theme.textTheme.bodyLarge?.color,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 4),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 110.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // TOP BLUE BANNER CARD
-            GestureDetector(
-              onTap: () => user != null ? _showBioDataSheet(context, user) : null,
-              child: Container(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 110.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // TOP BLUE BANNER CARD
+          GestureDetector(
+            onTap: () => user != null ? _showBioDataSheet(context, user) : null,
+            child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -944,6 +921,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const Divider(height: 1, indent: 64),
 
+                  _buildProfileTile(
+                    context,
+                    icon: Icons.security_rounded,
+                    iconBgColor: iconBgColor,
+                    iconColor: const Color(0xFF4A6CF7),
+                    title: '2nd-Launch Fingerprint Lock',
+                    subtitle: 'Requires fingerprint scan on 2nd launch & subsequent app opens',
+                    trailing: Consumer(
+                      builder: (context, ref, _) {
+                        final launchCount = ref.watch(appLaunchCountProvider);
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4A6CF7).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Open #$launchCount',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF4A6CF7)),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.lock_clock_outlined, color: Color(0xFF4A6CF7), size: 20),
+                              tooltip: 'Test 2nd-Launch Fingerprint Lock',
+                              onPressed: () {
+                                ref.read(appSessionUnlockedProvider.notifier).state = false;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Fingerprint lock engaged! Scan fingerprint to unlock.'),
+                                    backgroundColor: Color(0xFF4A6CF7),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const Divider(height: 1, indent: 64),
+
                   // 4. Dark Mode Theme Switch
                   Consumer(
                     builder: (context, ref, _) {
@@ -1053,8 +1075,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildProfileTile(
@@ -1360,14 +1381,14 @@ class _SavedItemsAndDownloadsSheetBodyState extends State<SavedItemsAndDownloads
       'title': 'Class 10 Physics Light Reflection Ray Diagrams',
       'subject': 'Physics',
       'duration': '24m 15s',
-      'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      'url': 'https://www.youtube.com/watch?v=fJ9rUzIMcZQ',
     },
     {
       'id': 'vid_302',
       'title': 'Organic Chemistry Reactions Easy Tricks & Tips',
       'subject': 'Chemistry',
       'duration': '18m 40s',
-      'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      'url': 'https://www.youtube.com/watch?v=p7HxfY3uNfg',
     },
   ];
 

@@ -28,29 +28,6 @@ class MagazineScreen extends ConsumerWidget {
     final user = ref.watch(authProvider);
     final isVendorOrAdmin = user?.role == UserRole.publication || user?.role == UserRole.admin;
 
-    if (embedInScaffold) {
-      return BlurredDrawerScaffold(
-        extendBody: true,
-        drawer: const AppDrawer(),
-        appBar: AppBar(
-          title: const Text(
-            'Educational Magazines',
-            style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold),
-          ),
-          actions: [
-            if (isVendorOrAdmin)
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline_rounded),
-                tooltip: 'Upload Magazine Issue',
-                onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
-              ),
-          ],
-        ),
-        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
-        body: const MagazineViewBody(),
-      );
-    }
-
     return const MagazineViewBody();
   }
 }

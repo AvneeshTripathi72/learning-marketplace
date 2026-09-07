@@ -50,58 +50,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isPublication = user?.role == UserRole.publication;
-
     final primaryAccent = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
 
-    return BlurredDrawerScaffold(
-      extendBody: true,
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            tooltip: 'Open Menu Drawer',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Row(
-          children: [
-            isPublication && logoUrl.startsWith('http')
-                ? Image.network(
-                    logoUrl,
-                    height: 28,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.business_rounded,
-                      color: primaryAccent,
-                    ),
-                  )
-                : Icon(
-                    isPublication ? Icons.business_rounded : Icons.public_rounded,
-                    color: primaryAccent,
-                  ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                isPublication ? 'Publication Portal' : 'Public Content Hub',
-                style: const TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.w700, fontSize: 18),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded),
-            tooltip: 'Notifications',
-            onPressed: () => showAppNotificationModal(context),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
-        child: Column(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Greeting Header Card
@@ -478,8 +432,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildMenuTile(

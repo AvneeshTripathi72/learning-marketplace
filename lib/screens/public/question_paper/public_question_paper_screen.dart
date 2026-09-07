@@ -55,15 +55,9 @@ class _PublicQuestionPaperScreenState extends State<PublicQuestionPaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        title: const Text('Public Question Paper Generator'),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DropdownButtonFormField<String>(
@@ -113,7 +107,6 @@ class _PublicQuestionPaperScreenState extends State<PublicQuestionPaperScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

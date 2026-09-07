@@ -43,15 +43,9 @@ class _PublicTestPaperScreenState extends State<PublicTestPaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        title: const Text('Public Test Paper Generator'),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Exam Blueprint Pattern', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -83,7 +77,6 @@ class _PublicTestPaperScreenState extends State<PublicTestPaperScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

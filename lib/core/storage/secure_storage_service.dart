@@ -8,6 +8,7 @@ class SecureStorageService {
   static const String _usersKey = 'app_registered_users_db_v1';
   static const String _currentUserKey = 'app_current_user_session_v1';
   static const String _biometricKey = 'app_biometric_security_enabled_v1';
+  static const String _launchCountKey = 'app_launch_count_v1';
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: AppConstants.tokenKey, value: token);
@@ -73,5 +74,31 @@ class SecureStorageService {
       return val == 'true';
     } catch (_) {}
     return false;
+  }
+
+  // Launch Count Tracking for 2nd-Time Fingerprint Lock Requirement
+  Future<int> getAppLaunchCount() async {
+    try {
+      final val = await _storage.read(key: _launchCountKey);
+      if (val != null) {
+        return int.tryParse(val) ?? 1;
+      }
+    } catch (_) {}
+    return 1;
+  }
+
+  Future<int> incrementAppLaunchCount() async {
+    try {
+      final current = await getAppLaunchCount();
+      final nextCount = current + 1;
+      await _storage.write(key: _launchCountKey, value: nextCount.toString());
+      return nextCount;
+    } catch (_) {}
+    return 2;
+  }
+
+  Future<bool> isSecondLaunchOrLater() async {
+    final count = await getAppLaunchCount();
+    return count >= 2;
   }
 }

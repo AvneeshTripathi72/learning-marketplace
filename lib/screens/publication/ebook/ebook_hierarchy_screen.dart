@@ -42,28 +42,14 @@ class _EBookHierarchyScreenState extends ConsumerState<EBookHierarchyScreen> {
       return matchesSeries && matchesClass && matchesSubject;
     }).toList();
 
-    return BlurredDrawerScaffold(
-      extendBody: true,
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        title: Text(_activeTabIndex == 0 ? 'eBook Library' : 'Educational Magazines'),
-        actions: [
-          if (_activeTabIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.cloud_upload_outlined),
-              tooltip: 'Upload Vendor eBook',
-              onPressed: () => _showVendorUploadEBookDialog(context),
-            ),
-        ],
-      ),
+    return Scaffold(
       floatingActionButton: _activeTabIndex == 0
           ? FloatingActionButton.extended(
               onPressed: () => _showVendorUploadEBookDialog(context),
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Upload eBook'),
+              icon: const Icon(Icons.cloud_upload_outlined),
+              label: const Text('Upload Vendor eBook'),
             )
           : null,
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
       body: Column(
         children: [
           // Segmented Tab Toggle Header

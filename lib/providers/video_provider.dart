@@ -11,7 +11,7 @@ final List<VideoModel> defaultSampleVideos = [
     id: 'v_default_1',
     title: 'Class 10 Maths Lakshya Series - Trigonometry Full Chapter One-Shot',
     description: 'Complete one-shot lecture covering all trigonometric identities, board exam questions, and shortcuts.',
-    url: 'https://www.youtube.com/watch?v=kffacxfA7G4',
+    url: 'https://www.youtube.com/watch?v=L_LUpnjgPso',
     platform: VideoPlatform.youtube,
     channelName: 'Oxford Educational Press',
     category: 'Educational',
@@ -29,7 +29,7 @@ final List<VideoModel> defaultSampleVideos = [
     id: 'v_default_2',
     title: 'Class 10 Science - Light Reflection & Refraction Board Exam Special',
     description: 'Detailed ray diagrams, mirror formulas, lens power numericals explained step-by-step.',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    url: 'https://www.youtube.com/watch?v=fJ9rUzIMcZQ',
     platform: VideoPlatform.youtube,
     channelName: 'Cambridge Press',
     category: 'Biology & Science',
@@ -47,7 +47,7 @@ final List<VideoModel> defaultSampleVideos = [
     id: 'v_default_3',
     title: 'Class 10 Physics - Electricity & Circuit Numericals Masterclass',
     description: 'Ohms law, series and parallel resistor combinations, electric power numericals.',
-    url: 'https://www.youtube.com/watch?v=kffacxfA7G4',
+    url: 'https://www.youtube.com/watch?v=p7HxfY3uNfg',
     platform: VideoPlatform.youtube,
     channelName: 'Global Science Hub',
     category: 'Informative',
@@ -105,7 +105,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
           final rawUrl = (item['url'] ?? '').toString().trim();
           final validUrl = rawUrl.isNotEmpty && rawUrl.startsWith('http')
               ? rawUrl
-              : 'https://www.youtube.com/watch?v=kffacxfA7G4';
+              : 'https://www.youtube.com/watch?v=L_LUpnjgPso';
 
           return VideoModel(
             id: item['id'].toString(),
@@ -168,7 +168,7 @@ class VideoSubmissionsNotifier extends StateNotifier<List<VideoModel>> {
           final rawUrl = (item['url'] ?? '').toString().trim();
           final validUrl = rawUrl.isNotEmpty && rawUrl.startsWith('http')
               ? rawUrl
-              : 'https://www.youtube.com/watch?v=kffacxfA7G4';
+              : 'https://www.youtube.com/watch?v=L_LUpnjgPso';
 
           return VideoModel(
             id: item['id'],

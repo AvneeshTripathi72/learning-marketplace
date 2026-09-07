@@ -33,12 +33,13 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
 
     final bodyContent = categoriesAsync.when(
         data: (categories) {
-          final effectiveCategories = categories.isNotEmpty
+          final effectiveCategories = (categories.length > 1)
               ? categories
               : [
                   CategoryModel(id: 'cat_all', name: 'All', isEnabled: true),
                   CategoryModel(id: 'cat_edu', name: 'Educational', isEnabled: true),
                   CategoryModel(id: 'cat_info', name: 'Informative', isEnabled: true),
+                  CategoryModel(id: 'cat_bio', name: 'Biology & Science', isEnabled: true),
                   CategoryModel(id: 'cat_rel', name: 'Religious', isEnabled: true),
                   CategoryModel(id: 'cat_ent', name: 'Entertainment', isEnabled: true),
                   CategoryModel(id: 'cat_tech', name: 'Technology', isEnabled: true),
@@ -53,10 +54,12 @@ class _CategoryBrowseScreenState extends ConsumerState<CategoryBrowseScreen> {
           // Filter videos
           final filteredVideos = combinedVideos.where((v) {
             final matchesCategory = _selectedCategoryId == 'cat_all' ||
-                v.category.toLowerCase() == selectedCategory.name.toLowerCase();
+                v.category.toLowerCase().contains(selectedCategory.name.toLowerCase()) ||
+                selectedCategory.name.toLowerCase().contains(v.category.toLowerCase());
             final matchesSearch = _searchQuery.isEmpty ||
                 v.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                v.channelName.toLowerCase().contains(_searchQuery.toLowerCase());
+                v.channelName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                v.subject.toLowerCase().contains(_searchQuery.toLowerCase());
             return matchesCategory && matchesSearch;
           }).toList();
 

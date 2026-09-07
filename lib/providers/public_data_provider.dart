@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/video_model.dart';
+import 'video_provider.dart';
 
 final publicRecommendedVideosProvider = FutureProvider<List<VideoModel>>((ref) async {
   try {
@@ -23,7 +24,7 @@ final publicRecommendedVideosProvider = FutureProvider<List<VideoModel>>((ref) a
               title: item['title'] ?? item['channelName'] ?? 'Educational Lecture',
               slug: item['slug'] ?? 'video-${item['id']}',
               description: item['description'] ?? '',
-              url: item['url'] ?? 'https://www.youtube.com/watch?v=kffacxfA7G4',
+              url: (item['url'] != null && item['url'].toString().startsWith('http')) ? item['url'] : 'https://www.youtube.com/watch?v=L_LUpnjgPso',
               platform: VideoPlatform.youtube,
               channelName: item['channelName'] ?? 'Educational Hub',
               category: item['Category'] != null ? (item['Category']['name'] ?? 'Educational') : 'Educational',
@@ -41,9 +42,11 @@ final publicRecommendedVideosProvider = FutureProvider<List<VideoModel>>((ref) a
             );
           }).toList();
 
-      return dbVideos;
+      if (dbVideos.isNotEmpty) {
+        return dbVideos;
+      }
     }
   } catch (_) {}
 
-  return [];
+  return defaultSampleVideos;
 });

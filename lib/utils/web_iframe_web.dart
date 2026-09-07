@@ -33,7 +33,7 @@ void registerIframeView(String viewType, String embedUrl) {
 
       final iframe = html.IFrameElement()
         ..src = embedUrl
-        ..style.border = 'none'
+        ..style.border = '0'
         ..style.width = '100%'
         ..style.height = '100%'
         ..style.pointerEvents = 'auto'
@@ -44,3 +44,4 @@ void registerIframeView(String viewType, String embedUrl) {
     },
   );
 }
+

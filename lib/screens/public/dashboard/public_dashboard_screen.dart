@@ -42,53 +42,12 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
     final recommendedAsync = ref.watch(publicRecommendedVideosProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
     final primaryAccent = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
 
-    return BlurredDrawerScaffold(
-      extendBody: true,
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            tooltip: 'Open Navigation Menu',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: primaryAccent.withValues(alpha: isDark ? 0.2 : 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.space_dashboard_rounded, color: primaryAccent, size: 20),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Educational Hub',
-                style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.w700, fontSize: 18),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded),
-            tooltip: 'Notifications',
-            onPressed: () => showAppNotificationModal(context),
-          ),
-        ],
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
-        child: Column(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Welcome Hero Banner
@@ -445,8 +404,7 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildMenuTile(

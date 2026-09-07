@@ -26,5 +26,11 @@ final enabledCategoriesProvider = FutureProvider<List<CategoryModel>>((ref) asyn
 
   return [
     CategoryModel(id: 'cat_all', name: 'All', isEnabled: true),
+    CategoryModel(id: 'cat_edu', name: 'Educational', isEnabled: true),
+    CategoryModel(id: 'cat_info', name: 'Informative', isEnabled: true),
+    CategoryModel(id: 'cat_bio', name: 'Biology & Science', isEnabled: true),
+    CategoryModel(id: 'cat_rel', name: 'Religious', isEnabled: true),
+    CategoryModel(id: 'cat_ent', name: 'Entertainment', isEnabled: true),
+    CategoryModel(id: 'cat_tech', name: 'Technology', isEnabled: true),
   ];
 });

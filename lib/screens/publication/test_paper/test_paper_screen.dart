@@ -55,15 +55,9 @@ class _TestPaperScreenState extends State<TestPaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        title: const Text('Test Paper Generator'),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HierarchyPicker(
@@ -108,7 +102,6 @@ class _TestPaperScreenState extends State<TestPaperScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

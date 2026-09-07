@@ -57,15 +57,9 @@ class _QuestionPaperScreenState extends State<QuestionPaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        title: const Text('Question Paper Generator'),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HierarchyPicker(
@@ -120,7 +114,6 @@ class _QuestionPaperScreenState extends State<QuestionPaperScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }

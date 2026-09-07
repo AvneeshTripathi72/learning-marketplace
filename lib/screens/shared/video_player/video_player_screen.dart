@@ -169,10 +169,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
     if (kIsWeb) {
       _youtubeViewType = 'pw-yt-player-${_currentVideo.id}-${DateTime.now().millisecondsSinceEpoch}';
-      final origin = Uri.base.origin;
       final embedUrl = isDirectVideo
           ? _currentVideo.url
-          : 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=${_isMuted ? 1 : 0}&enablejsapi=1&origin=${Uri.encodeComponent(origin)}&rel=0&modestbranding=1&playsinline=1';
+          : 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=1&controls=1&enablejsapi=1&rel=0&playsinline=1';
       registerIframe(_youtubeViewType, embedUrl);
     } else {
       if (!isDirectVideo) {
@@ -199,7 +198,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   }
 
   String _extractVideoId(String rawUrl) {
-    if (rawUrl.isEmpty) return 'kffacxfA7G4';
+    if (rawUrl.isEmpty) return 'L_LUpnjgPso';
     final regExp = RegExp(
       r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})',
       caseSensitive: false,
@@ -212,7 +211,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     if (trimmed.length == 11 && !trimmed.contains('/') && !trimmed.contains('.')) {
       return trimmed;
     }
-    return 'kffacxfA7G4';
+    return 'L_LUpnjgPso';
   }
 
   Future<void> _launchExternalVideo() async {
@@ -592,7 +591,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
             // Video Frame
             Positioned.fill(
               child: kIsWeb && _youtubeViewType.isNotEmpty
-                  ? HtmlElementView(viewType: _youtubeViewType)
+                  ? HtmlElementView(
+                      key: ValueKey(_youtubeViewType),
+                      viewType: _youtubeViewType,
+                    )
                   : (_youtubeController != null
                       ? YoutubePlayer(
                           controller: _youtubeController!,

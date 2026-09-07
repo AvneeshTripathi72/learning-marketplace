@@ -1,66 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/video_model.dart';
+import '../../../providers/video_provider.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/hierarchy_picker.dart';
 import '../../../widgets/video_card.dart';
 import '../../public/public_hub/category_browse_screen.dart';
 
-class PublicationYoutubeScreen extends StatefulWidget {
+class PublicationYoutubeScreen extends ConsumerStatefulWidget {
   const PublicationYoutubeScreen({super.key});
 
   @override
-  State<PublicationYoutubeScreen> createState() => _PublicationYoutubeScreenState();
+  ConsumerState<PublicationYoutubeScreen> createState() => _PublicationYoutubeScreenState();
 }
 
-class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
+class _PublicationYoutubeScreenState extends ConsumerState<PublicationYoutubeScreen> {
   int _activeTab = 0;
   String _selectedSeries = 'CBSE 2026';
   String _selectedClass = 'Class 10';
   String _selectedSubject = 'Mathematics';
-
-  final List<VideoModel> _mockVideos = [
-    VideoModel(
-      id: 'yt_101',
-      title: 'Class 10 Math Chapter 1 Real Numbers Full Lecture & Proofs',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'Oxford Academic Official',
-      category: 'Mathematics',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop',
-      duration: '42:10',
-      viewsCount: 15400,
-      status: VideoStatus.approved,
-      submittedBy: 'Oxford Pub',
-      submittedDate: DateTime.now(),
-    ),
-    VideoModel(
-      id: 'yt_102',
-      title: 'Class 10 Math Chapter 2 Polynomials Formulas & Examples',
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      platform: VideoPlatform.youtube,
-      channelName: 'Oxford Academic Official',
-      category: 'Mathematics',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop',
-      duration: '28:45',
-      viewsCount: 9200,
-      status: VideoStatus.approved,
-      submittedBy: 'Oxford Pub',
-      submittedDate: DateTime.now(),
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        title: Text(_activeTab == 0 ? 'Publication Channel' : 'Public Video Hub'),
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
-      body: Column(
+    final allVideos = ref.watch(videoSubmissionsProvider);
+
+    // Filter videos by subject/class if matched, or return all available approved videos
+    final publicationVideos = allVideos.where((v) {
+      final matchesSubject = v.subject.toLowerCase() == _selectedSubject.toLowerCase();
+      final matchesClass = v.classId.toLowerCase() == _selectedClass.toLowerCase();
+      return (matchesSubject || _selectedSubject == 'Mathematics') &&
+             (matchesClass || _selectedClass == 'Class 10');
+    }).toList();
+
+    final displayVideos = publicationVideos.isNotEmpty ? publicationVideos : allVideos;
+
+    return Column(
         children: [
           // Segmented Toggle Header
           Container(
@@ -155,22 +132,25 @@ class _PublicationYoutubeScreenState extends State<PublicationYoutubeScreen> {
                         onSubjectChanged: (v) => setState(() => _selectedSubject = v),
                       ),
                       Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _mockVideos.length,
-                          itemBuilder: (context, index) {
-                            return VideoCard(
-                              video: _mockVideos[index],
-                            );
-                          },
-                        ),
+                        child: displayVideos.isEmpty
+                            ? const Center(
+                                child: Text('No videos found for selected criteria.'),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(12),
+                                itemCount: displayVideos.length,
+                                itemBuilder: (context, index) {
+                                  return VideoCard(
+                                    video: displayVideos[index],
+                                  );
+                                },
+                              ),
                       ),
                     ],
                   )
                 : const CategoryBrowseScreen(embedInScaffold: false),
           ),
         ],
-      ),
-    );
+      );
   }
 }

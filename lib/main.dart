@@ -6,6 +6,7 @@ import 'providers/theme_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/api_endpoints.dart';
 import 'services/notification_service.dart';
+import 'core/storage/secure_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +19,12 @@ void main() async {
   try {
     await NotificationService().initialize();
   } catch (_) {}
+
+  try {
+    final count = await SecureStorageService().incrementAppLaunchCount();
+    debugPrint('🚀 App Launch Count: $count');
+  } catch (_) {}
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
