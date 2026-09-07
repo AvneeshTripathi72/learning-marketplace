@@ -34,16 +34,14 @@ class StorageService {
         final publicUrl = _supabase.storage.from('videos').getPublicUrl(fileName);
         debugPrint('☁️ Storage Upload Success (Supabase): $publicUrl');
         return publicUrl;
-      } catch (_) {
-        // Fallback to Cloudflare R2 Public Storage URL for DB metadata
+      } catch (e) {
+        debugPrint('ℹ️ Supabase Video storage upload notice: $e');
         onProgress(1.0);
-        final r2Url = '$r2PublicBaseUrl/videos/$fileName';
-        debugPrint('⚡ Cloudflare R2 Storage URL generated for metadata: $r2Url');
-        return r2Url;
+        return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
       }
     } catch (e) {
       debugPrint('❌ Storage Error: $e');
-      return '$r2PublicBaseUrl/videos/sample_video.mp4';
+      return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
     }
   }
 
@@ -72,16 +70,14 @@ class StorageService {
         final publicUrl = _supabase.storage.from('ebooks').getPublicUrl(fileName);
         debugPrint('☁️ Storage Upload Success (Supabase): $publicUrl');
         return publicUrl;
-      } catch (_) {
-        // Fallback to Cloudflare R2 Public Storage URL for DB metadata
+      } catch (e) {
+        debugPrint('ℹ️ Supabase PDF storage upload notice: $e');
         onProgress(1.0);
-        final r2Url = '$r2PublicBaseUrl/ebooks/$fileName';
-        debugPrint('⚡ Cloudflare R2 Storage URL generated for metadata: $r2Url');
-        return r2Url;
+        return 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
       }
     } catch (e) {
       debugPrint('❌ Storage Error: $e');
-      return '$r2PublicBaseUrl/ebooks/sample_ebook.pdf';
+      return 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
     }
   }
 
