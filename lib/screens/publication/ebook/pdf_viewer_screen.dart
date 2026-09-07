@@ -40,6 +40,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   bool _showSearchBar = false;
   final TextEditingController _searchController = TextEditingController();
 
+  String _activeUrl = '';
+  int _retryAttempt = 0;
+
   String _sanitizeUrl(String rawUrl) {
     const fallbackUrl = 'https://pub-0035a50eaf1046efa85b6e5d1631f721.r2.dev/ebooks/Class_10_Mathematics_Polynomials_Guide.pdf';
     var trimmed = rawUrl.trim();
@@ -73,6 +76,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   void _initPdfViewer({bool useGoogleDocs = false, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
+    _activeUrl = targetUrl;
 
     final isHtmlDoc = targetUrl.toLowerCase().endsWith('.html') ||
         targetUrl.toLowerCase().contains('aspirebookscompany') ||
@@ -110,6 +114,27 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         _hasError = false;
         _useIframe = false;
         _useGoogleDocsFallback = false;
+      });
+    }
+  }
+
+  void _handleDocumentLoadFailed(String description) {
+    if (_retryAttempt == 0 && kIsWeb) {
+      _retryAttempt = 1;
+      final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
+      _activeUrl = 'https://corsproxy.io/?${Uri.encodeComponent(targetUrl)}';
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    } else if (_retryAttempt == 1 && kIsWeb) {
+      _retryAttempt = 2;
+      _initPdfViewer(useGoogleDocs: true, useIframe: true);
+    } else {
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+        _errorMessage = description;
       });
     }
   }
@@ -463,7 +488,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                     },
                                   )
                                 : SfPdfViewer.network(
-                                    targetUrl,
+                                    _activeUrl.isNotEmpty ? _activeUrl : targetUrl,
                                     controller: _pdfViewerController,
                                     onPageChanged: (details) {
                                       setState(() {
@@ -473,15 +498,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                     onDocumentLoaded: (details) {
                                       setState(() {
                                         _isLoading = false;
+                                        _hasError = false;
                                         _totalPages = details.document.pages.count;
                                       });
                                     },
                                     onDocumentLoadFailed: (details) {
-                                      setState(() {
-                                        _isLoading = false;
-                                        _hasError = true;
-                                        _errorMessage = details.description;
-                                      });
+                                      _handleDocumentLoadFailed(details.description);
                                     },
                                   ),
                   if (_isLoading && !_hasError)
