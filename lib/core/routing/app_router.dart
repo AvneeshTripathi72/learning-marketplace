@@ -27,6 +27,7 @@ import '../../screens/publication/youtube/publication_youtube_screen.dart';
 import '../../screens/shared/donation/donation_screen.dart';
 import '../../screens/shared/magazine/magazine_screen.dart';
 import '../../screens/shared/restricted_content_screen.dart';
+import '../../widgets/persistent_shell_scaffold.dart';
 
 CustomTransitionPage<void> buildAnimatedPage({
   required LocalKey key,
@@ -35,8 +36,8 @@ CustomTransitionPage<void> buildAnimatedPage({
   return CustomTransitionPage<void>(
     key: key,
     child: child,
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 260),
+    transitionDuration: const Duration(milliseconds: 250),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curve = CurvedAnimation(
         parent: animation,
@@ -44,7 +45,7 @@ CustomTransitionPage<void> buildAnimatedPage({
       );
 
       final slideAnimation = Tween<Offset>(
-        begin: const Offset(0.04, 0.0),
+        begin: const Offset(0.02, 0.0),
         end: Offset.zero,
       ).animate(curve);
 
@@ -141,55 +142,83 @@ final routerProvider = Provider<GoRouter>((ref) {
           child: const AdminUserManagementScreen(),
         ),
       ),
-      GoRoute(
-        path: '/dashboard',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const DashboardScreen(),
-        ),
+
+      // Persistent ShellRoute for Main App Navigation (Navbar & BottomBar remain fixed)
+      ShellRoute(
+        builder: (context, state, child) {
+          return PersistentShellScaffold(
+            location: state.matchedLocation,
+            child: child,
+          );
+        },
+        routes: [
+          GoRoute(
+            path: '/dashboard',
+            builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/public/dashboard',
+            builder: (context, state) => const PublicDashboardScreen(),
+          ),
+          GoRoute(
+            path: '/public/ebook',
+            builder: (context, state) => const PublicEbookScreen(),
+          ),
+          GoRoute(
+            path: '/public/youtube',
+            builder: (context, state) => const PublicYoutubeScreen(),
+          ),
+          GoRoute(
+            path: '/public/question-paper',
+            builder: (context, state) => const PublicQuestionPaperScreen(),
+          ),
+          GoRoute(
+            path: '/public/test-paper',
+            builder: (context, state) => const PublicTestPaperScreen(),
+          ),
+          GoRoute(
+            path: '/public/hub',
+            builder: (context, state) => const CategoryBrowseScreen(),
+          ),
+          GoRoute(
+            path: '/pub/ebook',
+            builder: (context, state) => const EBookHierarchyScreen(),
+          ),
+          GoRoute(
+            path: '/pub/youtube',
+            builder: (context, state) => const PublicationYoutubeScreen(),
+          ),
+          GoRoute(
+            path: '/pub/question-paper',
+            builder: (context, state) => const QuestionPaperScreen(),
+          ),
+          GoRoute(
+            path: '/pub/test-paper',
+            builder: (context, state) => const TestPaperScreen(),
+          ),
+          GoRoute(
+            path: '/pub/hub/upload',
+            builder: (context, state) => const UploadVideoScreen(),
+          ),
+          GoRoute(
+            path: '/pub/hub/my-uploads',
+            builder: (context, state) => const MyUploadsScreen(),
+          ),
+          GoRoute(
+            path: '/pub/subscription',
+            builder: (context, state) => const AdSubscriptionScreen(),
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: '/magazines',
+            builder: (context, state) => const MagazineScreen(),
+          ),
+        ],
       ),
-      GoRoute(
-        path: '/public/dashboard',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const PublicDashboardScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/public/ebook',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const PublicEbookScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/public/youtube',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const PublicYoutubeScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/public/question-paper',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const PublicQuestionPaperScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/public/test-paper',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const PublicTestPaperScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/public/hub',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const CategoryBrowseScreen(),
-        ),
-      ),
+
       GoRoute(
         path: '/donate/:channelId',
         pageBuilder: (context, state) {
@@ -199,69 +228,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: DonationScreen(channelId: channelId),
           );
         },
-      ),
-      GoRoute(
-        path: '/pub/ebook',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const EBookHierarchyScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/pub/youtube',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const PublicationYoutubeScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/pub/question-paper',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const QuestionPaperScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/pub/test-paper',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const TestPaperScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/pub/hub/upload',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const UploadVideoScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/pub/hub/my-uploads',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const MyUploadsScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/pub/subscription',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const AdSubscriptionScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/profile',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const ProfileScreen(),
-        ),
-      ),
-      GoRoute(
-        path: '/magazines',
-        pageBuilder: (context, state) => buildAnimatedPage(
-          key: state.pageKey,
-          child: const MagazineScreen(),
-        ),
       ),
       GoRoute(
         path: '/restricted',
