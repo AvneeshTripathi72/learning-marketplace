@@ -14,6 +14,8 @@ import '../../../widgets/core/empty_state_view.dart';
 import '../../publication/ebook/pdf_viewer_screen.dart';
 import '../../shared/magazine/magazine_screen.dart';
 import '../../../widgets/core/blurred_drawer_scaffold.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 class PublicEbookScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -61,202 +63,431 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
 
     final storageService = StorageService();
 
+    String getFileSizeString(int bytes) {
+      if (bytes <= 0) return '0 B';
+      const suffixes = ['B', 'KB', 'MB', 'GB'];
+      var i = (bytes.toString().length - 1) ~/ 3;
+      if (i >= suffixes.length) i = suffixes.length - 1;
+      double num = bytes / (1 << (i * 10));
+      return '${num.toStringAsFixed(1)} ${suffixes[i]}';
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
           final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-          final dialogBg = isDarkTheme ? const Color(0xFF1E1E1E) : Colors.white;
-          final inputBg = isDarkTheme ? const Color(0xFF2A2A2A) : const Color(0xFFF5F5F7);
-          final accentCol = isDarkTheme ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
+          final dialogBg = isDarkTheme ? AppColors.darkSurface : Colors.white;
+          final inputBg = isDarkTheme ? AppColors.darkElevatedSurface : AppColors.lightBackground;
+          final accentCol = isDarkTheme ? AppColors.darkAccentPrimary : AppColors.lightAccentPrimary;
+          final textPrimary = isDarkTheme ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+          final textSecondary = isDarkTheme ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+          final dividerColor = isDarkTheme ? AppColors.darkDivider : AppColors.lightDivider;
+
+          InputDecoration buildInputDecoration({
+            required String labelText,
+            required IconData prefixIcon,
+            required String hintText,
+            String? helperText,
+          }) {
+            return InputDecoration(
+              labelText: labelText,
+              labelStyle: TextStyle(color: textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+              hintText: hintText,
+              hintStyle: TextStyle(color: textSecondary.withOpacity(0.4), fontSize: 13),
+              helperText: helperText,
+              helperStyle: TextStyle(color: textSecondary.withOpacity(0.6), fontSize: 11),
+              prefixIcon: Icon(prefixIcon, color: accentCol, size: 20),
+              filled: true,
+              fillColor: inputBg,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDarkTheme ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: accentCol, width: 1.5),
+              ),
+            );
+          }
 
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             backgroundColor: dialogBg,
+            titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             title: Row(
               children: [
-                Icon(Icons.picture_as_pdf_rounded, color: accentCol),
-                const SizedBox(width: 10),
-                const Text(
-                  'Upload eBook PDF',
-                  style: TextStyle(
-                    fontFamily: 'Lexend',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: accentCol.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.picture_as_pdf_rounded, color: accentCol, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Upload eBook PDF',
+                        style: AppTypography.h2(textPrimary).copyWith(fontSize: 17),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Upload PDF textbooks or provide direct document link.',
+                        style: AppTypography.caption(textSecondary).copyWith(fontSize: 11),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
             content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleCtrl,
-                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13),
-                    decoration: InputDecoration(
-                      labelText: 'eBook Title',
-                      hintText: 'e.g. Class 10 Maths Chapter 3',
-                      filled: true,
-                      fillColor: inputBg,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixIcon: Icon(Icons.book_rounded, color: accentCol),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: series,
-                    decoration: const InputDecoration(labelText: 'Series', border: OutlineInputBorder()),
-                    items: ['CBSE 2026', 'ICSE 2026', 'State Board']
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (val) => val != null ? setDialogState(() => series = val) : null,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: cls,
-                    decoration: const InputDecoration(labelText: 'Class', border: OutlineInputBorder()),
-                    items: ['Class 9', 'Class 10', 'Class 11', 'Class 12']
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (val) => val != null ? setDialogState(() => cls = val) : null,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: subject,
-                    decoration: const InputDecoration(labelText: 'Subject', border: OutlineInputBorder()),
-                    items: ['Mathematics', 'Science', 'English', 'Hindi']
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (val) => val != null ? setDialogState(() => subject = val) : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: pdfUrlCtrl,
-                    enabled: selectedPdfFile == null,
-                    decoration: const InputDecoration(
-                      labelText: 'PDF Document Link / URL',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.picture_as_pdf),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Center(child: Text("OR", style: TextStyle(fontWeight: FontWeight.bold))),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: isUploading ? null : () async {
-                      final result = await FilePicker.platform.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['pdf'],
-                        withData: true,
-                      );
-                      if (result != null && result.files.isNotEmpty) {
-                        setDialogState(() {
-                          selectedPdfFile = result.files.first;
-                          pdfUrlCtrl.text = '';
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.picture_as_pdf),
-                    label: Text(selectedPdfFile != null ? 'Selected: ${selectedPdfFile!.name}' : 'Select PDF File'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      minimumSize: const Size.fromHeight(48),
-                    ),
-                  ),
-                  if (selectedPdfFile != null)
-                    TextButton(
-                      onPressed: () => setDialogState(() => selectedPdfFile = null),
-                      child: const Text('Remove File', style: TextStyle(color: Colors.red)),
-                    ),
-                  if (isUploading && selectedPdfFile != null) ...[
-                    const SizedBox(height: 16),
-                    LinearProgressIndicator(value: uploadProgress),
+              child: SizedBox(
+                width: 460,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     const SizedBox(height: 8),
-                    Text('${(uploadProgress * 100).toStringAsFixed(0)}% Uploaded', textAlign: TextAlign.center),
+
+                    // eBook Title
+                    TextField(
+                      controller: titleCtrl,
+                      style: AppTypography.body(textPrimary, fontSize: 14),
+                      decoration: buildInputDecoration(
+                        labelText: 'eBook Title *',
+                        prefixIcon: Icons.menu_book_rounded,
+                        hintText: 'e.g., Class 10 Mathematics: Polynomials & Quadratic Equations',
+                        helperText: 'Enter full chapter or textbook title.',
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Series / Board Dropdown
+                    DropdownButtonFormField<String>(
+                      initialValue: series,
+                      dropdownColor: inputBg,
+                      style: AppTypography.body(textPrimary, fontSize: 14),
+                      decoration: buildInputDecoration(
+                        labelText: 'Series / Board *',
+                        prefixIcon: Icons.workspace_premium_rounded,
+                        hintText: 'Select Series',
+                      ),
+                      items: ['CBSE 2026', 'ICSE 2026', 'State Board']
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s, style: TextStyle(color: textPrimary))))
+                          .toList(),
+                      onChanged: (val) => val != null ? setDialogState(() => series = val) : null,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Class Dropdown
+                    DropdownButtonFormField<String>(
+                      initialValue: cls,
+                      dropdownColor: inputBg,
+                      style: AppTypography.body(textPrimary, fontSize: 14),
+                      decoration: buildInputDecoration(
+                        labelText: 'Grade / Class *',
+                        prefixIcon: Icons.school_rounded,
+                        hintText: 'Select Class',
+                      ),
+                      items: ['Class 9', 'Class 10', 'Class 11', 'Class 12']
+                          .map((c) => DropdownMenuItem(value: c, child: Text(c, style: TextStyle(color: textPrimary))))
+                          .toList(),
+                      onChanged: (val) => val != null ? setDialogState(() => cls = val) : null,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Subject Dropdown
+                    DropdownButtonFormField<String>(
+                      initialValue: subject,
+                      dropdownColor: inputBg,
+                      style: AppTypography.body(textPrimary, fontSize: 14),
+                      decoration: buildInputDecoration(
+                        labelText: 'Subject *',
+                        prefixIcon: Icons.auto_stories_rounded,
+                        hintText: 'Select Subject',
+                      ),
+                      items: ['Mathematics', 'Science', 'English', 'Hindi']
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s, style: TextStyle(color: textPrimary))))
+                          .toList(),
+                      onChanged: (val) => val != null ? setDialogState(() => subject = val) : null,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // PDF URL
+                    TextField(
+                      controller: pdfUrlCtrl,
+                      enabled: selectedPdfFile == null,
+                      style: AppTypography.body(textPrimary, fontSize: 14),
+                      decoration: buildInputDecoration(
+                        labelText: 'PDF Document Link / URL',
+                        prefixIcon: Icons.link_rounded,
+                        hintText: 'e.g., https://example.com/books/class10_maths.pdf',
+                        helperText: 'Direct link to hosted PDF file.',
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // OR Divider
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: dividerColor)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: inputBg,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: dividerColor),
+                            ),
+                            child: Text(
+                              'OR UPLOAD FILE',
+                              style: AppTypography.caption(accentCol).copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: dividerColor)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // PDF File Selector Container
+                    InkWell(
+                      onTap: isUploading ? null : () async {
+                        final result = await FilePicker.platform.pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['pdf'],
+                          withData: true,
+                        );
+                        if (result != null && result.files.isNotEmpty) {
+                          setDialogState(() {
+                            selectedPdfFile = result.files.first;
+                            pdfUrlCtrl.text = ''; // Clear URL if file selected
+                          });
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: selectedPdfFile != null
+                              ? accentCol.withOpacity(0.08)
+                              : inputBg,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selectedPdfFile != null
+                                ? accentCol
+                                : (isDarkTheme ? const Color(0xFF333333) : const Color(0xFFE0E0E0)),
+                            width: selectedPdfFile != null ? 1.5 : 1,
+                          ),
+                        ),
+                        child: selectedPdfFile == null
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.upload_file_rounded, color: accentCol, size: 22),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Select PDF File',
+                                        style: AppTypography.button(textPrimary).copyWith(fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Tap to pick PDF document from device',
+                                        style: AppTypography.caption(textSecondary).copyWith(fontSize: 10),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.darkSuccess.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.check_rounded, color: AppColors.darkSuccess, size: 16),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          selectedPdfFile!.name,
+                                          style: AppTypography.body(textPrimary, fontSize: 13).copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          getFileSizeString(selectedPdfFile!.size),
+                                          style: AppTypography.caption(textSecondary).copyWith(fontSize: 10),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 18),
+                                    onPressed: isUploading ? null : () => setDialogState(() => selectedPdfFile = null),
+                                    tooltip: 'Remove file',
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+
+                    if (isUploading && selectedPdfFile != null) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Uploading PDF...', style: AppTypography.caption(textSecondary)),
+                          Text('${(uploadProgress * 100).toStringAsFixed(0)}%', style: AppTypography.caption(accentCol)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: uploadProgress,
+                          minHeight: 6,
+                          backgroundColor: inputBg,
+                          valueColor: AlwaysStoppedAnimation<Color>(accentCol),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
+                child: Text('Cancel', style: TextStyle(color: textSecondary)),
               ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.cloud_upload),
-                label: const Text('Submit eBook'),
-                onPressed: isUploading ? null : () async {
-                  if (titleCtrl.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter eBook title')),
-                    );
-                    return;
-                  }
-                  if (pdfUrlCtrl.text.trim().isEmpty && selectedPdfFile == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter eBook URL or select a PDF file')),
-                    );
-                    return;
-                  }
-
-                  setDialogState(() {
-                    isUploading = true;
-                    uploadProgress = 0.0;
-                  });
-
-                  String finalUrl = pdfUrlCtrl.text.trim();
-                  if (selectedPdfFile != null) {
-                    finalUrl = await storageService.uploadPDF(selectedPdfFile!, onProgress: (progress) {
-                      setDialogState(() {
-                        uploadProgress = progress;
-                      });
-                    }) ?? '';
-                  }
-
-                  if (finalUrl.isEmpty) {
-                    setDialogState(() => isUploading = false);
-                    if (context.mounted) {
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [
+                      accentCol,
+                      accentCol.withBlue(240),
+                    ],
+                  ),
+                ),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  icon: isUploading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.cloud_upload_rounded, color: Colors.white, size: 18),
+                  label: Text(
+                    isUploading ? 'Submitting...' : 'Submit eBook',
+                    style: AppTypography.button(Colors.white).copyWith(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  onPressed: isUploading ? null : () async {
+                    if (titleCtrl.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to upload PDF file.')),
+                        const SnackBar(content: Text('Please enter eBook title')),
+                      );
+                      return;
+                    }
+                    if (pdfUrlCtrl.text.trim().isEmpty && selectedPdfFile == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter eBook URL or select a PDF file')),
+                      );
+                      return;
+                    }
+
+                    setDialogState(() {
+                      isUploading = true;
+                      uploadProgress = 0.0;
+                    });
+
+                    String finalUrl = pdfUrlCtrl.text.trim();
+                    if (selectedPdfFile != null) {
+                      finalUrl = await storageService.uploadPDF(selectedPdfFile!, onProgress: (progress) {
+                        setDialogState(() {
+                          uploadProgress = progress;
+                        });
+                      }) ?? '';
+                    }
+
+                    if (finalUrl.isEmpty) {
+                      setDialogState(() => isUploading = false);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to upload PDF file.')),
+                        );
+                      }
+                      return;
+                    }
+
+                    final newEBook = EBookModel(
+                      id: 'eb_${DateTime.now().millisecondsSinceEpoch}',
+                      title: titleCtrl.text.trim(),
+                      publicationId: 'Public Upload',
+                      seriesId: series,
+                      classId: cls,
+                      subjectId: subject,
+                      coverUrl: 'https://picsum.photos/300/400?random=${DateTime.now().millisecondsSinceEpoch % 1000}',
+                      fileUrl: finalUrl,
+                    );
+
+                    ref.read(ebookSubmissionsProvider.notifier).addEBookSubmission(
+                      newEBook,
+                      submittedBy: 'Public User',
+                      autoApprove: true,
+                    );
+
+                    await ref.read(ebookSubmissionsProvider.notifier).saveEBookToSupabase(
+                      title: newEBook.title,
+                      fileUrl: finalUrl,
+                      subjectName: subject,
+                    );
+
+                    if (context.mounted) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('eBook "${titleCtrl.text.trim()}" submitted & published!'),
+                          backgroundColor: Colors.green,
+                        ),
                       );
                     }
-                    return;
-                  }
-
-                  final newEBook = EBookModel(
-                    id: 'eb_${DateTime.now().millisecondsSinceEpoch}',
-                    title: titleCtrl.text.trim(),
-                    publicationId: 'Public Upload',
-                    seriesId: series,
-                    classId: cls,
-                    subjectId: subject,
-                    coverUrl: 'https://picsum.photos/300/400?random=${DateTime.now().millisecondsSinceEpoch % 1000}',
-                    fileUrl: finalUrl,
-                  );
-
-                  ref.read(ebookSubmissionsProvider.notifier).addEBookSubmission(
-                    newEBook,
-                    submittedBy: 'Public User',
-                    autoApprove: true,
-                  );
-
-                  await ref.read(ebookSubmissionsProvider.notifier).saveEBookToSupabase(
-                    title: newEBook.title,
-                    fileUrl: finalUrl,
-                    subjectName: subject,
-                  );
-
-                  if (context.mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('eBook PDF uploaded & added to library!')),
-                    );
-                  }
-                },
+                  },
+                ),
               ),
             ],
           );
