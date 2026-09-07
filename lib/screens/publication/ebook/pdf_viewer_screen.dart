@@ -30,6 +30,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   String _pdfViewType = '';
   double _currentScale = 1.0;
   bool _useGoogleDocsFallback = false;
+  bool _useIframe = false;
 
   // Reader state
   int _currentPage = 1;
@@ -40,12 +41,20 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   String _sanitizeUrl(String rawUrl) {
+    const fallbackUrl = 'https://pub-0035a50eaf1046efa85b6e5d1631f721.r2.dev/ebooks/Class_10_Mathematics_Polynomials_Guide.pdf';
     var trimmed = rawUrl.trim();
     if (trimmed.isEmpty) {
-      return 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
+      return fallbackUrl;
     }
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      if (!trimmed.contains('.') || trimmed.length < 5) {
+        return fallbackUrl;
+      }
       trimmed = 'https://$trimmed';
+    }
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !uri.hasAuthority || uri.host.isEmpty || !uri.host.contains('.')) {
+      return fallbackUrl;
     }
     // Auto-convert Google Drive view links to iframe-compatible preview links
     if (trimmed.contains('drive.google.com') && trimmed.contains('/view')) {
@@ -62,16 +71,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _initPdfViewer();
   }
 
-  bool _useIframe = kIsWeb;
-
   void _initPdfViewer({bool useGoogleDocs = false, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
 
-    final shouldIframe = useIframe ?? (kIsWeb ||
+    final shouldIframe = useIframe ?? (
         targetUrl.toLowerCase().endsWith('.html') ||
         targetUrl.toLowerCase().contains('/mobile/') ||
         targetUrl.toLowerCase().contains('aspirebookscompany') ||
-        targetUrl.toLowerCase().contains('index.html'));
+        targetUrl.toLowerCase().contains('index.html') ||
+        targetUrl.contains('drive.google.com'));
 
     if (shouldIframe) {
       if (kIsWeb) {
@@ -426,12 +434,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 children: [
                   if (!_hasError)
                     _useIframe && kIsWeb && _pdfViewType.isNotEmpty
-                        ? InteractiveViewer(
-                            transformationController: _transformationController,
-                            minScale: 0.5,
-                            maxScale: 5.0,
-                            panEnabled: true,
-                            scaleEnabled: true,
+                        ? SizedBox.expand(
                             child: HtmlElementView(viewType: _pdfViewType),
                           )
                         : _webViewController != null
@@ -709,4 +712,3 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     );
   }
 }
-
