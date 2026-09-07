@@ -172,15 +172,7 @@ class PersistentShellScaffold extends ConsumerWidget {
           ),
         ),
         bottomNavigationBar: CustomBottomNavBar(currentIndex: navIndex),
-        body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          child: KeyedSubtree(
-            key: ValueKey(location),
-            child: child,
-          ),
-        ),
+        body: child,
       ),
     );
   }
