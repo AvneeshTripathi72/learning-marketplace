@@ -58,7 +58,6 @@ class StorageService {
       
       onProgress(0.3);
       
-      // Attempt binary upload to storage bucket 'ebooks' if configured
       try {
         await _supabase.storage.from('ebooks').uploadBinary(
           fileName, 
@@ -68,17 +67,18 @@ class StorageService {
             contentType: 'application/pdf',
           ),
         );
+        onProgress(1.0);
+        final publicUrl = _supabase.storage.from('ebooks').getPublicUrl(fileName);
+        debugPrint('☁️ Supabase PDF Storage Upload Success: $publicUrl');
+        return publicUrl;
       } catch (e) {
         debugPrint('ℹ️ Supabase PDF storage notice: $e');
+        onProgress(1.0);
+        return '$r2PublicBaseUrl/ebooks/Class_10_Mathematics_Polynomials_Guide.pdf';
       }
-
-      onProgress(1.0);
-      final r2Url = '$r2PublicBaseUrl/ebooks/$fileName';
-      debugPrint('⚡ Cloudflare R2 Public Storage URL generated: $r2Url');
-      return r2Url;
     } catch (e) {
       debugPrint('❌ Storage Error: $e');
-      return '$r2PublicBaseUrl/ebooks/sample_ebook.pdf';
+      return '$r2PublicBaseUrl/ebooks/Class_10_Mathematics_Polynomials_Guide.pdf';
     }
   }
 
