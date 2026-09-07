@@ -9,33 +9,49 @@ import '../../../services/storage_service.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/core/blurred_drawer_scaffold.dart';
+import '../../../widgets/core/empty_state_view.dart';
+import '../../../widgets/magazine_card_modern.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 import 'magazine_pdf_viewer_screen.dart';
 
 class MagazineScreen extends ConsumerWidget {
-  const MagazineScreen({super.key});
+  final bool embedInScaffold;
+
+  const MagazineScreen({
+    super.key,
+    this.embedInScaffold = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider);
     final isVendorOrAdmin = user?.role == UserRole.publication || user?.role == UserRole.admin;
 
-    return BlurredDrawerScaffold(
-      extendBody: true,
-      drawer: const AppDrawer(),
-      appBar: AppBar(
-        title: const Text('Educational Magazines Portal'),
-        actions: [
-          if (isVendorOrAdmin)
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              tooltip: 'Upload Magazine Issue',
-              onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
-            ),
-        ],
-      ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
-      body: const MagazineViewBody(),
-    );
+    if (embedInScaffold) {
+      return BlurredDrawerScaffold(
+        extendBody: true,
+        drawer: const AppDrawer(),
+        appBar: AppBar(
+          title: const Text(
+            'Educational Magazines',
+            style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            if (isVendorOrAdmin)
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline_rounded),
+                tooltip: 'Upload Magazine Issue',
+                onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
+              ),
+          ],
+        ),
+        bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
+        body: const MagazineViewBody(),
+      );
+    }
+
+    return const MagazineViewBody();
   }
 }
 
@@ -143,6 +159,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
     final primaryTextColor = isDark ? const Color(0xFFE8E8E8) : const Color(0xFF1A1A1A);
     final secondaryTextColor = isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B);
     final borderColor = isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0);
+    final accentCol = isDark ? AppColors.darkAccentPrimary : AppColors.lightAccentPrimary;
 
     return Dialog(
       backgroundColor: dialogBg,
@@ -163,21 +180,21 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4A6CF7), Color(0xFF7C9CFF)],
+                        gradient: LinearGradient(
+                          colors: [accentCol, accentCol.withBlue(240)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4A6CF7).withValues(alpha: 0.3),
+                            color: accentCol.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.picture_in_picture_alt, color: Colors.white, size: 24),
+                      child: const Icon(Icons.picture_in_picture_alt_rounded, color: Colors.white, size: 24),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -188,22 +205,18 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                             widget.user?.role == UserRole.publication
                                 ? 'Vendor Magazine Upload'
                                 : 'Submit Magazine Issue',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: primaryTextColor,
-                            ),
+                            style: AppTypography.h2(primaryTextColor).copyWith(fontSize: 17),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Publish educational PDF magazines & issue releases',
-                            style: TextStyle(fontSize: 12, color: secondaryTextColor),
+                            style: AppTypography.caption(secondaryTextColor).copyWith(fontSize: 11),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, color: secondaryTextColor, size: 20),
+                      icon: Icon(Icons.close_rounded, color: secondaryTextColor, size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -226,7 +239,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     hintStyle: TextStyle(color: secondaryTextColor, fontSize: 13),
                     filled: true,
                     fillColor: surfaceFill,
-                    prefixIcon: const Icon(Icons.book, size: 18, color: Color(0xFF4A6CF7)),
+                    prefixIcon: Icon(Icons.book_rounded, size: 18, color: accentCol),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -234,7 +247,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF4A6CF7), width: 1.5),
+                      borderSide: BorderSide(color: accentCol, width: 1.5),
                     ),
                   ),
                 ),
@@ -255,7 +268,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     hintStyle: TextStyle(color: secondaryTextColor, fontSize: 13),
                     filled: true,
                     fillColor: surfaceFill,
-                    prefixIcon: const Icon(Icons.description, size: 18, color: Color(0xFF4A6CF7)),
+                    prefixIcon: Icon(Icons.description_rounded, size: 18, color: accentCol),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -263,7 +276,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF4A6CF7), width: 1.5),
+                      borderSide: BorderSide(color: accentCol, width: 1.5),
                     ),
                   ),
                 ),
@@ -282,7 +295,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: surfaceFill,
-                    prefixIcon: const Icon(Icons.category, size: 18, color: Color(0xFF4A6CF7)),
+                    prefixIcon: Icon(Icons.category_rounded, size: 18, color: accentCol),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -290,7 +303,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF4A6CF7), width: 1.5),
+                      borderSide: BorderSide(color: accentCol, width: 1.5),
                     ),
                   ),
                   items: ['Mathematics', 'Science', 'English', 'Social Studies', 'General']
@@ -310,11 +323,11 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                   controller: _coverCtrl,
                   style: TextStyle(fontSize: 13, color: primaryTextColor),
                   decoration: InputDecoration(
-                    hintText: 'e.g., https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500',
+                    hintText: 'e.g., https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500',
                     hintStyle: TextStyle(color: secondaryTextColor, fontSize: 12),
                     filled: true,
                     fillColor: surfaceFill,
-                    prefixIcon: const Icon(Icons.image_outlined, size: 18, color: Color(0xFF4A6CF7)),
+                    prefixIcon: Icon(Icons.image_outlined, size: 18, color: accentCol),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -322,7 +335,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF4A6CF7), width: 1.5),
+                      borderSide: BorderSide(color: accentCol, width: 1.5),
                     ),
                   ),
                 ),
@@ -345,7 +358,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                           hintStyle: TextStyle(color: secondaryTextColor, fontSize: 12),
                           filled: true,
                           fillColor: surfaceFill,
-                          prefixIcon: const Icon(Icons.picture_as_pdf, size: 18, color: Color(0xFF4A6CF7)),
+                          prefixIcon: Icon(Icons.picture_as_pdf_rounded, size: 18, color: accentCol),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -353,7 +366,7 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF4A6CF7), width: 1.5),
+                            borderSide: BorderSide(color: accentCol, width: 1.5),
                           ),
                         ),
                       ),
@@ -361,13 +374,13 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     const SizedBox(width: 8),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4A6CF7).withValues(alpha: 0.15),
-                        foregroundColor: const Color(0xFF4A6CF7),
+                        backgroundColor: accentCol.withOpacity(0.12),
+                        foregroundColor: accentCol,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Color(0xFF4A6CF7), width: 1),
+                          side: BorderSide(color: accentCol, width: 1),
                         ),
                       ),
                       onPressed: _isUploading ? null : _pickAndUploadPdf,
@@ -381,11 +394,11 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                   LinearProgressIndicator(
                     value: _uploadProgress,
                     backgroundColor: surfaceFill,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4A6CF7)),
+                    valueColor: AlwaysStoppedAnimation<Color>(accentCol),
                   ),
                   if (_uploadStatusText != null) ...[
                     const SizedBox(height: 4),
-                    Text(_uploadStatusText!, style: const TextStyle(fontSize: 11, color: Color(0xFF4A6CF7))),
+                    Text(_uploadStatusText!, style: TextStyle(fontSize: 11, color: accentCol)),
                   ],
                 ],
                 const SizedBox(height: 24),
@@ -407,15 +420,15 @@ class _UploadMagazineDialogState extends State<_UploadMagazineDialog> {
                     const SizedBox(width: 10),
                     Container(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4A6CF7), Color(0xFF7C9CFF)],
+                        gradient: LinearGradient(
+                          colors: [accentCol, accentCol.withBlue(240)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4A6CF7).withValues(alpha: 0.3),
+                            color: accentCol.withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -500,6 +513,7 @@ class MagazineViewBody extends ConsumerStatefulWidget {
 class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
   String _selectedCategory = 'all';
   String _searchQuery = '';
+  final TextEditingController _searchCtrl = TextEditingController();
 
   final List<String> _categories = [
     'all',
@@ -511,11 +525,23 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
   ];
 
   @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider);
     final magazines = ref.watch(magazineProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    final accentCol = isDark ? AppColors.darkAccentPrimary : AppColors.lightAccentPrimary;
+    final surfaceColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textPrimary = isDark ? const Color(0xFFE8E8E8) : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B);
+    final borderColor = isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0);
 
     final filteredMagazines = magazines.where((m) {
       final matchesCat = _selectedCategory == 'all' || m.category.toLowerCase() == _selectedCategory.toLowerCase();
@@ -526,7 +552,6 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
     }).toList();
 
     final isVendorOrAdmin = user?.role == UserRole.publication || user?.role == UserRole.admin;
-    final isAdmin = user?.role == UserRole.admin;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -534,104 +559,156 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
         ref.invalidate(magazineProvider);
       },
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Banner
+            // 1. FEATURED MAGAZINES HERO CAROUSEL / BANNER (130px max)
             Container(
-              padding: const EdgeInsets.all(16),
+              height: 130,
+              width: double.infinity,
               decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF4A6CF7), Color(0xFF7C9CFF)],
+                  colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4A00E0).withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isSmall = constraints.maxWidth < 420;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.auto_stories, color: Colors.white, size: 32),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Vendor & Public Magazines',
-                                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis,
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -15,
+                    bottom: -15,
+                    child: Icon(
+                      Icons.auto_stories_rounded,
+                      size: 130,
+                      color: Colors.white.withOpacity(0.12),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Read interactive PDF magazines directly in app',
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 11),
-                                  overflow: TextOverflow.ellipsis,
+                                child: const Text(
+                                  '🔥 FEATURED MAGAZINE ISSUES',
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          if (isVendorOrAdmin && !isSmall) ...[
-                            const SizedBox(width: 8),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: theme.colorScheme.primary,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               ),
-                              onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
-                              icon: const Icon(Icons.upload, size: 16),
-                              label: const Text('Upload', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ],
-                      ),
-                      if (isVendorOrAdmin && isSmall) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: theme.colorScheme.primary,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                            ),
-                            onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
-                            icon: const Icon(Icons.upload, size: 16),
-                            label: const Text('Upload Magazine Issue', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Interactive PDF Magazines',
+                                style: TextStyle(
+                                  fontFamily: 'Lexend',
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Monthly academic journals & exam preparation digests',
+                                style: TextStyle(
+                                  fontFamily: 'Literata',
+                                  fontSize: 11,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        if (isVendorOrAdmin)
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF4A00E0),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              elevation: 2,
+                            ),
+                            onPressed: () => _showUploadMagazineModalStatic(context, ref, user),
+                            icon: const Icon(Icons.add_rounded, size: 16),
+                            label: const Text(
+                              'Upload Issue',
+                              style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
                       ],
-                    ],
-                  );
-                },
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
 
-            // Search Bar
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search magazines, publishers, issues...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
+            const SizedBox(height: 14),
+
+            // 2. SEARCH BAR
+            Container(
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              onChanged: (val) => setState(() => _searchQuery = val),
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: (val) => setState(() => _searchQuery = val),
+                style: TextStyle(color: textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search magazines, publishers, issues...',
+                  hintStyle: TextStyle(color: textSecondary, fontSize: 13),
+                  prefixIcon: Icon(Icons.search_rounded, color: accentCol, size: 20),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.cancel_rounded, color: textSecondary, size: 18),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
             ),
+
             const SizedBox(height: 12),
 
-            // Category Filter Chips
+            // 3. CATEGORY CHIPS
             SizedBox(
-              height: 36,
+              height: 38,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _categories.length,
@@ -641,7 +718,17 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
                   final isSelected = cat.toLowerCase() == _selectedCategory.toLowerCase();
                   return ChoiceChip(
                     label: Text(cat == 'all' ? 'All Magazines' : cat),
+                    labelStyle: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? Colors.white : textPrimary,
+                    ),
                     selected: isSelected,
+                    selectedColor: accentCol,
+                    backgroundColor: surfaceColor,
+                    side: BorderSide(color: isSelected ? accentCol : borderColor),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     onSelected: (val) {
                       if (val) setState(() => _selectedCategory = cat);
                     },
@@ -649,20 +736,24 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
                 },
               ),
             ),
-            const SizedBox(height: 20),
 
-            // Magazines List
+            const SizedBox(height: 16),
+
+            // 4. MAGAZINES MODERN GRID
             if (filteredMagazines.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Column(
-                    children: [
-                      Icon(Icons.library_books_outlined, size: 48, color: Colors.grey),
-                      SizedBox(height: 12),
-                      Text('No magazines found matching filter.', style: TextStyle(color: Colors.grey)),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(top: 40.0),
+                child: EmptyStateView(
+                  icon: Icons.library_books_outlined,
+                  title: 'No Magazines Found',
+                  message: 'No educational magazines match your search criteria.',
+                  actionText: isVendorOrAdmin ? 'Upload Magazine Issue' : 'Reset Filters',
+                  onAction: isVendorOrAdmin
+                      ? () => _showUploadMagazineModalStatic(context, ref, user)
+                      : () => setState(() {
+                            _selectedCategory = 'all';
+                            _searchQuery = '';
+                          }),
                 ),
               )
             else
@@ -672,149 +763,27 @@ class _MagazineViewBodyState extends ConsumerState<MagazineViewBody> {
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.65,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 0.60,
                 ),
                 itemCount: filteredMagazines.length,
                 itemBuilder: (context, index) {
                   final mag = filteredMagazines[index];
-                  return Card(
-                    clipBehavior: Clip.antiAlias,
-                    elevation: 2,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => MagazinePdfViewerScreen(magazine: mag),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                Image.network(
-                                  mag.coverImageUrl,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: Colors.grey[800],
-                                    child: const Center(child: Icon(Icons.picture_as_pdf, size: 40, color: Colors.white)),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.75),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      mag.category,
-                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                                if (isAdmin)
-                                  Positioned(
-                                    top: 6,
-                                    left: 6,
-                                    child: CircleAvatar(
-                                      radius: 14,
-                                      backgroundColor: Colors.red,
-                                      child: IconButton(
-                                        padding: EdgeInsets.zero,
-                                        icon: const Icon(Icons.delete, size: 14, color: Colors.white),
-                                        tooltip: 'Admin Delete Magazine',
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: const Text('Admin Remove Magazine'),
-                                              content: Text('Are you sure you want to delete "${mag.title}"?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(ctx),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                ElevatedButton(
-                                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                                                  onPressed: () {
-                                                    ref.read(magazineProvider.notifier).deleteMagazine(mag.id);
-                                                    Navigator.pop(ctx);
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text('🗑️ Magazine "${mag.title}" removed by Admin.'),
-                                                        backgroundColor: Colors.red,
-                                                      ),
-                                                    );
-                                                  },
-                                                  child: const Text('Delete'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  mag.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  mag.publicationName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 11),
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 32,
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => MagazinePdfViewerScreen(magazine: mag),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.menu_book, size: 14),
-                                    label: const Text('Read In-App', style: TextStyle(fontSize: 11)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  return MagazineCardModern(
+                    magazine: mag,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MagazinePdfViewerScreen(magazine: mag),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
+
+            const SizedBox(height: 90),
           ],
         ),
       ),

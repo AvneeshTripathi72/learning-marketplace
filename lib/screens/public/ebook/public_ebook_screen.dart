@@ -8,15 +8,14 @@ import '../../../providers/ebook_provider.dart';
 import '../../../services/storage_service.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
-import '../../../widgets/hierarchy_picker.dart';
-import '../../../widgets/core/debounced_search_bar.dart';
-import '../../../widgets/core/empty_state_view.dart';
-import '../../publication/ebook/pdf_viewer_screen.dart';
-import '../../shared/magazine/magazine_screen.dart';
 import '../../../widgets/core/blurred_drawer_scaffold.dart';
-import '../../../widgets/ebook_details_modal.dart';
+import '../../../widgets/core/empty_state_view.dart';
+import '../../../widgets/ebook_card_modern.dart';
+import '../../../widgets/ebook_filter_bottom_sheet.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import 'pdf_details_screen.dart';
+import '../../shared/magazine/magazine_screen.dart';
 
 class PublicEbookScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -32,12 +31,17 @@ class PublicEbookScreen extends ConsumerStatefulWidget {
 
 class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
   late int _activeTabIndex;
+  bool _isGridView = true;
+  bool _showSearchBar = false;
+  final TextEditingController _searchCtrl = TextEditingController();
 
   String _selectedPublication = 'All Publications';
   String _selectedSeries = 'CBSE 2026';
   String _selectedClass = 'Class 10';
   String _selectedSubject = 'Mathematics';
+  String _selectedChip = 'All';
   String _searchQuery = '';
+  bool _freeOnly = false;
 
   @override
   void initState() {
@@ -45,11 +49,25 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
     _activeTabIndex = widget.initialTabIndex;
   }
 
-  final List<String> _publications = [
-    'All Publications',
-    'Oxford Educational Press',
-    'Pearson India',
-    'S. Chand Publishing',
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  final List<String> _quickFilterChips = [
+    'All',
+    'CBSE 2026',
+    'ICSE 2026',
+    'State Board',
+    'Class 9',
+    'Class 10',
+    'Mathematics',
+    'Science',
+    'Physics',
+    'Chemistry',
+    'Free',
+    'Premium',
   ];
 
   void _showUploadPdfModal(BuildContext context) {
@@ -235,7 +253,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                         labelText: 'Cover Image URL (Optional)',
                         prefixIcon: Icons.image_outlined,
                         hintText: 'e.g., https://images.unsplash.com/photo-1544716278',
-                        helperText: 'Optional. Leave blank to auto-generate cover photo from subject.',
+                        helperText: 'Optional. Leave blank to auto-generate cover photo.',
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -295,7 +313,7 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                         if (result != null && result.files.isNotEmpty) {
                           setDialogState(() {
                             selectedPdfFile = result.files.first;
-                            pdfUrlCtrl.text = ''; // Clear URL if file selected
+                            pdfUrlCtrl.text = '';
                           });
                         }
                       },
@@ -521,6 +539,30 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
     );
   }
 
+  void _openFilterBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => EBookFilterBottomSheet(
+        selectedPublication: _selectedPublication,
+        selectedSeries: _selectedSeries,
+        selectedClass: _selectedClass,
+        selectedSubject: _selectedSubject,
+        freeOnly: _freeOnly,
+        onApply: (pub, series, cls, subject, freeOnly) {
+          setState(() {
+            _selectedPublication = pub;
+            _selectedSeries = series;
+            _selectedClass = cls;
+            _selectedSubject = subject;
+            _freeOnly = freeOnly;
+          });
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -530,6 +572,9 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
     final surfaceColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final elevatedColor = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F3);
     final accentPrimary = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
+    final textPrimary = isDark ? const Color(0xFFE8E8E8) : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B);
+    final borderColor = isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0);
 
     final currentUser = ref.watch(authProvider);
     final isPublisherOrAdmin = currentUser != null &&
@@ -540,6 +585,22 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
 
     final filteredEbooks = approvedSubmissions.where((item) {
       final ebook = item.ebook;
+
+      // Filter by chip selection
+      if (_selectedChip != 'All') {
+        if (_selectedChip == 'Free' && _freeOnly == false) {
+          // free filter
+        } else if (_selectedChip == 'Premium') {
+          // premium filter
+        } else if (_selectedChip.contains('CBSE') || _selectedChip.contains('ICSE') || _selectedChip.contains('State')) {
+          if (!ebook.seriesId.toLowerCase().contains(_selectedChip.toLowerCase())) return false;
+        } else if (_selectedChip.contains('Class')) {
+          if (!ebook.classId.toLowerCase().contains(_selectedChip.toLowerCase())) return false;
+        } else {
+          if (!ebook.subjectId.toLowerCase().contains(_selectedChip.toLowerCase())) return false;
+        }
+      }
+
       final matchesPub = _selectedPublication == 'All Publications' ||
           ebook.publicationId.toLowerCase().contains(_selectedPublication.toLowerCase());
       final matchesSeries = ebook.seriesId.isEmpty ||
@@ -551,99 +612,160 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
       final matchesSubject = ebook.subjectId.isEmpty ||
           ebook.subjectId.toLowerCase().contains(_selectedSubject.toLowerCase()) ||
           _selectedSubject.toLowerCase().contains(ebook.subjectId.toLowerCase());
-      final matchesSearch = _searchQuery.isEmpty || 
+      final matchesSearch = _searchQuery.isEmpty ||
           ebook.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           ebook.subjectId.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesPub && (matchesSeries || matchesClass || matchesSubject) && matchesSearch;
     }).map((item) => item.ebook).toList();
 
-    final availablePubs = <String>{'All Publications'};
-    for (final sub in approvedSubmissions) {
-      if (sub.ebook.publicationId.isNotEmpty) {
-        availablePubs.add(sub.ebook.publicationId);
-      }
-    }
-    final publicationsList = availablePubs.toList();
-    final currentPubValue = publicationsList.contains(_selectedPublication) ? _selectedPublication : 'All Publications';
+    final totalCountStr = '${approvedSubmissions.length} Books';
 
     return BlurredDrawerScaffold(
       extendBody: true,
       drawer: const AppDrawer(),
+
+      // ELEGANT 1-ROW HEADER
       appBar: AppBar(
         backgroundColor: bgColor,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          _activeTabIndex == 0 ? 'Publication eBooks' : 'Educational Magazines',
-          style: const TextStyle(
-            fontFamily: 'Lexend',
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
+        centerTitle: false,
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            Text(
+              _activeTabIndex == 0 ? 'eBooks Library' : 'Magazines Hub',
+              style: const TextStyle(
+                fontFamily: 'Lexend',
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: accentPrimary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _activeTabIndex == 0 ? totalCountStr : 'Magazines',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: accentPrimary,
+                ),
+              ),
+            ),
+          ],
         ),
-        actions: isPublisherOrAdmin
-            ? [
-                Padding(
-                  padding: const EdgeInsets.only(right: 14.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      gradient: LinearGradient(
-                        colors: [accentPrimary, accentPrimary.withOpacity(0.8)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: accentPrimary.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+        actions: [
+          // Search Icon Toggle
+          IconButton(
+            icon: Icon(
+              _showSearchBar ? Icons.search_off_rounded : Icons.search_rounded,
+              color: textPrimary,
+              size: 20,
+            ),
+            tooltip: 'Search',
+            onPressed: () => setState(() => _showSearchBar = !_showSearchBar),
+          ),
+
+          // Grid / List View Switcher (eBooks mode)
+          if (_activeTabIndex == 0)
+            IconButton(
+              icon: Icon(
+                _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
+                color: textPrimary,
+                size: 20,
+              ),
+              tooltip: _isGridView ? 'List View' : 'Grid View',
+              onPressed: () => setState(() => _isGridView = !_isGridView),
+            ),
+
+          // Advanced Filter Button
+          if (_activeTabIndex == 0)
+            IconButton(
+              icon: Icon(Icons.tune_rounded, color: accentPrimary, size: 20),
+              tooltip: 'Advanced Filters',
+              onPressed: () => _openFilterBottomSheet(context),
+            ),
+
+          // Small Upload Button for Admin/Publisher
+          if (isPublisherOrAdmin)
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0, left: 4.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    colors: [accentPrimary, accentPrimary.withBlue(240)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentPrimary.withOpacity(0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => _showUploadPdfModal(context),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text(
+                          'Upload',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () => _showUploadPdfModal(context),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(Icons.picture_as_pdf, size: 16, color: Colors.white),
-                              SizedBox(width: 6),
-                              Text(
-                                'Upload PDF',
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
                   ),
                 ),
-              ]
-            : [],
+              ),
+            ),
+        ],
       ),
+
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
+
+      // EXPANDABLE FLOATING ACTION BUTTON (Admin Only)
+      floatingActionButton: isPublisherOrAdmin
+          ? FloatingActionButton.extended(
+              onPressed: () => _showUploadPdfModal(context),
+              backgroundColor: accentPrimary,
+              elevation: 4,
+              icon: const Icon(Icons.cloud_upload_rounded, color: Colors.white, size: 20),
+              label: const Text(
+                'Upload eBook PDF',
+                style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white),
+              ),
+            )
+          : null,
+
       body: Container(
         color: bgColor,
         child: Column(
           children: [
-            // Premium Segmented Tab Bar
+            // PREMIUM SEGMENTED TAB BAR (eBooks vs Magazines)
             Container(
-              margin: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+              margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: elevatedColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
-                  width: 1,
-                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: borderColor, width: 1),
               ),
               child: Row(
                 children: [
@@ -651,10 +773,10 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                     child: GestureDetector(
                       onTap: () => setState(() => _activeTabIndex = 0),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 9),
                         decoration: BoxDecoration(
                           color: _activeTabIndex == 0 ? accentPrimary : Colors.transparent,
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius: BorderRadius.circular(10),
                           boxShadow: _activeTabIndex == 0
                               ? [
                                   BoxShadow(
@@ -670,17 +792,17 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                           children: [
                             Icon(
                               Icons.menu_book_rounded,
-                              size: 18,
-                              color: _activeTabIndex == 0 ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B)),
+                              size: 16,
+                              color: _activeTabIndex == 0 ? Colors.white : textSecondary,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'eBooks Library',
                               style: TextStyle(
                                 fontFamily: 'Inter',
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
-                                color: _activeTabIndex == 0 ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B)),
+                                color: _activeTabIndex == 0 ? Colors.white : textSecondary,
                               ),
                             ),
                           ],
@@ -692,10 +814,10 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                     child: GestureDetector(
                       onTap: () => setState(() => _activeTabIndex = 1),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 9),
                         decoration: BoxDecoration(
                           color: _activeTabIndex == 1 ? accentPrimary : Colors.transparent,
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius: BorderRadius.circular(10),
                           boxShadow: _activeTabIndex == 1
                               ? [
                                   BoxShadow(
@@ -711,17 +833,17 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
                           children: [
                             Icon(
                               Icons.auto_stories_rounded,
-                              size: 18,
-                              color: _activeTabIndex == 1 ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B)),
+                              size: 16,
+                              color: _activeTabIndex == 1 ? Colors.white : textSecondary,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'Magazines Hub',
                               style: TextStyle(
                                 fontFamily: 'Inter',
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
-                                color: _activeTabIndex == 1 ? Colors.white : (isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B)),
+                                color: _activeTabIndex == 1 ? Colors.white : textSecondary,
                               ),
                             ),
                           ],
@@ -733,225 +855,292 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
               ),
             ),
 
-            // Tab Content Body
+            // MAIN TAB CONTENT BODY
             Expanded(
               child: _activeTabIndex == 0
-                  ? Column(
-                      children: [
-                        // Search & Filter Panel
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                          padding: const EdgeInsets.all(12.0),
-                          decoration: BoxDecoration(
-                            color: surfaceColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
-                              width: 1,
+                  ? SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. HERO BANNER (120-140px max height)
+                          Container(
+                            height: 130,
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                colors: isDark
+                                    ? [const Color(0xFF1E2640), const Color(0xFF2A365C)]
+                                    : [const Color(0xFF4A6CF7), const Color(0xFF7C9CFF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentPrimary.withOpacity(0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ),
-                          child: Column(
-                            children: [
-                              DebouncedSearchBar(
-                                hintText: 'Search eBooks by title or topic...',
-                                onChanged: (val) => setState(() => _searchQuery = val),
-                              ),
-                              const SizedBox(height: 10),
-                               DropdownButtonFormField<String>(
-                                isExpanded: true,
-                                value: currentPubValue,
-                                dropdownColor: surfaceColor,
-                                style: TextStyle(
-                                  fontFamily: 'Inter',
-                                  fontSize: 13,
-                                  color: isDark ? const Color(0xFFE8E8E8) : const Color(0xFF1A1A1A),
+                            child: Stack(
+                              children: [
+                                // Background Decorative Shapes
+                                Positioned(
+                                  right: -20,
+                                  bottom: -20,
+                                  child: Icon(
+                                    Icons.auto_stories_rounded,
+                                    size: 140,
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
                                 ),
-                                decoration: InputDecoration(
-                                  labelText: 'Filter by Publisher',
-                                  labelStyle: TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontSize: 12,
-                                    color: isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B),
+                                Positioned(
+                                  right: 80,
+                                  top: -10,
+                                  child: Icon(
+                                    Icons.school_rounded,
+                                    size: 80,
+                                    color: Colors.white.withOpacity(0.08),
                                   ),
-                                  filled: true,
-                                  fillColor: elevatedColor,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  prefixIcon: Icon(Icons.business_rounded, color: accentPrimary, size: 18),
                                 ),
-                                items: publicationsList
-                                    .map((p) => DropdownMenuItem(
-                                          value: p,
-                                          child: Text(p, overflow: TextOverflow.ellipsis),
-                                        ))
-                                    .toList(),
-                                onChanged: (v) => v != null ? setState(() => _selectedPublication = v) : null,
-                              ),
-                            ],
-                          ),
-                        ),
 
-                        // Hierarchy Selector
-                        HierarchyPicker(
-                          seriesList: const ['CBSE 2026', 'ICSE 2026', 'State Board'],
-                          classList: const ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
-                          subjectList: const ['Mathematics', 'Science', 'English', 'Hindi'],
-                          selectedSeries: _selectedSeries,
-                          selectedClass: _selectedClass,
-                          selectedSubject: _selectedSubject,
-                          onSeriesChanged: (v) => setState(() => _selectedSeries = v),
-                          onClassChanged: (v) => setState(() => _selectedClass = v),
-                          onSubjectChanged: (v) => setState(() => _selectedSubject = v),
-                        ),
-
-                        // eBooks Grid or Empty State
-                        Expanded(
-                          child: filteredEbooks.isEmpty
-                              ? EmptyStateView(
-                                  icon: Icons.picture_as_pdf_rounded,
-                                  title: 'No eBooks found for $_selectedClass - $_selectedSubject',
-                                  message: isPublisherOrAdmin
-                                      ? 'Tap "Upload eBook PDF" to publish new learning material or PDF document link to this catalog.'
-                                      : 'No eBook learning materials available for $_selectedClass - $_selectedSubject yet.',
-                                  actionText: isPublisherOrAdmin ? 'Upload eBook PDF' : null,
-                                  onAction: isPublisherOrAdmin ? () => _showUploadPdfModal(context) : null,
-                                )
-                              : GridView.builder(
-                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    childAspectRatio: 0.65,
-                                    crossAxisSpacing: 14,
-                                    mainAxisSpacing: 14,
-                                  ),
-                                  itemCount: filteredEbooks.length,
-                                  itemBuilder: (context, index) {
-                                    final ebook = filteredEbooks[index];
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        color: surfaceColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
-                                          width: 1,
+                                // Content Row
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(0.2),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Text(
+                                                '📚 15,000+ Educational Books & Guides',
+                                                style: TextStyle(
+                                                  fontFamily: 'Inter',
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            const Text(
+                                              'Explore Educational Library',
+                                              style: TextStyle(
+                                                fontFamily: 'Lexend',
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                                height: 1.1,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              'Read anywhere, download PDFs & learn faster.',
+                                              style: TextStyle(
+                                                fontFamily: 'Literata',
+                                                fontSize: 11,
+                                                color: Colors.white.withOpacity(0.9),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        boxShadow: isDark
-                                            ? []
-                                            : [
-                                                BoxShadow(
-                                                  color: Colors.black.withOpacity(0.04),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 3),
-                                                )
-                                              ],
                                       ),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: InkWell(
-                                          borderRadius: BorderRadius.circular(12),
-                                          onTap: () => showEBookDetailsModal(context, ebook),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              // Cover Image Thumbnail with PDF Badge
-                                              Expanded(
-                                                child: Stack(
-                                                  children: [
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
-                                                        image: DecorationImage(
-                                                          image: NetworkImage(ebook.coverUrl),
-                                                          fit: BoxFit.cover,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Positioned(
-                                                      top: 8,
-                                                      right: 8,
-                                                      child: Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.redAccent.withOpacity(0.9),
-                                                          borderRadius: BorderRadius.circular(6),
-                                                        ),
-                                                        child: const Row(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          children: [
-                                                            Icon(Icons.picture_as_pdf, size: 10, color: Colors.white),
-                                                            SizedBox(width: 3),
-                                                            Text(
-                                                              'PDF',
-                                                              style: TextStyle(
-                                                                fontFamily: 'Inter',
-                                                                fontWeight: FontWeight.bold,
-                                                                fontSize: 9,
-                                                                color: Colors.white,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
 
-                                              // eBook Meta Description
-                                              Padding(
-                                                padding: const EdgeInsets.all(10.0),
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      ebook.title,
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                        fontFamily: 'Lexend',
-                                                        fontWeight: FontWeight.w600,
-                                                        fontSize: 13,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Row(
-                                                      children: [
-                                                        Container(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                          decoration: BoxDecoration(
-                                                            color: accentPrimary.withOpacity(0.15),
-                                                            borderRadius: BorderRadius.circular(4),
-                                                          ),
-                                                          child: Text(
-                                                            ebook.subjectId.isEmpty ? 'Maths' : ebook.subjectId,
-                                                            style: TextStyle(
-                                                              fontFamily: 'Inter',
-                                                              fontSize: 10,
-                                                              fontWeight: FontWeight.w500,
-                                                              color: accentPrimary,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const Spacer(),
-                                                        Icon(Icons.arrow_forward_ios_rounded, size: 12, color: isDark ? const Color(0xFFA0A0A0) : const Color(0xFF6B6B6B)),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
+                                      // Browse Button
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: const Color(0xFF4A6CF7),
+                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                        ),
+                                        onPressed: () => _openFilterBottomSheet(context),
+                                        child: const Text(
+                                          'Browse Now',
+                                          style: TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12,
                                           ),
                                         ),
                                       ),
-                                    );
-                                  },
+                                    ],
+                                  ),
                                 ),
-                        ),
-                      ],
+                              ],
+                            ),
+                          ),
+
+                          // 2. SEARCH BAR (COLLAPSIBLE / ANIMATED)
+                          if (_showSearchBar)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: surfaceColor,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: borderColor),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: TextField(
+                                  controller: _searchCtrl,
+                                  onChanged: (val) => setState(() => _searchQuery = val),
+                                  style: TextStyle(color: textPrimary, fontSize: 14),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search eBooks by title, subject, board, or class...',
+                                    hintStyle: TextStyle(color: textSecondary, fontSize: 13),
+                                    prefixIcon: Icon(Icons.search_rounded, color: accentPrimary, size: 20),
+                                    suffixIcon: _searchQuery.isNotEmpty
+                                        ? IconButton(
+                                            icon: Icon(Icons.cancel_rounded, color: textSecondary, size: 18),
+                                            onPressed: () {
+                                              _searchCtrl.clear();
+                                              setState(() => _searchQuery = '');
+                                            },
+                                          )
+                                        : null,
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                          // 3. HORIZONTAL SCROLLABLE FILTER CHIPS
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 38,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _quickFilterChips.length,
+                              itemBuilder: (context, idx) {
+                                final chipLabel = _quickFilterChips[idx];
+                                final isSelected = _selectedChip == chipLabel;
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ChoiceChip(
+                                    label: Text(chipLabel),
+                                    labelStyle: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 12,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected ? Colors.white : textPrimary,
+                                    ),
+                                    selected: isSelected,
+                                    selectedColor: accentPrimary,
+                                    backgroundColor: surfaceColor,
+                                    elevation: isSelected ? 2 : 0,
+                                    side: BorderSide(
+                                      color: isSelected ? accentPrimary : borderColor,
+                                      width: 1,
+                                    ),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    onSelected: (val) {
+                                      if (val) {
+                                        setState(() => _selectedChip = chipLabel);
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // 4. EBOOKS GRID OR LIST VIEW
+                          filteredEbooks.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 40.0),
+                                  child: EmptyStateView(
+                                    icon: Icons.picture_as_pdf_rounded,
+                                    title: 'No eBooks Found',
+                                    message: isPublisherOrAdmin
+                                        ? 'Tap "Upload eBook PDF" to publish new learning materials to this catalog.'
+                                        : 'Try clearing search or applying different board & subject filters.',
+                                    actionText: isPublisherOrAdmin ? 'Upload eBook PDF' : 'Reset Filters',
+                                    onAction: isPublisherOrAdmin
+                                        ? () => _showUploadPdfModal(context)
+                                        : () => setState(() {
+                                              _selectedChip = 'All';
+                                              _selectedPublication = 'All Publications';
+                                              _searchQuery = '';
+                                            }),
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                  child: _isGridView
+                                      ? GridView.builder(
+                                          shrinkWrap: true,
+                                          physics: const NeverScrollableScrollPhysics(),
+                                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 2,
+                                            childAspectRatio: 0.62,
+                                            crossAxisSpacing: 12,
+                                            mainAxisSpacing: 14,
+                                          ),
+                                          itemCount: filteredEbooks.length,
+                                          itemBuilder: (context, index) {
+                                            final ebook = filteredEbooks[index];
+                                            return EBookCardModern(
+                                              ebook: ebook,
+                                              isListView: false,
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => PdfDetailsScreen(ebook: ebook),
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                        )
+                                      : ListView.builder(
+                                          shrinkWrap: true,
+                                          physics: const NeverScrollableScrollPhysics(),
+                                          itemCount: filteredEbooks.length,
+                                          itemBuilder: (context, index) {
+                                            final ebook = filteredEbooks[index];
+                                            return EBookCardModern(
+                                              ebook: ebook,
+                                              isListView: true,
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => PdfDetailsScreen(ebook: ebook),
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                        ),
+                                ),
+
+                          const SizedBox(height: 100),
+                        ],
+                      ),
                     )
                   : const MagazineScreen(),
             ),
@@ -960,5 +1149,4 @@ class _PublicEbookScreenState extends ConsumerState<PublicEbookScreen> {
       ),
     );
   }
-
 }
