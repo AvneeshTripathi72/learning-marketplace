@@ -38,7 +38,7 @@ void registerIframeView(String viewType, String embedUrl) {
         ..style.height = '100%'
         ..style.pointerEvents = 'auto'
         ..style.touchAction = 'auto'
-        ..allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+        ..allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen'
         ..allowFullscreen = true;
       return iframe;
     },

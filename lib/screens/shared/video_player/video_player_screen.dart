@@ -66,9 +66,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     if (kIsWeb) {
       _youtubeViewType = 'pw-yt-player-${widget.video.id}-${DateTime.now().millisecondsSinceEpoch}';
+      final origin = Uri.base.origin;
       final embedUrl = isDirectVideo
           ? widget.video.url
-          : 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=0&enablejsapi=1&rel=0&modestbranding=1&playsinline=1';
+          : 'https://www.youtube.com/embed/$videoId?autoplay=1&mute=1&enablejsapi=1&origin=${Uri.encodeComponent(origin)}&rel=0&modestbranding=1&playsinline=1';
       registerIframe(_youtubeViewType, embedUrl);
     } else {
       if (!isDirectVideo) {
