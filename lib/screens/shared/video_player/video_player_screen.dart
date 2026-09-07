@@ -53,12 +53,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     super.initState();
     _likeCount = widget.video.viewsCount > 100 ? (widget.video.viewsCount ~/ 8) : 124;
 
-    final rawUrl = widget.video.url.toLowerCase();
+    final rawUrl = widget.video.url.toLowerCase().trim();
     final isDirectVideo = rawUrl.endsWith('.mp4') ||
         rawUrl.contains('.mp4?') ||
-        rawUrl.contains('.webm') ||
-        rawUrl.contains('r2.dev') ||
-        rawUrl.contains('cloudflare');
+        rawUrl.endsWith('.webm') ||
+        rawUrl.contains('.webm?') ||
+        rawUrl.endsWith('.mov') ||
+        rawUrl.endsWith('.mkv') ||
+        rawUrl.contains('/videos/');
 
     final videoId = _extractVideoId(widget.video.url);
 
@@ -92,6 +94,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final match = regExp.firstMatch(rawUrl);
     if (match != null && match.groupCount >= 1 && match.group(1) != null) {
       return match.group(1)!;
+    }
+    final trimmed = rawUrl.trim();
+    if (trimmed.length == 11 && !trimmed.contains('/') && !trimmed.contains('.')) {
+      return trimmed;
     }
     return 'kffacxfA7G4';
   }
@@ -188,8 +194,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                             controller: _youtubeController!,
                             aspectRatio: 16 / 9,
                           )
-                        : const Center(
-                            child: CircularProgressIndicator(color: Colors.red),
+                        : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.play_circle_fill, size: 54, color: Colors.white70),
+                                const SizedBox(height: 10),
+                                ElevatedButton.icon(
+                                  onPressed: _launchExternalVideo,
+                                  icon: const Icon(Icons.open_in_new),
+                                  label: const Text('Open & Play Stream'),
+                                ),
+                              ],
+                            ),
                           )),
               ),
 
