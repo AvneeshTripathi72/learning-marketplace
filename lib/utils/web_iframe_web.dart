@@ -7,11 +7,16 @@ void registerIframeView(String viewType, String embedUrl) {
     viewType,
     (int viewId) {
       final lower = embedUrl.toLowerCase();
-      final isDirectVideo = lower.endsWith('.mp4') ||
-          lower.contains('.mp4?') ||
-          lower.contains('.webm') ||
-          lower.contains('r2.dev') ||
-          lower.contains('cloudflare');
+      final isPdf = lower.endsWith('.pdf') || lower.contains('.pdf?') || lower.contains('/ebooks/') || lower.contains('pdfviewer');
+      
+      final isDirectVideo = !isPdf &&
+          (lower.endsWith('.mp4') ||
+           lower.contains('.mp4?') ||
+           lower.endsWith('.webm') ||
+           lower.contains('.webm?') ||
+           lower.endsWith('.mov') ||
+           lower.endsWith('.mkv') ||
+           lower.contains('/videos/'));
 
       if (isDirectVideo) {
         final videoElement = html.VideoElement()
