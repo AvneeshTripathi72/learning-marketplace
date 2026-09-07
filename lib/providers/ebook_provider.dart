@@ -19,6 +19,7 @@ class EBookSubmissionModel {
   });
 }
 
+class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>> {
   static final List<EBookSubmissionModel> _defaultSampleEBooks = [
     EBookSubmissionModel(
       ebook: const EBookModel(
