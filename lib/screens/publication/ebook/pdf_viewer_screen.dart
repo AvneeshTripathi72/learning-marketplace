@@ -74,16 +74,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _initPdfViewer();
   }
 
-  void _initPdfViewer({bool useGoogleDocs = false, bool? useIframe}) {
+  void _initPdfViewer({bool useGoogleDocs = true, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
     _activeUrl = targetUrl;
 
-    final isHtmlDoc = targetUrl.toLowerCase().endsWith('.html') ||
-        targetUrl.toLowerCase().contains('aspirebookscompany') ||
-        targetUrl.toLowerCase().contains('index.html') ||
-        targetUrl.contains('drive.google.com');
-
-    final shouldIframe = useIframe ?? isHtmlDoc;
+    final shouldIframe = useIframe ?? kIsWeb;
 
     if (shouldIframe) {
       if (kIsWeb) {
@@ -357,6 +352,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               onSelected: (val) {
                 if (val == 'download' || val == 'print') {
                   _openExternalPdfUrl();
+                } else if (val == 'toggle_engine') {
+                  _initPdfViewer(useGoogleDocs: !_useGoogleDocsFallback, useIframe: true);
                 } else if (val == 'offline') {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -368,6 +365,16 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 }
               },
               itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  value: 'toggle_engine',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.swap_horiz, size: 18, color: Colors.amber),
+                      const SizedBox(width: 8),
+                      Text(_useGoogleDocsFallback ? 'Use Native Stream Engine' : 'Use Google Docs Reader'),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'download',
                   child: Row(children: [Icon(Icons.download, size: 18), SizedBox(width: 8), Text('Download PDF')]),
