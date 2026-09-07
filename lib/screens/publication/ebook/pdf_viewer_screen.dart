@@ -50,7 +50,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _initPdfViewer();
   }
 
-  void _initPdfViewer({bool useGoogleDocs = false}) {
+  bool _useIframe = false;
+
+  void _initPdfViewer({bool useGoogleDocs = false, bool useIframe = false}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
 
     final isHtml = targetUrl.toLowerCase().endsWith('.html') ||
@@ -58,29 +60,35 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         targetUrl.toLowerCase().contains('aspirebookscompany') ||
         targetUrl.toLowerCase().contains('index.html');
 
-    if (kIsWeb) {
-      _pdfViewType = 'ebook-pdf-iframe-${widget.ebook.id}-${DateTime.now().millisecondsSinceEpoch}';
-      final embedUrl = useGoogleDocs
-          ? 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}'
-          : targetUrl;
-      registerIframe(_pdfViewType, embedUrl);
-      setState(() {
-        _isLoading = false;
-        _hasError = false;
-        _useGoogleDocsFallback = useGoogleDocs;
-      });
-    } else if (isHtml && !widget.ebook.isDownloaded) {
-      _webViewController = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..loadRequest(Uri.parse(targetUrl));
-      setState(() {
-        _isLoading = false;
-        _hasError = false;
-      });
+    if (useIframe || isHtml) {
+      if (kIsWeb) {
+        _pdfViewType = 'ebook-pdf-iframe-${widget.ebook.id}-${DateTime.now().millisecondsSinceEpoch}';
+        final embedUrl = useGoogleDocs
+            ? 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}'
+            : targetUrl;
+        registerIframe(_pdfViewType, embedUrl);
+        setState(() {
+          _isLoading = false;
+          _hasError = false;
+          _useGoogleDocsFallback = useGoogleDocs;
+          _useIframe = true;
+        });
+      } else {
+        _webViewController = WebViewController()
+          ..setJavaScriptMode(JavaScriptMode.unrestricted)
+          ..loadRequest(Uri.parse(targetUrl));
+        setState(() {
+          _isLoading = false;
+          _hasError = false;
+          _useIframe = true;
+        });
+      }
     } else {
       setState(() {
         _isLoading = true;
         _hasError = false;
+        _useIframe = false;
+        _useGoogleDocsFallback = false;
       });
     }
   }
@@ -177,7 +185,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       body: Stack(
         children: [
           if (!_hasError)
-            kIsWeb && _pdfViewType.isNotEmpty
+            _useIframe && kIsWeb && _pdfViewType.isNotEmpty
                 ? InteractiveViewer(
                     transformationController: _transformationController,
                     minScale: 0.5,
@@ -319,7 +327,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
                                 onPressed: () {
-                                  _initPdfViewer(useGoogleDocs: !_useGoogleDocsFallback);
+                                  _initPdfViewer(useGoogleDocs: !_useGoogleDocsFallback, useIframe: true);
                                 },
                                 icon: const Icon(Icons.refresh, size: 16),
                                 label: Text(_useGoogleDocsFallback ? 'Use Direct Stream' : 'Use Google Docs Reader'),
