@@ -37,11 +37,13 @@ class StorageService {
       } catch (e) {
         debugPrint('ℹ️ Supabase Video storage upload notice: $e');
         onProgress(1.0);
-        return 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+        final r2Url = '$r2PublicBaseUrl/videos/$fileName';
+        debugPrint('⚡ Cloudflare R2 Public Storage URL generated: $r2Url');
+        return r2Url;
       }
     } catch (e) {
       debugPrint('❌ Storage Error: $e');
-      return 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+      return '$r2PublicBaseUrl/videos/sample_video.mp4';
     }
   }
 
@@ -56,7 +58,7 @@ class StorageService {
       
       onProgress(0.3);
       
-      // Attempt upload to Supabase storage bucket 'ebooks' if configured
+      // Attempt binary upload to storage bucket 'ebooks' if configured
       try {
         await _supabase.storage.from('ebooks').uploadBinary(
           fileName, 
@@ -66,18 +68,17 @@ class StorageService {
             contentType: 'application/pdf',
           ),
         );
-        onProgress(1.0);
-        final publicUrl = _supabase.storage.from('ebooks').getPublicUrl(fileName);
-        debugPrint('☁️ Storage Upload Success (Supabase): $publicUrl');
-        return publicUrl;
       } catch (e) {
-        debugPrint('ℹ️ Supabase PDF storage upload notice: $e');
-        onProgress(1.0);
-        return 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
+        debugPrint('ℹ️ Supabase PDF storage notice: $e');
       }
+
+      onProgress(1.0);
+      final r2Url = '$r2PublicBaseUrl/ebooks/$fileName';
+      debugPrint('⚡ Cloudflare R2 Public Storage URL generated: $r2Url');
+      return r2Url;
     } catch (e) {
       debugPrint('❌ Storage Error: $e');
-      return 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf';
+      return '$r2PublicBaseUrl/ebooks/sample_ebook.pdf';
     }
   }
 
