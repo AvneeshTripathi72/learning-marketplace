@@ -50,17 +50,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _initPdfViewer();
   }
 
-  bool _useIframe = false;
+  bool _useIframe = kIsWeb;
 
-  void _initPdfViewer({bool useGoogleDocs = false, bool useIframe = false}) {
+  void _initPdfViewer({bool useGoogleDocs = false, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
 
-    final isHtml = targetUrl.toLowerCase().endsWith('.html') ||
+    final shouldIframe = useIframe ?? (kIsWeb ||
+        targetUrl.toLowerCase().endsWith('.html') ||
         targetUrl.toLowerCase().contains('/mobile/') ||
         targetUrl.toLowerCase().contains('aspirebookscompany') ||
-        targetUrl.toLowerCase().contains('index.html');
+        targetUrl.toLowerCase().contains('index.html'));
 
-    if (useIframe || isHtml) {
+    if (shouldIframe) {
       if (kIsWeb) {
         _pdfViewType = 'ebook-pdf-iframe-${widget.ebook.id}-${DateTime.now().millisecondsSinceEpoch}';
         final embedUrl = useGoogleDocs
