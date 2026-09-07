@@ -67,6 +67,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   String _selectedQuality = '1080p HD';
 
   // Engagement & Actions State
+  bool _isPlayerMinimized = false;
   bool _isSubscribed = false;
   bool _isLiked = false;
   bool _isDisliked = false;
@@ -74,6 +75,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   bool _isSavedOffline = false;
   bool _isDescriptionExpanded = false;
   late int _likeCount;
+
+  void _toggleMinimizePlayer() {
+    setState(() {
+      _isPlayerMinimized = !_isPlayerMinimized;
+    });
+  }
 
   String _youtubeViewType = '';
   YoutubePlayerController? _youtubeController;
@@ -397,6 +404,15 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     ),
                   ),
                   IconButton(
+                    icon: Icon(
+                      _isPlayerMinimized ? Icons.open_in_full_rounded : Icons.close_fullscreen_rounded,
+                      color: accentPrimary,
+                      size: 20,
+                    ),
+                    tooltip: _isPlayerMinimized ? 'Maximize Video Player' : 'Minimize Video Player',
+                    onPressed: _toggleMinimizePlayer,
+                  ),
+                  IconButton(
                     icon: Icon(Icons.fullscreen_rounded, color: accentPrimary, size: 24),
                     tooltip: 'Toggle Fullscreen Mode',
                     onPressed: _toggleFullscreen,
@@ -508,7 +524,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
 
   // 1. HERO VIDEO PLAYER CONTAINER
   Widget _buildVideoPlayerHero(Color surfaceColor, Color accentPrimary) {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.black,
@@ -523,7 +541,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       ),
       clipBehavior: Clip.antiAlias,
       child: AspectRatio(
-        aspectRatio: 16 / 9,
+        aspectRatio: _isPlayerMinimized ? 21 / 7 : 16 / 9,
         child: Stack(
           children: [
             Positioned.fill(
@@ -535,7 +553,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                   : (_youtubeController != null
                       ? YoutubePlayer(
                           controller: _youtubeController!,
-                          aspectRatio: 16 / 9,
+                          aspectRatio: _isPlayerMinimized ? 21 / 7 : 16 / 9,
                         )
                       : Container(
                           decoration: BoxDecoration(
@@ -557,39 +575,81 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         )),
             ),
 
-            // Bottom Right Fullscreen Action Overlay Button
+            // Bottom Right Action Overlay Pill Row (Minimize/Maximize + Fullscreen)
             Positioned(
               bottom: 10,
               right: 10,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _toggleFullscreen,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.8),
+              child: Row(
+                children: [
+                  // Minimize / Maximize Pill Button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _toggleMinimizePlayer,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white30),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.fullscreen_rounded, color: Colors.white, size: 18),
-                        SizedBox(width: 4),
-                        Text(
-                          'Fullscreen',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white30),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isPlayerMinimized ? Icons.open_in_full_rounded : Icons.close_fullscreen_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isPlayerMinimized ? 'Expand' : 'Minimize',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+
+                  // Fullscreen Pill Button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _toggleFullscreen,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white30),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.fullscreen_rounded, color: Colors.white, size: 18),
+                            SizedBox(width: 4),
+                            Text(
+                              'Fullscreen',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
