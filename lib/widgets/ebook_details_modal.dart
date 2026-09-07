@@ -3,12 +3,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/ebook_model.dart';
 import '../screens/publication/ebook/pdf_viewer_screen.dart';
 
+import '../screens/public/ebook/pdf_details_screen.dart';
+
 void showEBookDetailsModal(BuildContext context, EBookModel ebook) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => EBookDetailsModal(ebook: ebook),
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => PdfDetailsScreen(ebook: ebook),
+    ),
   );
 }
 
