@@ -74,23 +74,34 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     _initPdfViewer();
   }
 
-  void _initPdfViewer({bool useGoogleDocs = true, bool? useIframe}) {
+  int _engineMode = 0; // 0: Mozilla PDF.js, 1: Google Docs, 2: Direct Stream
+
+  void _initPdfViewer({int? engineMode, bool useGoogleDocs = false, bool? useIframe}) {
     final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
     _activeUrl = targetUrl;
+    final mode = engineMode ?? (useGoogleDocs ? 1 : 0);
+    _engineMode = mode;
 
     final shouldIframe = useIframe ?? kIsWeb;
 
     if (shouldIframe) {
       if (kIsWeb) {
         _pdfViewType = 'ebook-pdf-iframe-${widget.ebook.id}-${DateTime.now().millisecondsSinceEpoch}';
-        final embedUrl = useGoogleDocs
-            ? 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}'
-            : targetUrl;
+        
+        String embedUrl;
+        if (mode == 0) {
+          embedUrl = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=${Uri.encodeComponent(targetUrl)}';
+        } else if (mode == 1) {
+          embedUrl = 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(targetUrl)}';
+        } else {
+          embedUrl = targetUrl;
+        }
+
         registerIframe(_pdfViewType, embedUrl);
         setState(() {
           _isLoading = false;
           _hasError = false;
-          _useGoogleDocsFallback = useGoogleDocs;
+          _useGoogleDocsFallback = (mode == 1);
           _useIframe = true;
         });
       } else {
@@ -116,15 +127,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   void _handleDocumentLoadFailed(String description) {
     if (_retryAttempt == 0 && kIsWeb) {
       _retryAttempt = 1;
-      final targetUrl = _sanitizeUrl(widget.ebook.fileUrl);
-      _activeUrl = 'https://corsproxy.io/?${Uri.encodeComponent(targetUrl)}';
-      setState(() {
-        _isLoading = true;
-        _hasError = false;
-      });
+      _initPdfViewer(engineMode: 0, useIframe: true);
     } else if (_retryAttempt == 1 && kIsWeb) {
       _retryAttempt = 2;
-      _initPdfViewer(useGoogleDocs: true, useIframe: true);
+      _initPdfViewer(engineMode: 1, useIframe: true);
     } else {
       setState(() {
         _isLoading = false;
@@ -353,7 +359,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 if (val == 'download' || val == 'print') {
                   _openExternalPdfUrl();
                 } else if (val == 'toggle_engine') {
-                  _initPdfViewer(useGoogleDocs: !_useGoogleDocsFallback, useIframe: true);
+                  final nextMode = (_engineMode + 1) % 3;
+                  _initPdfViewer(engineMode: nextMode, useIframe: true);
                 } else if (val == 'offline') {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -371,7 +378,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     children: [
                       const Icon(Icons.swap_horiz, size: 18, color: Colors.amber),
                       const SizedBox(width: 8),
-                      Text(_useGoogleDocsFallback ? 'Use Native Stream Engine' : 'Use Google Docs Reader'),
+                      Text(
+                        _engineMode == 0
+                            ? 'Switch to Google Docs Reader'
+                            : (_engineMode == 1 ? 'Switch to Direct Stream' : 'Switch to Mozilla PDF.js Reader'),
+                      ),
                     ],
                   ),
                 ),
@@ -404,51 +415,55 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               Container(
                 color: _readerBgColor == const Color(0xFF121212) ? const Color(0xFF2A2A2A) : Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        style: TextStyle(color: _readerTextColor, fontSize: 14),
-                        decoration: InputDecoration(
-                          hintText: 'Search text inside PDF...',
-                          hintStyle: TextStyle(color: _readerTextColor.withValues(alpha: 0.5)),
-                          isDense: true,
-                          border: InputBorder.none,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 240,
+                        child: TextField(
+                          controller: _searchController,
+                          style: TextStyle(color: _readerTextColor, fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Search text inside PDF...',
+                            hintStyle: TextStyle(color: _readerTextColor.withValues(alpha: 0.5)),
+                            isDense: true,
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: (text) {
+                            if (text.trim().isNotEmpty) {
+                              _searchResult = _pdfViewerController.searchText(text.trim());
+                              setState(() {});
+                            }
+                          },
                         ),
-                        onSubmitted: (text) {
-                          if (text.trim().isNotEmpty) {
-                            _searchResult = _pdfViewerController.searchText(text.trim());
-                            setState(() {});
-                          }
+                      ),
+                      if (_searchResult.totalInstanceCount > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: Text(
+                            '${_searchResult.currentInstanceIndex}/${_searchResult.totalInstanceCount}',
+                            style: TextStyle(color: _readerTextColor, fontSize: 12),
+                          ),
+                        ),
+                      IconButton(
+                        icon: Icon(Icons.navigate_before, color: _readerTextColor),
+                        onPressed: () => _searchResult.previousInstance(),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.navigate_next, color: _readerTextColor),
+                        onPressed: () => _searchResult.nextInstance(),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: _readerTextColor),
+                        onPressed: () {
+                          _searchController.clear();
+                          _searchResult.clear();
+                          setState(() => _showSearchBar = false);
                         },
                       ),
-                    ),
-                    if (_searchResult.totalInstanceCount > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Text(
-                          '${_searchResult.currentInstanceIndex}/${_searchResult.totalInstanceCount}',
-                          style: TextStyle(color: _readerTextColor, fontSize: 12),
-                        ),
-                      ),
-                    IconButton(
-                      icon: Icon(Icons.navigate_before, color: _readerTextColor),
-                      onPressed: () => _searchResult.previousInstance(),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.navigate_next, color: _readerTextColor),
-                      onPressed: () => _searchResult.nextInstance(),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: _readerTextColor),
-                      onPressed: () {
-                        _searchController.clear();
-                        _searchResult.clear();
-                        setState(() => _showSearchBar = false);
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
