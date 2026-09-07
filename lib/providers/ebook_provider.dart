@@ -22,7 +22,7 @@ class EBookSubmissionModel {
 class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>> {
   static final List<EBookSubmissionModel> _defaultSampleEBooks = [
     EBookSubmissionModel(
-      ebook: const EBookModel(
+      ebook: EBookModel(
         id: 'eb_sample_1',
         title: 'Class 10 Mathematics: Polynomials & Quadratic Equations Guide',
         publicationId: 'Oxford Educational Press',
@@ -30,7 +30,7 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
         classId: 'Class 10',
         subjectId: 'Mathematics',
         coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400',
-        fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+        fileUrl: 'https://pub-0035a50eaf1046efa85b6e5d1631f721.r2.dev/ebooks/Class_10_Mathematics_Polynomials_Guide.pdf',
         status: EBookAdminStatus.published,
       ),
       status: EBookStatus.approved,
@@ -38,7 +38,7 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
       submittedDate: DateTime.now(),
     ),
     EBookSubmissionModel(
-      ebook: const EBookModel(
+      ebook: EBookModel(
         id: 'eb_sample_2',
         title: 'Class 10 Science: Physics Motion & Light Notes',
         publicationId: 'S. Chand Publishing',
@@ -46,7 +46,7 @@ class EBookSubmissionsNotifier extends StateNotifier<List<EBookSubmissionModel>>
         classId: 'Class 10',
         subjectId: 'Science',
         coverUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400',
-        fileUrl: 'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
+        fileUrl: 'https://pub-0035a50eaf1046efa85b6e5d1631f721.r2.dev/ebooks/Class_10_Mathematics_Polynomials_Guide.pdf',
         status: EBookAdminStatus.published,
       ),
       status: EBookStatus.approved,
