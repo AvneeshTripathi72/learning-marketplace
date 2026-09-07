@@ -11,6 +11,8 @@ import '../../../models/user_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/video_provider.dart';
 import '../../../models/video_model.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_typography.dart';
 
 class UploadVideoScreen extends ConsumerStatefulWidget {
   const UploadVideoScreen({super.key});
@@ -74,6 +76,15 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
         _urlController.text = ''; // Clear URL if file selected
       });
     }
+  }
+
+  String _getFileSizeString(int bytes) {
+    if (bytes <= 0) return '0 B';
+    const suffixes = ['B', 'KB', 'MB', 'GB'];
+    var i = (bytes.toString().length - 1) ~/ 3;
+    if (i >= suffixes.length) i = suffixes.length - 1;
+    double num = bytes / (1 << (i * 10));
+    return '${num.toStringAsFixed(1)} ${suffixes[i]}';
   }
 
   void _submitVideo() async {
@@ -199,7 +210,6 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
     ref.read(videoSubmissionsProvider.notifier).addVideoSubmission(newVideo);
     await ref.read(videoSubmissionsProvider.notifier).fetchCloudQueue();
 
-
     final user = ref.read(authProvider);
 
     if (mounted) {
@@ -221,11 +231,100 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
     }
   }
 
+  InputDecoration _buildInputDecoration({
+    required String labelText,
+    required IconData prefixIcon,
+    required String hintText,
+    required bool isDark,
+    required Color accentPrimary,
+    required Color elevatedSurfaceColor,
+    required Color textSecondaryColor,
+    String? helperText,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: TextStyle(color: textSecondaryColor, fontSize: 13, fontWeight: FontWeight.w500),
+      hintText: hintText,
+      hintStyle: TextStyle(color: textSecondaryColor.withOpacity(0.4), fontSize: 13),
+      helperText: helperText,
+      helperStyle: TextStyle(color: textSecondaryColor.withOpacity(0.6), fontSize: 11),
+      prefixIcon: Icon(prefixIcon, color: accentPrimary, size: 20),
+      filled: true,
+      fillColor: elevatedSurfaceColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
+          width: 1,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: accentPrimary,
+          width: 1.5,
+        ),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: isDark ? AppColors.darkError : AppColors.lightError,
+          width: 1,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required IconData icon,
+    required String title,
+    required Color accentColor,
+    required Color textPrimaryColor,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: accentColor, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: AppTypography.h2(textPrimaryColor).copyWith(fontSize: 16),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final elevatedSurfaceColor = isDark ? AppColors.darkElevatedSurface : AppColors.lightElevatedSurface;
+    final textPrimaryColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final textSecondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final accentPrimary = isDark ? AppColors.darkAccentPrimary : AppColors.lightAccentPrimary;
+    final dividerColor = isDark ? AppColors.darkDivider : AppColors.lightDivider;
+
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        title: const Text('Submit Video URL'),
+        title: Text(
+          'Submit Video URL',
+          style: AppTypography.h2(textPrimaryColor).copyWith(fontSize: 18),
+        ),
+        centerTitle: false,
+        backgroundColor: surfaceColor,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
@@ -234,106 +333,444 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Video Title',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.title),
-                  hintText: 'e.g. Class 10 Physics Motion Chapter',
+              // Hero Banner Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [
+                            AppColors.darkSurface,
+                            accentPrimary.withOpacity(0.2),
+                          ]
+                        : [
+                            AppColors.lightSurface,
+                            accentPrimary.withOpacity(0.12),
+                          ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: accentPrimary.withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a video title' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _urlController,
-                enabled: _selectedVideoFile == null,
-                decoration: const InputDecoration(
-                  labelText: 'Video URL (YouTube / Instagram / Facebook)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.link),
-                ),
-                validator: (val) {
-                  if (_selectedVideoFile != null) return null;
-                  if (val == null || val.isEmpty) return 'Please enter a video URL or select a file';
-                  if (!_isValidVideoUrl(val)) return 'Must be a YouTube, Instagram, or Facebook link';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              const Center(child: Text("OR", style: TextStyle(fontWeight: FontWeight.bold))),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _pickVideoFile,
-                icon: const Icon(Icons.video_file),
-                label: Text(_selectedVideoFile != null ? 'Selected: ${_selectedVideoFile!.name}' : 'Select Video File (MP4)'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  minimumSize: const Size.fromHeight(48),
-                ),
-              ),
-              if (_selectedVideoFile != null)
-                TextButton(
-                  onPressed: () => setState(() => _selectedVideoFile = null),
-                  child: const Text('Remove File', style: TextStyle(color: Colors.red)),
-                ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _channelController,
-                decoration: const InputDecoration(
-                  labelText: 'Channel / Creator Name',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_box),
-                ),
-                validator: (val) => val == null || val.isEmpty ? 'Enter channel name' : null,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.category),
-                ),
-                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                onChanged: (v) => v != null ? setState(() => _selectedCategory = v) : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _tagsController,
-                decoration: const InputDecoration(
-                  labelText: 'Video Tags (Comma separated)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.label),
-                  hintText: 'e.g. CBSE, Maths, Algebra',
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: accentPrimary.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.video_library_rounded,
+                        color: accentPrimary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Submit Educational Video',
+                            style: AppTypography.h2(textPrimaryColor).copyWith(fontSize: 18),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Submit YouTube, Instagram, Facebook links or MP4 files for admin review and feature listing.',
+                            style: AppTypography.caption(textSecondaryColor).copyWith(height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _keywordsController,
-                decoration: const InputDecoration(
-                  labelText: 'Keywords (Comma separated)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.vpn_key),
-                  hintText: 'e.g. Class10, BoardExam2026',
+
+              const SizedBox(height: 20),
+
+              // CARD 1: Video Details & Source
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: dividerColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      icon: Icons.play_circle_fill_rounded,
+                      title: 'Video Content & Source',
+                      accentColor: accentPrimary,
+                      textPrimaryColor: textPrimaryColor,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Title Field
+                    TextFormField(
+                      controller: _titleController,
+                      style: AppTypography.body(textPrimaryColor, fontSize: 14),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Video Title *',
+                        prefixIcon: Icons.title_rounded,
+                        hintText: 'e.g., Class 10 Physics: Laws of Motion One-Shot Lecture',
+                        helperText: 'Enter a clear educational title for students.',
+                        isDark: isDark,
+                        accentPrimary: accentPrimary,
+                        elevatedSurfaceColor: elevatedSurfaceColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a video title' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // URL Field
+                    TextFormField(
+                      controller: _urlController,
+                      enabled: _selectedVideoFile == null,
+                      style: AppTypography.body(textPrimaryColor, fontSize: 14),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Video URL (YouTube / Instagram / Facebook)',
+                        prefixIcon: Icons.link_rounded,
+                        hintText: 'e.g., https://www.youtube.com/watch?v=kffacxfA7G4',
+                        helperText: 'Paste direct link to video platform.',
+                        isDark: isDark,
+                        accentPrimary: accentPrimary,
+                        elevatedSurfaceColor: elevatedSurfaceColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      validator: (val) {
+                        if (_selectedVideoFile != null) return null;
+                        if (val == null || val.isEmpty) return 'Please enter a video URL or select a file';
+                        if (!_isValidVideoUrl(val)) return 'Must be a YouTube, Instagram, or Facebook link';
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // OR Divider
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: dividerColor)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: elevatedSurfaceColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: dividerColor),
+                            ),
+                            child: Text(
+                              'OR UPLOAD FILE',
+                              style: AppTypography.caption(accentPrimary).copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: dividerColor)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // Video File Selection Box
+                    InkWell(
+                      onTap: _pickVideoFile,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: _selectedVideoFile != null
+                              ? accentPrimary.withOpacity(0.08)
+                              : elevatedSurfaceColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _selectedVideoFile != null
+                                ? accentPrimary
+                                : (isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0)),
+                            width: _selectedVideoFile != null ? 1.5 : 1,
+                          ),
+                        ),
+                        child: _selectedVideoFile == null
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.video_file_rounded, color: accentPrimary, size: 24),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Select Video File (MP4)',
+                                        style: AppTypography.button(textPrimaryColor).copyWith(fontSize: 14),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Tap to pick video from device storage',
+                                        style: AppTypography.caption(textSecondaryColor).copyWith(fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.darkSuccess.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.check_rounded, color: AppColors.darkSuccess, size: 18),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _selectedVideoFile!.name,
+                                          style: AppTypography.body(textPrimaryColor, fontSize: 13).copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _getFileSizeString(_selectedVideoFile!.size),
+                                          style: AppTypography.caption(textSecondaryColor).copyWith(fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 20),
+                                    onPressed: () => setState(() => _selectedVideoFile = null),
+                                    tooltip: 'Remove file',
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
+              const SizedBox(height: 20),
+
+              // CARD 2: Channel & Category
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: dividerColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      icon: Icons.account_circle_rounded,
+                      title: 'Channel & Category',
+                      accentColor: accentPrimary,
+                      textPrimaryColor: textPrimaryColor,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Channel Name Field
+                    TextFormField(
+                      controller: _channelController,
+                      style: AppTypography.body(textPrimaryColor, fontSize: 14),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Channel / Creator Name *',
+                        prefixIcon: Icons.account_box_rounded,
+                        hintText: 'e.g., Oxford Educational Press / Faculty Node',
+                        helperText: 'Enter publisher or channel name.',
+                        isDark: isDark,
+                        accentPrimary: accentPrimary,
+                        elevatedSurfaceColor: elevatedSurfaceColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      validator: (val) => val == null || val.trim().isEmpty ? 'Enter channel name' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Category Dropdown
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedCategory,
+                      dropdownColor: elevatedSurfaceColor,
+                      style: AppTypography.body(textPrimaryColor, fontSize: 14),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Category',
+                        prefixIcon: Icons.category_rounded,
+                        hintText: 'Select category',
+                        helperText: 'Choose appropriate content category.',
+                        isDark: isDark,
+                        accentPrimary: accentPrimary,
+                        elevatedSurfaceColor: elevatedSurfaceColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                      items: _categories
+                          .map((c) => DropdownMenuItem(
+                                value: c,
+                                child: Text(c, style: TextStyle(color: textPrimaryColor)),
+                              ))
+                          .toList(),
+                      onChanged: (v) => v != null ? setState(() => _selectedCategory = v) : null,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // CARD 3: SEO & Tags
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: dividerColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(
+                      icon: Icons.local_offer_rounded,
+                      title: 'Metadata & Search Tags',
+                      accentColor: accentPrimary,
+                      textPrimaryColor: textPrimaryColor,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Video Tags
+                    TextFormField(
+                      controller: _tagsController,
+                      style: AppTypography.body(textPrimaryColor, fontSize: 14),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Video Tags (Comma Separated)',
+                        prefixIcon: Icons.tag_rounded,
+                        hintText: 'e.g., CBSE 2026, Physics, Class 10, Motion',
+                        helperText: 'Tags help categorize content in student discovery.',
+                        isDark: isDark,
+                        accentPrimary: accentPrimary,
+                        elevatedSurfaceColor: elevatedSurfaceColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Keywords
+                    TextFormField(
+                      controller: _keywordsController,
+                      style: AppTypography.body(textPrimaryColor, fontSize: 14),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Search Keywords (Comma Separated)',
+                        prefixIcon: Icons.key_rounded,
+                        hintText: 'e.g., board_prep, ncert_solutions, one_shot_lecture',
+                        helperText: 'Keywords used for search relevance matching.',
+                        isDark: isDark,
+                        accentPrimary: accentPrimary,
+                        elevatedSurfaceColor: elevatedSurfaceColor,
+                        textSecondaryColor: textSecondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               if (_isSubmitting && _selectedVideoFile != null) ...[
-                const SizedBox(height: 16),
-                LinearProgressIndicator(value: _uploadProgress),
-                const SizedBox(height: 8),
-                Text('${(_uploadProgress * 100).toStringAsFixed(0)}% Uploaded', textAlign: TextAlign.center),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: accentPrimary.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Uploading File...', style: AppTypography.button(textPrimaryColor)),
+                          Text('${(_uploadProgress * 100).toStringAsFixed(0)}%', style: AppTypography.button(accentPrimary)),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: _uploadProgress,
+                          minHeight: 8,
+                          backgroundColor: elevatedSurfaceColor,
+                          valueColor: AlwaysStoppedAnimation<Color>(accentPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
+
+              const SizedBox(height: 24),
+
+              // Submit Button
               SizedBox(
                 width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: _isSubmitting ? null : _submitVideo,
-                  icon: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.cloud_upload),
-                  label: Text(_isSubmitting ? 'Submitting...' : 'Submit Video for Moderation'),
+                height: 52,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [
+                        accentPrimary,
+                        accentPrimary.withBlue(240),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentPrimary.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _isSubmitting ? null : _submitVideo,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.cloud_upload_rounded, color: Colors.white, size: 22),
+                    label: Text(
+                      _isSubmitting ? 'Submitting Video...' : 'Submit Video for Moderation',
+                      style: AppTypography.button(Colors.white).copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -344,3 +781,4 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
     );
   }
 }
+
