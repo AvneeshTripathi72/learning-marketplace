@@ -37,11 +37,11 @@ class StorageService {
       } catch (e) {
         debugPrint('ℹ️ Supabase Video storage upload notice: $e');
         onProgress(1.0);
-        return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+        return 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
       }
     } catch (e) {
       debugPrint('❌ Storage Error: $e');
-      return 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+      return 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
     }
   }
 
