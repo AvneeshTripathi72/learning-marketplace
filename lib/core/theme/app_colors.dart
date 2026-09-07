@@ -14,9 +14,9 @@ class AppColors {
   static const darkSuccess = Color(0xFF4CD964);
 
   // Light Theme Colors
-  static const lightBackground = Color(0xFFF5F5F7);
-  static const lightSurface = Color(0xFFE8E8E8);
-  static const lightElevatedSurface = Color(0xFFFAFAFA);
+  static const lightBackground = Color(0xFFFFFFFF);
+  static const lightSurface = Color(0xFFF5F5F7);
+  static const lightElevatedSurface = Color(0xFFFFFFFF);
   static const lightTextPrimary = Color(0xFF1A1A1A);
   static const lightTextSecondary = Color(0xFF6B6B6B);
   static const lightAccentPrimary = Color(0xFF4A6CF7);

@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../models/category_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/public_data_provider.dart';
-import '../../../widgets/animated_card.dart';
 import '../../../widgets/app_drawer.dart';
 import '../../../widgets/bottom_nav_bar.dart';
 import '../../../widgets/category_chip_list.dart';
 import '../../../widgets/notification_modal.dart';
 import '../../../widgets/video_card.dart';
-import '../../shared/video_player/video_player_screen.dart';
 import '../../../widgets/core/blurred_drawer_scaffold.dart';
+import '../../../widgets/core/metric_card.dart';
+import '../../../widgets/core/premium_card.dart';
+import '../../../widgets/core/skeleton_loader.dart';
+import '../../shared/video_player/video_player_screen.dart';
 
 class PublicDashboardScreen extends ConsumerStatefulWidget {
   const PublicDashboardScreen({super.key});
 
   @override
-  ConsumerState<PublicDashboardScreen> createState() =>
-      _PublicDashboardScreenState();
+  ConsumerState<PublicDashboardScreen> createState() => _PublicDashboardScreenState();
 }
 
 class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
@@ -39,6 +41,9 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
     final user = ref.watch(authProvider);
     final recommendedAsync = ref.watch(publicRecommendedVideosProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final primaryAccent = isDark ? const Color(0xFF7C9CFF) : const Color(0xFF4A6CF7);
 
     return BlurredDrawerScaffold(
       extendBody: true,
@@ -47,18 +52,25 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
-            tooltip: 'Open Menu Drawer',
+            tooltip: 'Open Navigation Menu',
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         title: Row(
           children: [
-            Icon(Icons.public, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: primaryAccent.withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.space_dashboard_rounded, color: primaryAccent, size: 20),
+            ),
+            const SizedBox(width: 10),
             const Expanded(
               child: Text(
-                'Public Educational Hub',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                'Educational Hub',
+                style: TextStyle(fontFamily: 'Lexend', fontWeight: FontWeight.w700, fontSize: 18),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -66,45 +78,206 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none),
-            tooltip: 'Notifications & Web Alerts',
+            icon: const Icon(Icons.notifications_none_rounded),
+            tooltip: 'Notifications',
             onPressed: () => showAppNotificationModal(context),
           ),
         ],
       ),
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Search Bar & Category Filters
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Search public eBooks, topics, or videos...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            // 1. Welcome Hero Banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [const Color(0xFF1E1E1E), const Color(0xFF2A2A2A)]
+                      : [const Color(0xFF4A6CF7), const Color(0xFF6B8AFF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                filled: true,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF333333) : Colors.transparent,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isDark ? Colors.black : const Color(0xFF4A6CF7)).withValues(alpha: 0.15),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              onChanged: (val) {},
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        child: Text(
+                          (user?.name.isNotEmpty == true ? user!.name[0] : 'S').toUpperCase(),
+                          style: const TextStyle(
+                            fontFamily: 'Lexend',
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Welcome back, ${user?.name ?? "Student"}! 👋',
+                              style: const TextStyle(
+                                fontFamily: 'Lexend',
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Text(
+                              'Explore thousands of free eBooks, video lectures & practice papers.',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Integrated Search Field
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search eBooks, videos, or model papers...',
+                      hintStyle: TextStyle(
+                        fontFamily: 'Inter',
+                        color: isDark ? Colors.white54 : Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search_rounded,
+                        color: isDark ? primaryAccent : const Color(0xFF4A6CF7),
+                        size: 20,
+                      ),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF121212) : Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: primaryAccent, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 20),
+
+            // 2. Metrics & KPI Summary Row
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 650;
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: isWide ? 4 : 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: isWide ? 1.4 : 1.35,
+                  children: [
+                    MetricCard(
+                      title: 'Available eBooks',
+                      value: 1240,
+                      icon: Icons.auto_stories_rounded,
+                      color: const Color(0xFF7C9CFF),
+                      trendText: '+14%',
+                      isPositive: true,
+                      onTap: () => context.push('/public/ebook'),
+                    ),
+                    MetricCard(
+                      title: 'Video Tutorials',
+                      value: 850,
+                      icon: Icons.play_circle_fill_rounded,
+                      color: const Color(0xFFFF6B6B),
+                      trendText: '+8%',
+                      isPositive: true,
+                      onTap: () => context.push('/public/youtube'),
+                    ),
+                    MetricCard(
+                      title: 'Question Papers',
+                      value: 420,
+                      icon: Icons.quiz_rounded,
+                      color: const Color(0xFFFFB84C),
+                      trendText: '+22%',
+                      isPositive: true,
+                      onTap: () => context.push('/public/question-paper'),
+                    ),
+                    MetricCard(
+                      title: 'Practice Tests',
+                      value: 310,
+                      icon: Icons.assignment_rounded,
+                      color: const Color(0xFF4CD964),
+                      trendText: '+5%',
+                      isPositive: true,
+                      onTap: () => context.push('/public/test-paper'),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            // 3. Category Filter Chips
             CategoryChipList(
               categories: _categories,
               selectedCategoryId: _selectedCategoryId,
               onSelected: (catId) => setState(() => _selectedCategoryId = catId),
             ),
-            const SizedBox(height: 20),
 
-            // Explore Public Modules Grid
-            Text(
-              'Explore Public Educational Modules',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            const SizedBox(height: 24),
+
+            // 4. Quick Access Navigation Grid
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Quick Access Modules',
+                  style: AppTypography.h2(theme.colorScheme.onSurface),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/public/hub'),
+                  child: const Text('View All'),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             GridView.count(
@@ -113,131 +286,131 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.65,
+              childAspectRatio: 1.7,
               children: [
                 _buildMenuTile(
                   context,
-                  title: 'All eBooks',
-                  subtitle: 'Free & Publication Books',
-                  icon: Icons.library_books,
-                  color: Colors.indigo,
+                  title: 'Textbooks & eBooks',
+                  subtitle: 'NCERT & State Board PDFs',
+                  icon: Icons.menu_book_rounded,
+                  color: primaryAccent,
                   onTap: () => context.push('/public/ebook'),
                 ),
                 _buildMenuTile(
                   context,
-                  title: 'Public YouTube Hub',
-                  subtitle: 'Community & Free Videos',
-                  icon: Icons.ondemand_video,
-                  color: Colors.redAccent,
+                  title: 'Video Lectures',
+                  subtitle: 'Interactive YouTube Hub',
+                  icon: Icons.ondemand_video_rounded,
+                  color: const Color(0xFFFF6B6B),
                   onTap: () => context.push('/public/youtube'),
                 ),
                 _buildMenuTile(
                   context,
-                  title: 'Question Papers',
-                  subtitle: 'Model Question Papers',
-                  icon: Icons.quiz,
-                  color: Colors.orange,
+                  title: 'Model Papers',
+                  subtitle: 'Class 9th - 12th Solved Papers',
+                  icon: Icons.fact_check_rounded,
+                  color: const Color(0xFFFFB84C),
                   onTap: () => context.push('/public/question-paper'),
                 ),
                 _buildMenuTile(
                   context,
-                  title: 'Test Papers',
-                  subtitle: 'Practice Evaluation Tests',
-                  icon: Icons.assignment,
-                  color: Colors.teal,
+                  title: 'Online Test Engine',
+                  subtitle: 'Timed Practice Evaluation',
+                  icon: Icons.assignment_turned_in_rounded,
+                  color: const Color(0xFF4CD964),
                   onTap: () => context.push('/public/test-paper'),
                 ),
                 _buildMenuTile(
                   context,
-                  title: 'Category Hub',
-                  subtitle: 'Browse by Subject Category',
-                  icon: Icons.grid_view,
-                  color: Colors.deepPurple,
+                  title: 'Category Browser',
+                  subtitle: 'Filter by Subject & Class',
+                  icon: Icons.grid_view_rounded,
+                  color: Colors.purpleAccent,
                   onTap: () => context.push('/public/hub'),
                 ),
                 _buildMenuTile(
                   context,
-                  title: 'Support Creator',
-                  subtitle: 'Direct Tip via UPI / QR',
-                  icon: Icons.volunteer_activism,
-                  color: Colors.pink,
-                  onTap: () => context.push('/donate/creator_001'),
-                ),
-                _buildMenuTile(
-                  context,
                   title: 'Magazines Portal',
-                  subtitle: 'Read In-App PDF Issues',
-                  icon: Icons.picture_in_picture,
-                  color: Colors.indigo,
+                  subtitle: 'Monthly Educational Issues',
+                  icon: Icons.article_rounded,
+                  color: Colors.tealAccent,
                   onTap: () => context.push('/magazines'),
                 ),
               ],
             ),
+
             const SizedBox(height: 24),
 
-            // Direct Creator Support Banner
-            Card(
-              color: theme.colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: theme.dividerColor),
+            // 5. Creator Tip Card
+            PremiumCard(
+              padding: const EdgeInsets.all(18),
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF2A1F2D), const Color(0xFF1E1E1E)]
+                    : [const Color(0xFFFFF0F5), Colors.white],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.pinkAccent,
-                      child: Icon(Icons.favorite, color: Colors.white),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.pinkAccent.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Support Independent Video Creators',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Send 100% direct tips via UPI & QR code with zero platform commission.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: theme.textTheme.bodySmall?.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.pink,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    child: const Icon(Icons.favorite_rounded, color: Colors.pinkAccent, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Support Independent Educators',
+                          style: AppTypography.h2(theme.colorScheme.onSurface).copyWith(fontSize: 15),
                         ),
-                      ),
-                      onPressed: () => context.push('/donate/creator_001'),
-                      icon: const Icon(Icons.volunteer_activism, size: 16),
-                      label: const Text('Tip Now'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Send 100% direct tips via UPI & QR code with zero platform commission.',
+                          style: AppTypography.caption(theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pinkAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () => context.push('/donate/creator_001'),
+                    icon: const Icon(Icons.volunteer_activism_rounded, size: 16),
+                    label: const Text('Tip Now', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  ),
+                ],
               ),
             ),
+
             const SizedBox(height: 24),
 
-            // Trending Videos Feed
-            Text(
-              'Trending Educational Videos',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            // 6. Trending Video Feed
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Trending Video Lectures',
+                  style: AppTypography.h2(theme.colorScheme.onSurface),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/public/youtube'),
+                  child: const Text('See All'),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -245,22 +418,29 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
               child: recommendedAsync.when(
                 data: (videos) => ListView.builder(
                   scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
                   itemCount: videos.length,
-                  itemBuilder: (context, index) => VideoCard(
-                    video: videos[index],
-                    width: 260,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => VideoPlayerScreen(video: videos[index]),
-                        ),
-                      );
-                    },
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.only(right: 14),
+                    child: VideoCard(
+                      video: videos[index],
+                      width: 260,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VideoPlayerScreen(video: videos[index]),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const Text('Error loading public feed'),
+                loading: () => const SkeletonList(count: 3, height: 260),
+                error: (_, __) => Text(
+                  'Unable to load public video feed.',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
               ),
             ),
           ],
@@ -277,45 +457,50 @@ class _PublicDashboardScreenState extends ConsumerState<PublicDashboardScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return AnimatedCard(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return PremiumCard(
       onTap: onTap,
-      child: Card(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
             padding: const EdgeInsets.all(10),
-            child: Row(
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: isDark ? 0.18 : 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 22, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(icon, size: 28, color: color),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
